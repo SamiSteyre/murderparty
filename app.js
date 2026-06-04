@@ -72,7 +72,8 @@ let appState = {
     loginStep: 'email',// 'email' | 'otp'
     pendingEmail: '',  // email input in progress
     mockOtp: '',       // generated OTP code for mock testing
-    n8nBaseUrl: 'http://localhost:5678' // default n8n Base URL
+    n8nBaseUrl: 'http://localhost:5678', // default n8n Base URL
+    orgaView: 'landing' // Track active organizer view
 };
 
 // Load State from LocalStorage
@@ -182,62 +183,32 @@ function getActivePlayer() {
    ORGANIZER DASHBOARD RENDERING
    ========================================================================== */
 function renderOrganizerDashboard() {
+    const landingPanel = document.getElementById('orgaLandingPanel');
     const creationPanel = document.getElementById('sessionCreationPanel');
     const activePanel = document.getElementById('sessionActivePanel');
+    
+    if (!appState.orgaView) {
+        appState.orgaView = 'landing';
+    }
 
-    // 1. Toggle panels based on active session status
-    if (appState.session && appState.session.status !== 'Configuration') {
+    // 1. Toggle panels visibility based on appState.orgaView
+    if (appState.orgaView === 'landing') {
+        if (landingPanel) landingPanel.classList.remove('hidden');
         if (creationPanel) creationPanel.classList.add('hidden');
-        if (activePanel) activePanel.classList.remove('hidden');
+        if (activePanel) activePanel.classList.add('hidden');
 
-        // Render Active Scenario
-        if (appState.scenario) {
-            document.getElementById('activeScenarioTitle').textContent = appState.scenario.title;
-            document.getElementById('activeScenarioPitch').textContent = appState.scenario.pitch;
-            document.getElementById('activeScenarioCrimeRoom').textContent = appState.scenario.crimeRoom;
-            document.getElementById('activeScenarioCluesCount').textContent = appState.scenario.cluesCount;
-        }
-
-        // Render Session Economy Stats
-        document.getElementById('statTotalClues').textContent = appState.session.totalClues;
-        document.getElementById('statPointsPerPlayer').textContent = appState.session.pointsPerPlayer;
-
-        // Render Players list
-        const tbody = document.getElementById('orgPlayersTableBody');
-        if (tbody) {
-            tbody.innerHTML = '';
-
-            if (appState.players.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="3" class="py-6 text-center text-slate-500">Aucun joueur dans la session.</td>
-                    </tr>
-                `;
+        // Show active session button only if session exists and is not 'A initier'
+        const activeBtn = document.getElementById('orgaActiveSessionBtn');
+        if (activeBtn) {
+            const hasActive = appState.session && appState.session.status && appState.session.status !== 'A initier';
+            if (hasActive) {
+                activeBtn.classList.remove('hidden');
             } else {
-                appState.players.forEach(p => {
-                    let roleBadgeClass = "bg-slate-900 border border-slate-700 text-slate-400";
-                    if (p.roleType === "Coupable") roleBadgeClass = "bg-red-950 border border-red-800 text-red-400 font-extrabold";
-                    if (p.roleType === "Faux-Coupable") roleBadgeClass = "bg-amber-950 border border-amber-800 text-amber-400";
-
-                    const tr = document.createElement('tr');
-                    tr.className = "border-b border-noir-border/30 hover:bg-noir-card/50 transition-colors";
-                    tr.innerHTML = `
-                        <td class="py-3 font-semibold text-slate-200">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full ${p.avatarUrl ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : 'bg-yellow-500'}" title="${p.avatarUrl ? 'Profil généré' : 'En attente d\'onboarding'}"></span>
-                                ${p.roleName}
-                            </div>
-                        </td>
-                        <td class="py-3 font-mono text-2xs text-slate-400">${p.email}</td>
-                        <td class="py-3">
-                            <span class="px-2 py-0.5 text-3xs uppercase tracking-wider rounded font-semibold ${roleBadgeClass}">${p.roleType}</span>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                activeBtn.classList.add('hidden');
             }
         }
-    } else {
+    } else if (appState.orgaView === 'create') {
+        if (landingPanel) landingPanel.classList.add('hidden');
         if (creationPanel) creationPanel.classList.remove('hidden');
         if (activePanel) activePanel.classList.add('hidden');
 
@@ -247,35 +218,85 @@ function renderOrganizerDashboard() {
             const dummyEmails = Array.from({length: 16}, (_, i) => `invite${i+1}@email.com`).join('\n');
             emailArea.value = dummyEmails;
         }
-    }
 
-    // 2. Render Live Console Logs
-    const consoleDiv = document.getElementById('monitoringConsole');
-    if (consoleDiv) {
-        consoleDiv.innerHTML = '';
-        if (appState.logs.length === 0) {
-            consoleDiv.innerHTML = '<div class="text-slate-500">>> En attente de configuration de la session...</div>';
+        // Stylize creation sub-buttons based on scenarioMode state
+        const modeInput = document.getElementById('scenarioMode');
+        const createBtnCard = document.getElementById('orgaBtnCreateScenarioOption');
+        const selectBtnCard = document.getElementById('orgaBtnSelectScenarioOption');
+        const formContainer = document.getElementById('unifiedSessionForm');
+        const createFields = document.getElementById('createScenarioFormFields');
+        const selectFields = document.getElementById('selectScenarioFormFields');
+
+        if (modeInput && modeInput.value) {
+            if (formContainer) formContainer.classList.remove('hidden');
+            if (modeInput.value === 'create') {
+                if (createBtnCard) createBtnCard.className = "orga-option-card active p-6 rounded-xl text-center space-y-2";
+                if (selectBtnCard) selectBtnCard.className = "orga-option-card p-6 rounded-xl text-center space-y-2";
+                if (createFields) createFields.classList.remove('hidden');
+                if (selectFields) selectFields.classList.add('hidden');
+            } else {
+                if (createBtnCard) createBtnCard.className = "orga-option-card p-6 rounded-xl text-center space-y-2";
+                if (selectBtnCard) selectBtnCard.className = "orga-option-card active p-6 rounded-xl text-center space-y-2";
+                if (createFields) createFields.classList.add('hidden');
+                if (selectFields) selectFields.classList.remove('hidden');
+            }
         } else {
-            appState.logs.forEach(log => {
-                const div = document.createElement('div');
-                div.className = "border-b border-noir-border/10 py-1 last:border-0 text-slate-300";
-                
-                // Colorize logs based on content
-                if (log.includes("Succès") || log.includes("terminée") || log.includes("configurée")) {
-                    div.className = "border-b border-noir-border/10 py-1 last:border-0 text-emerald-400 font-semibold";
-                } else if (log.includes("Agent") || log.includes("Démarrage")) {
-                    div.className = "border-b border-noir-border/10 py-1 last:border-0 text-gold font-bold";
-                } else if (log.includes("Erreur")) {
-                    div.className = "border-b border-noir-border/10 py-1 last:border-0 text-blood font-bold";
-                } else if (log.includes("En attente") || log.includes(">>")) {
-                    div.className = "border-b border-noir-border/10 py-1 last:border-0 text-slate-500";
-                }
-                
-                div.textContent = log;
-                consoleDiv.appendChild(div);
-            });
-            // Auto scroll console
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            if (formContainer) formContainer.classList.add('hidden');
+            if (createBtnCard) createBtnCard.className = "orga-option-card p-6 rounded-xl text-center space-y-2";
+            if (selectBtnCard) selectBtnCard.className = "orga-option-card p-6 rounded-xl text-center space-y-2";
+        }
+    } else if (appState.orgaView === 'active') {
+        if (landingPanel) landingPanel.classList.add('hidden');
+        if (creationPanel) creationPanel.classList.add('hidden');
+        if (activePanel) activePanel.classList.remove('hidden');
+
+        // Render Active Scenario Details
+        if (appState.scenario) {
+            document.getElementById('activeScenarioTitle').textContent = appState.scenario.title;
+            document.getElementById('activeScenarioPitch').textContent = appState.scenario.pitch;
+            document.getElementById('activeScenarioCrimeRoom').textContent = appState.scenario.crimeRoom;
+            document.getElementById('activeScenarioCluesCount').textContent = appState.scenario.cluesCount;
+        }
+
+        // Render Session Economy Stats
+        if (appState.session) {
+            document.getElementById('statTotalClues').textContent = appState.session.totalClues || '--';
+            document.getElementById('statPointsPerPlayer').textContent = appState.session.pointsPerPlayer || '--';
+        }
+
+        // Render Players List Table
+        const tbody = document.getElementById('orgPlayersTableBody');
+        if (tbody) {
+            tbody.innerHTML = '';
+            if (appState.players.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-6 text-center text-slate-500">Aucun joueur dans la session.</td>
+                    </tr>
+                `;
+            } else {
+                appState.players.forEach(p => {
+                    let roleBadgeClass = "bg-slate-900 border border-slate-700 text-slate-400";
+                    if (p.roleType === "Coupable") roleBadgeClass = "bg-red-950/20 border border-red-900/60 text-red-500 font-extrabold";
+                    if (p.roleType === "Faux-Coupable") roleBadgeClass = "bg-slate-900 border border-slate-800 text-slate-300";
+
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-white/5 hover:bg-noir-card/50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="py-3 font-semibold text-slate-200">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full ${p.avatarUrl ? 'bg-red-550 shadow-[0_0_5px_#b30b0b]' : 'bg-red-900 animate-pulse'}" title="${p.avatarUrl ? 'Profil généré' : 'En attente d\'onboarding'}"></span>
+                                ${p.roleName}
+                            </div>
+                        </td>
+                        <td class="py-3 font-mono text-2xs text-slate-400">${p.email}</td>
+                        <td class="py-3 text-right">
+                            <span class="px-2 py-0.5 text-3xs uppercase tracking-wider rounded font-semibold ${roleBadgeClass}">${p.roleType}</span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
         }
     }
 }
@@ -476,27 +497,7 @@ function addLiveLog(message) {
 }
 
 // 1. Webhook: POST /webhook/generate-scenario
-function handleToggleScenarioMode(mode) {
-    const createFields = document.getElementById('createScenarioFormFields');
-    const selectFields = document.getElementById('selectScenarioFormFields');
-    const toggleCreateBtn = document.getElementById('toggleCreateScenarioBtn');
-    const toggleSelectBtn = document.getElementById('toggleSelectScenarioBtn');
-    const modeInput = document.getElementById('scenarioMode');
-
-    if (modeInput) modeInput.value = mode;
-
-    if (mode === 'create') {
-        if (createFields) createFields.classList.remove('hidden');
-        if (selectFields) selectFields.classList.add('hidden');
-        if (toggleCreateBtn) toggleCreateBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-gold text-noir-deep transition-all";
-        if (toggleSelectBtn) toggleSelectBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
-    } else {
-        if (createFields) createFields.classList.add('hidden');
-        if (selectFields) selectFields.classList.remove('hidden');
-        if (toggleCreateBtn) toggleCreateBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
-        if (toggleSelectBtn) toggleSelectBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-gold text-noir-deep transition-all";
-    }
-}
+// Note: handleToggleScenarioMode removed since mode switching is managed by direct card clicks and renderOrganizerDashboard.
 
 async function handleUnifiedSessionSubmit(e) {
     e.preventDefault();
@@ -709,6 +710,7 @@ async function handleUnifiedSessionSubmit(e) {
         });
 
         addLiveLog(`Succès final : Session de jeu configurée et lancée !`);
+        appState.orgaView = 'active'; // Redirect to active dashboard
         savePersistedState();
         showToast("Session Créée !", "Les invitations ont été envoyées et l'intrigue est prête.", "success");
 
@@ -718,7 +720,7 @@ async function handleUnifiedSessionSubmit(e) {
         showToast("Erreur d'orchestration", err.message || "Une erreur est survenue.", "error");
     } finally {
         submitBtn.removeAttribute('disabled');
-        submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la Session & Orchestrer les Agents IA`;
+        submitBtn.innerHTML = `<i class="fa-solid fa-skull"></i> Lancer la Session & Envoyer les Invitations`;
         renderOrganizerDashboard();
     }
 }
@@ -730,6 +732,7 @@ function handleResetSession() {
         appState.players = [];
         appState.clues = [];
         appState.logs = [];
+        appState.orgaView = 'landing'; // Return to landing board
         savePersistedState();
         
         // Reset inputs in creation form
@@ -739,12 +742,6 @@ function handleResetSession() {
         if (emailArea) {
             const dummyEmails = Array.from({length: 16}, (_, i) => `invite${i+1}@email.com`).join('\n');
             emailArea.value = dummyEmails;
-        }
-        
-        // Reset console log
-        const consoleEl = document.getElementById('monitoringConsole');
-        if (consoleEl) {
-            consoleEl.innerHTML = '<div class="text-slate-500">>> En attente de configuration de la session...</div>';
         }
         
         renderOrganizerDashboard();
@@ -1115,6 +1112,7 @@ function logout() {
     appState.loginStep = 'email';
     appState.pendingEmail = '';
     appState.mockOtp = '';
+    appState.orgaView = 'landing'; // Reset dashboard view
     savePersistedState();
     
     document.getElementById('loginEmail').value = '';
@@ -1186,23 +1184,75 @@ function init() {
     document.getElementById('backToEmailBtn').addEventListener('click', handleBackToEmail);
     document.getElementById('logoutBtn').addEventListener('click', logout);
     
+    // Organizer Navigation Links
+    const orgaCreateSessionBtn = document.getElementById('orgaCreateSessionBtn');
+    if (orgaCreateSessionBtn) {
+        orgaCreateSessionBtn.addEventListener('click', () => {
+            appState.orgaView = 'create';
+            const modeInput = document.getElementById('scenarioMode');
+            if (modeInput) modeInput.value = ''; // Reset option initially
+            savePersistedState();
+            renderOrganizerDashboard();
+        });
+    }
+
+    const orgaActiveSessionBtn = document.getElementById('orgaActiveSessionBtn');
+    if (orgaActiveSessionBtn) {
+        orgaActiveSessionBtn.addEventListener('click', () => {
+            appState.orgaView = 'active';
+            savePersistedState();
+            renderOrganizerDashboard();
+        });
+    }
+
+    const orgaBackToLandingBtn = document.getElementById('orgaBackToLandingBtn');
+    if (orgaBackToLandingBtn) {
+        orgaBackToLandingBtn.addEventListener('click', () => {
+            appState.orgaView = 'landing';
+            savePersistedState();
+            renderOrganizerDashboard();
+        });
+    }
+
+    const orgaActiveBackToLandingBtn = document.getElementById('orgaActiveBackToLandingBtn');
+    if (orgaActiveBackToLandingBtn) {
+        orgaActiveBackToLandingBtn.addEventListener('click', () => {
+            appState.orgaView = 'landing';
+            savePersistedState();
+            renderOrganizerDashboard();
+        });
+    }
+
+    // Wizard Scenario Options Cards
+    const orgaBtnCreateScenarioOption = document.getElementById('orgaBtnCreateScenarioOption');
+    if (orgaBtnCreateScenarioOption) {
+        orgaBtnCreateScenarioOption.addEventListener('click', () => {
+            const modeInput = document.getElementById('scenarioMode');
+            if (modeInput) modeInput.value = 'create';
+            savePersistedState();
+            renderOrganizerDashboard();
+        });
+    }
+
+    const orgaBtnSelectScenarioOption = document.getElementById('orgaBtnSelectScenarioOption');
+    if (orgaBtnSelectScenarioOption) {
+        orgaBtnSelectScenarioOption.addEventListener('click', () => {
+            const modeInput = document.getElementById('scenarioMode');
+            if (modeInput) modeInput.value = 'select';
+            savePersistedState();
+            renderOrganizerDashboard();
+        });
+    }
+
     // Organizer Forms (Unified Panel)
     const unifiedForm = document.getElementById('unifiedSessionForm');
     if (unifiedForm) unifiedForm.addEventListener('submit', handleUnifiedSessionSubmit);
-
-    const toggleCreateBtn = document.getElementById('toggleCreateScenarioBtn');
-    if (toggleCreateBtn) toggleCreateBtn.addEventListener('click', () => handleToggleScenarioMode('create'));
-
-    const toggleSelectBtn = document.getElementById('toggleSelectScenarioBtn');
-    if (toggleSelectBtn) toggleSelectBtn.addEventListener('click', () => handleToggleScenarioMode('select'));
 
     const resetBtn = document.getElementById('resetSessionBtn');
     if (resetBtn) resetBtn.addEventListener('click', handleResetSession);
     
     // Onboarding Form
     document.getElementById('onboardingForm').addEventListener('submit', handlePlayerOnboarding);
-    
-
     
     // Player Gameplay trigger
     document.getElementById('searchRoomBtn').addEventListener('click', handleRoomSearch);

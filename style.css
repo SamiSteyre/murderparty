@@ -1,44 +1,62 @@
 /* ==========================================================================
-   STYLE OVERRIDES & PREMIUM EFFECTS
+   STYLE OVERRIDES & PREMIUM EFFECTS - BLACK, RED & WHITE LUXURY
    ========================================================================== */
 
 :root {
-    --color-bg-main: #06070a;
-    --color-border: rgba(255, 255, 255, 0.08);
+    --color-bg-main: #000000;
+    --color-border-subtle: rgba(255, 255, 255, 0.05);
+    --color-border-crimson: rgba(179, 11, 11, 0.25);
+    --color-blood: #b30b0b;
+    --color-blood-glow: rgba(179, 11, 11, 0.5);
 }
 
-/* Custom Typography & Body Configuration */
+/* Custom Typography & Body Configuration with Eerie Fog Gradients */
 body {
     background-color: var(--color-bg-main);
     background-image: 
-        radial-gradient(at 0% 0%, rgba(217, 56, 56, 0.06) 0px, transparent 40%),
-        radial-gradient(at 100% 100%, rgba(212, 175, 55, 0.04) 0px, transparent 40%);
+        radial-gradient(at 10% 10%, rgba(179, 11, 11, 0.08) 0px, transparent 45%),
+        radial-gradient(at 90% 90%, rgba(179, 11, 11, 0.04) 0px, transparent 40%),
+        radial-gradient(at 50% 40%, rgba(0, 0, 0, 0.95) 0px, transparent 100%);
     background-attachment: fixed;
 }
 
-/* Glassmorphism Panels */
+/* Glassmorphism Panels - Ultra Dark & High Contrast */
 .glass-panel {
-    background: rgba(16, 18, 29, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+    background: rgba(8, 8, 8, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: 0 15px 50px 0 rgba(0, 0, 0, 0.8);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+    border-color: var(--color-border-crimson);
+}
+
+/* Dynamic Gothic Glow for Cinematic Serifs */
+.gothic-glow {
+    text-shadow: 0 0 10px rgba(179, 11, 11, 0.7), 0 0 20px rgba(179, 11, 11, 0.3);
+}
+
+.gothic-glow-white {
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
 /* Scrollbar Customization */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
 }
 ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.01);
+    background: rgba(0, 0, 0, 0.2);
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(217, 56, 56, 0.4);
+    background: var(--color-blood);
 }
 
 /* Helper Font sizes not standard in Tailwind */
@@ -52,64 +70,67 @@ body {
 }
 
 .loading-ring {
-    width: 50px;
-    height: 50px;
-    border: 3px solid rgba(212, 175, 55, 0.1);
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(179, 11, 11, 0.1);
     border-radius: 50%;
-    border-top-color: #d4af37;
-    animation: spin 1s linear infinite;
-    filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.4));
+    border-top-color: var(--color-blood);
+    animation: spin 0.8s linear infinite;
+    filter: drop-shadow(0 0 8px var(--color-blood));
 }
 
-/* Action Points SVG Gauge */
+/* AP circular progress bar */
 #dashProgressCircle {
     transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     stroke-linecap: round;
-    filter: drop-shadow(0 0 3px rgba(217, 56, 56, 0.6));
+    filter: drop-shadow(0 0 4px var(--color-blood-glow));
 }
 
-/* Suggested Traits Badges */
+/* Suggested Traits Badges (Silver & Blood Red) */
 .trait-tag {
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #94a3b8;
-    padding: 0.25rem 0.65rem;
-    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    padding: 0.3rem 0.75rem;
+    border-radius: 8px;
     font-size: 0.7rem;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
 }
 
 .trait-tag:hover {
-    background: rgba(212, 175, 55, 0.08);
-    border-color: rgba(212, 175, 55, 0.4);
-    color: #d4af37;
+    background: rgba(179, 11, 11, 0.08);
+    border-color: rgba(179, 11, 11, 0.4);
+    color: #ffffff;
 }
 
 .trait-tag.selected {
-    background: rgba(212, 175, 55, 0.15);
-    border-color: #d4af37;
-    color: #fff;
-    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+    background: rgba(179, 11, 11, 0.25);
+    border-color: var(--color-blood);
+    color: #ffffff;
+    box-shadow: 0 0 12px var(--color-blood-glow);
 }
 
-/* Monitoring Console logs styles */
-#monitoringConsole div {
-    border-left: 2px solid transparent;
-    padding-left: 0.5rem;
-    margin-bottom: 0.35rem;
-    animation: logFadeIn 0.3s ease-out;
+/* Card Button styles for options selector */
+.orga-option-card {
+    background: rgba(10, 10, 10, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
 }
 
-#monitoringConsole .log-info { border-left-color: #3b82f6; color: #93c5fd; }
-#monitoringConsole .log-success { border-left-color: #10b981; color: #34d399; }
-#monitoringConsole .log-warning { border-left-color: #f59e0b; color: #fcd34d; }
-#monitoringConsole .log-danger { border-left-color: #ef4444; color: #fca5a5; }
+.orga-option-card:hover {
+    background: rgba(179, 11, 11, 0.05);
+    border-color: rgba(179, 11, 11, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(179, 11, 11, 0.15);
+}
 
-@keyframes logFadeIn {
-    from { opacity: 0; transform: translateX(-5px); }
-    to { opacity: 1; transform: translateX(0); }
+.orga-option-card.active {
+    background: rgba(179, 11, 11, 0.15);
+    border-color: var(--color-blood);
+    box-shadow: 0 0 15px rgba(179, 11, 11, 0.3);
 }
 
 /* Toast Notifications styling */
@@ -128,13 +149,11 @@ body {
     opacity: 1;
 }
 
-/* Micro interaction shadows & glow */
-.glow-gold {
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
-}
-
+/* Micro interaction shadows & glows */
 .glow-blood {
-    box-shadow: 0 0 15px rgba(217, 56, 56, 0.15);
+    box-shadow: 0 0 20px rgba(179, 11, 11, 0.25);
 }
 
-
+.glow-white {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+}
