@@ -7,7 +7,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "request-otp",
+        "path": "mp-request-otp",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -23,7 +23,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "verify-otp",
+        "path": "mp-verify-otp",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -39,7 +39,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "generate-scenario",
+        "path": "mp-generate-scenario",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -55,7 +55,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "send-invitations",
+        "path": "mp-send-invitations",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -71,7 +71,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "generate-avatar",
+        "path": "mp-generate-avatar",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -87,7 +87,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "complete-mission",
+        "path": "mp-complete-mission",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -103,7 +103,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "reveal-index",
+        "path": "mp-reveal-index",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -118,7 +118,7 @@
     },
     {
       "parameters": {
-        "content": "### 🛠️ CONFIGURATION NOTION ET LOGIQUE METIER\nCe template contient les points d'entrée (Webhooks) pour le Frontend.\n\nPour chaque webhook :\n1. Connectez un nœud **Notion** (Lire, Créer ou Modifier une page).\n2. Utilisez le fichier `.env` pour récupérer les IDs de vos bases.\n3. Pour la génération d'images, connectez un nœud **OpenAI / DALL-E** après le Webhook `generate-avatar`.\n4. Pour l'envoi du mail OTP, connectez un nœud **Gmail** ou **SMTP** après le Webhook `request-otp`."
+        "content": "### 🛠️ CONFIGURATION NOTION ET LOGIQUE METIER\nCe template contient les points d'entrée (Webhooks) pour le Frontend.\n\nPour chaque webhook (préfixé mp-) :\n1. Connectez un nœud **Notion** (Lire, Créer ou Modifier une page).\n2. Utilisez le fichier `.env` pour récupérer les IDs de vos bases.\n3. Pour la génération d'images, connectez un nœud **OpenAI / DALL-E** après le Webhook `mp-generate-avatar`.\n4. Pour l'envoi du mail OTP, connectez un nœud **Gmail** ou **SMTP** après le Webhook `mp-request-otp`."
       },
       "id": "67fa890e-128a-4abf-b98a-534a78faefd1",
       "name": "Note explicative",

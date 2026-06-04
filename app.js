@@ -495,7 +495,7 @@ async function handleGenerateScenario(e) {
         let title, crimeRoom, cluesCount, pitch, scenarioId;
 
         if (appState.n8nBaseUrl) {
-            const response = await fetch(`${appState.n8nBaseUrl}/webhook/generate-scenario`, {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -569,7 +569,7 @@ async function handleSendInvitations(e) {
         let sessionId = "sess_" + Math.random().toString(36).substr(2, 9);
 
         if (appState.n8nBaseUrl) {
-            const response = await fetch(`${appState.n8nBaseUrl}/webhook/send-invitations`, {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-send-invitations`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -683,7 +683,7 @@ async function handlePlayerOnboarding(e) {
         let visualMarker = "Une broche ancienne en argent poli";
 
         if (appState.n8nBaseUrl) {
-            const response = await fetch(`${appState.n8nBaseUrl}/webhook/generate-avatar`, {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-avatar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -744,7 +744,7 @@ async function completePlayerMission(missionId) {
         let unlockedClueName = "";
 
         if (appState.n8nBaseUrl) {
-            const response = await fetch(`${appState.n8nBaseUrl}/webhook/complete-mission`, {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-complete-mission`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -815,7 +815,7 @@ async function handleRoomSearch() {
         let webhookClues = null;
 
         if (appState.n8nBaseUrl) {
-            const response = await fetch(`${appState.n8nBaseUrl}/webhook/reveal-index`, {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-reveal-index`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -892,7 +892,7 @@ async function handleRequestOtp(e) {
     addLiveLog(`Demande de code OTP pour l'adresse : ${email}...`);
 
     try {
-        const webhookUrl = appState.n8nBaseUrl ? `${appState.n8nBaseUrl}/webhook/request-otp` : '';
+        const webhookUrl = appState.n8nBaseUrl ? `${appState.n8nBaseUrl}/webhook/mp-request-otp` : '';
         
         if (webhookUrl) {
             const response = await fetch(webhookUrl, {
@@ -956,7 +956,7 @@ async function handleLogin(e) {
     submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Vérification...`;
 
     try {
-        const verifyWebhookUrl = appState.n8nBaseUrl ? `${appState.n8nBaseUrl}/webhook/verify-otp` : '';
+        const verifyWebhookUrl = appState.n8nBaseUrl ? `${appState.n8nBaseUrl}/webhook/mp-verify-otp` : '';
         let role = '';
 
         if (verifyWebhookUrl) {
