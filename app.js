@@ -59,6 +59,70 @@ const ROOMS_DB = {
 // Default suggested onboarding character traits
 const SUGGESTED_TRAITS = ["Calculateur", "Menteur", "Observateur", "Froid", "Manipulateur", "Nerveux", "Silencieux", "Arrogant"];
 
+// Suggestion lists for Scenario Wizard
+const THEME_SUGGESTIONS = [
+    "Chic & Mafia (Années 20)",
+    "Prohibition & Speakeasy",
+    "Manoir Gothique & Vampires",
+    "Cyberpunk & Néon Noir",
+    "Space Opera & Vaisseau Perdu",
+    "Pirates & Île Maudite",
+    "Égypte Antique & Malédiction",
+    "Far West & Saloon Clandestin",
+    "Années 80 & Club Disco",
+    "Steampunk & Cités Volantes",
+    "Hollywood Vintage (Années 50)",
+    "Carnaval Vénitien",
+    "Asile Psychiatrique Rétro",
+    "Orient-Express & Espionnage",
+    "Cabaret Parisien (Belle Époque)",
+    "Post-Apocalyptique & Survivants",
+    "Ordre Médiéval & Templiers",
+    "Université d'Élite & Société Secrète",
+    "Station Polaire Isolée",
+    "Tournage de Film d'Horreur"
+];
+
+const EPOCH_SUGGESTIONS = [
+    "Antiquité (Égypte, Rome)",
+    "Moyen-Âge (Châteaux)",
+    "Renaissance (Florence)",
+    "Siècle des Lumières (XVIIIe)",
+    "Époque Victorienne (1890)",
+    "Années Folles (1920)",
+    "Seconde Guerre Mondiale (1940)",
+    "Années Rock (1950)",
+    "Années Disco (1970/80)",
+    "Époque Contemporaine (Présent)",
+    "Futur Proche (Dystopie)",
+    "Futur Lointain (Galaxies)",
+    "Uchronie Steampunk",
+    "Époque Indéterminée"
+];
+
+const PITCH_SUGGESTIONS = [
+    "Une histoire d'amour qui tourne mal",
+    "Une vengeance froide et préparée",
+    "Une trahison familiale pour héritage",
+    "Un chantage politique compromettant",
+    "Un espionnage industriel raté",
+    "Une jalousie artistique mortelle",
+    "Une malédiction ésotérique ancestrale",
+    "Un vol de relique ayant dérapé",
+    "Un pacte secret rompu entre associés",
+    "Un règlement de comptes mafieux",
+    "Une fausse identité démasquée",
+    "Un double jeu d'un agent infiltré",
+    "Une dette de jeu impayable",
+    "Une expérience scientifique interdite",
+    "Une affaire étouffée par la justice",
+    "Une usurpation d'identité",
+    "Un secret d'État sur le point d'être vendu",
+    "Une rivalité fraternelle féroce",
+    "Une vengeance pour un crime passé",
+    "Un rituel ésotérique ayant dérapé"
+];
+
 /* ==========================================================================
    STATE MANAGEMENT
    ========================================================================== */
@@ -870,6 +934,22 @@ function handleResetSession() {
         const modeInput = document.getElementById('scenarioMode');
         if (modeInput) modeInput.value = '';
 
+        // Reset illustrated card text labels
+        const displayTheme = document.getElementById('displayThemeVal');
+        if (displayTheme) {
+            displayTheme.textContent = "Non définie (Aléatoire)";
+            displayTheme.classList.add('italic');
+        }
+        const displayEpoch = document.getElementById('displayEpochVal');
+        if (displayEpoch) {
+            displayEpoch.textContent = "Passé (Défaut)";
+        }
+        const displayPitch = document.getElementById('displayPitchVal');
+        if (displayPitch) {
+            displayPitch.textContent = "Non définie (Aléatoire)";
+            displayPitch.classList.add('italic');
+        }
+
         const setupName = document.getElementById('setupSessionName');
         if (setupName) setupName.value = '';
         const setupLoc = document.getElementById('setupSessionLocation');
@@ -1305,11 +1385,161 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function setupScenarioModals() {
+    const themeCloud = document.getElementById('themeTagCloud');
+    const epochCloud = document.getElementById('epochTagCloud');
+    const pitchCloud = document.getElementById('pitchTagCloud');
+
+    // Populate theme suggestions
+    if (themeCloud) {
+        themeCloud.innerHTML = '';
+        THEME_SUGGESTIONS.forEach(theme => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'trait-tag';
+            btn.textContent = theme;
+            btn.addEventListener('click', () => {
+                themeCloud.querySelectorAll('.trait-tag').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                document.getElementById('customThemeInput').value = theme;
+            });
+            themeCloud.appendChild(btn);
+        });
+    }
+
+    // Populate epoch suggestions
+    if (epochCloud) {
+        epochCloud.innerHTML = '';
+        EPOCH_SUGGESTIONS.forEach(epoch => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'trait-tag';
+            btn.textContent = epoch;
+            btn.addEventListener('click', () => {
+                epochCloud.querySelectorAll('.trait-tag').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                document.getElementById('customEpochInput').value = epoch;
+            });
+            epochCloud.appendChild(btn);
+        });
+    }
+
+    // Populate pitch suggestions
+    if (pitchCloud) {
+        pitchCloud.innerHTML = '';
+        PITCH_SUGGESTIONS.forEach(pitch => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'trait-tag text-left leading-tight py-2 w-full';
+            btn.textContent = pitch;
+            btn.addEventListener('click', () => {
+                pitchCloud.querySelectorAll('.trait-tag').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                document.getElementById('customPitchInput').value = pitch;
+            });
+            pitchCloud.appendChild(btn);
+        });
+    }
+
+    // Bind open buttons
+    const btnOpenTheme = document.getElementById('btnOpenThemeModal');
+    if (btnOpenTheme) {
+        btnOpenTheme.addEventListener('click', () => {
+            const currentVal = document.getElementById('scenarioTheme').value;
+            document.getElementById('customThemeInput').value = currentVal;
+            document.getElementById('modalTheme').classList.remove('hidden');
+            
+            if (themeCloud) {
+                themeCloud.querySelectorAll('.trait-tag').forEach(b => {
+                    if (b.textContent === currentVal) b.classList.add('selected');
+                    else b.classList.remove('selected');
+                });
+            }
+        });
+    }
+
+    const btnOpenEpoch = document.getElementById('btnOpenEpochModal');
+    if (btnOpenEpoch) {
+        btnOpenEpoch.addEventListener('click', () => {
+            const currentVal = document.getElementById('scenarioEpoch').value;
+            document.getElementById('customEpochInput').value = currentVal;
+            document.getElementById('modalEpoch').classList.remove('hidden');
+            
+            if (epochCloud) {
+                epochCloud.querySelectorAll('.trait-tag').forEach(b => {
+                    if (b.textContent === currentVal) b.classList.add('selected');
+                    else b.classList.remove('selected');
+                });
+            }
+        });
+    }
+
+    const btnOpenPitch = document.getElementById('btnOpenPitchModal');
+    if (btnOpenPitch) {
+        btnOpenPitch.addEventListener('click', () => {
+            const currentVal = document.getElementById('scenarioPitch').value;
+            document.getElementById('customPitchInput').value = currentVal;
+            document.getElementById('modalPitch').classList.remove('hidden');
+            
+            if (pitchCloud) {
+                pitchCloud.querySelectorAll('.trait-tag').forEach(b => {
+                    if (b.textContent === currentVal) b.classList.add('selected');
+                    else b.classList.remove('selected');
+                });
+            }
+        });
+    }
+
+    // Bind close buttons
+    document.querySelectorAll('.close-modal-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            if (targetId) {
+                document.getElementById(targetId).classList.add('hidden');
+            }
+        });
+    });
+
+    // Bind save buttons
+    const saveTheme = document.getElementById('saveThemeBtn');
+    if (saveTheme) {
+        saveTheme.addEventListener('click', () => {
+            const val = document.getElementById('customThemeInput').value.trim();
+            document.getElementById('scenarioTheme').value = val;
+            document.getElementById('displayThemeVal').textContent = val || "Non définie (Aléatoire)";
+            document.getElementById('displayThemeVal').classList.toggle('italic', !val);
+            document.getElementById('modalTheme').classList.add('hidden');
+        });
+    }
+
+    const saveEpoch = document.getElementById('saveEpochBtn');
+    if (saveEpoch) {
+        saveEpoch.addEventListener('click', () => {
+            const val = document.getElementById('customEpochInput').value.trim();
+            document.getElementById('scenarioEpoch').value = val || "passé";
+            document.getElementById('displayEpochVal').textContent = val ? val : "Passé (Défaut)";
+            document.getElementById('modalEpoch').classList.add('hidden');
+        });
+    }
+
+    const savePitch = document.getElementById('savePitchBtn');
+    if (savePitch) {
+        savePitch.addEventListener('click', () => {
+            const val = document.getElementById('customPitchInput').value.trim();
+            document.getElementById('scenarioPitch').value = val;
+            document.getElementById('displayPitchVal').textContent = val || "Non définie (Aléatoire)";
+            document.getElementById('displayPitchVal').classList.toggle('italic', !val);
+            document.getElementById('modalPitch').classList.add('hidden');
+        });
+    }
+}
+
 /* ==========================================================================
    INITIALIZATION & EVENT LISTENERS
    ========================================================================== */
 function init() {
     loadPersistedState();
+    setupScenarioModals();
     
     // Global routes
     routeApp();

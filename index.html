@@ -239,26 +239,56 @@
                                     <i class="fa-solid fa-scroll text-blood"></i> Détails de l'Intrigue
                                 </h3>
 
-                                <!-- Sub-Form A: Create Scenario (IA) Fields -->
-                                <div id="createScenarioFormFields" class="hidden p-5 rounded-xl border border-blood/30 bg-blood/5 space-y-4 shadow-[0_0_15px_rgba(179,11,11,0.1)]">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-xs uppercase tracking-wider text-white font-extrabold mb-1.5"><i class="fa-solid fa-masks-theater text-blood"></i> Thématique / Ambiance</label>
-                                            <input type="text" id="scenarioTheme" class="w-full bg-noir-input border border-noir-border rounded-xl py-3 px-4 text-slate-200 text-sm focus:outline-none focus:border-blood transition-all font-medium" placeholder="Ex: Années 20, Prohibition, Chic & Mafia">
+                                <!-- Sub-Form A: Create Scenario (IA) Fields (Illustrated Cards) -->
+                                <div id="createScenarioFormFields" class="hidden space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <!-- Card 1: Thématique -->
+                                        <div id="btnOpenThemeModal" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-blood/40 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 group transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(179,11,11,0.15)] bg-black/30">
+                                            <div class="space-y-3">
+                                                <div class="w-12 h-12 mx-auto rounded-full bg-blood/10 border border-blood/30 flex items-center justify-center text-blood group-hover:scale-105 transition-all">
+                                                    <i class="fa-solid fa-masks-theater text-lg"></i>
+                                                </div>
+                                                <h4 class="font-cinzel text-xs font-bold text-white uppercase tracking-wider">Thématique</h4>
+                                                <p id="displayThemeVal" class="text-2xs text-slate-400 italic">Non définie (Aléatoire)</p>
+                                            </div>
+                                            <div class="mt-4 text-3xs text-blood font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+                                                Choisir <i class="fa-solid fa-pencil text-2xs"></i>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label class="block text-xs uppercase tracking-wider text-white font-extrabold mb-1.5"><i class="fa-solid fa-clock text-blood"></i> Époque du Jeu</label>
-                                            <select id="scenarioEpoch" class="w-full bg-noir-input border border-noir-border rounded-xl py-3 px-4 text-slate-200 text-sm focus:outline-none focus:border-blood transition-all font-medium">
-                                                <option value="passé" selected>Passé (Médiéval, Prohibition, Révolution...)</option>
-                                                <option value="présent">Présent (Manoir moderne, Contemporain...)</option>
-                                                <option value="futur">Futur (Cyberpunk, Space Opera...)</option>
-                                            </select>
+
+                                        <!-- Card 2: Époque -->
+                                        <div id="btnOpenEpochModal" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-blood/40 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 group transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(179,11,11,0.15)] bg-black/30">
+                                            <div class="space-y-3">
+                                                <div class="w-12 h-12 mx-auto rounded-full bg-blood/10 border border-blood/30 flex items-center justify-center text-blood group-hover:scale-105 transition-all">
+                                                    <i class="fa-solid fa-clock text-lg"></i>
+                                                </div>
+                                                <h4 class="font-cinzel text-xs font-bold text-white uppercase tracking-wider">Époque</h4>
+                                                <p id="displayEpochVal" class="text-2xs text-slate-400">Passé (Défaut)</p>
+                                            </div>
+                                            <div class="mt-4 text-3xs text-blood font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+                                                Choisir <i class="fa-solid fa-pencil text-2xs"></i>
+                                            </div>
+                                        </div>
+
+                                        <!-- Card 3: Intrigue / Pitch -->
+                                        <div id="btnOpenPitchModal" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-blood/40 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 group transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(179,11,11,0.15)] bg-black/30">
+                                            <div class="space-y-3">
+                                                <div class="w-12 h-12 mx-auto rounded-full bg-blood/10 border border-blood/30 flex items-center justify-center text-blood group-hover:scale-105 transition-all">
+                                                    <i class="fa-solid fa-lightbulb text-lg"></i>
+                                                </div>
+                                                <h4 class="font-cinzel text-xs font-bold text-white uppercase tracking-wider">Idée d'intrigue</h4>
+                                                <p id="displayPitchVal" class="text-2xs text-slate-400 italic line-clamp-2">Non définie (Aléatoire)</p>
+                                            </div>
+                                            <div class="mt-4 text-3xs text-blood font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+                                                Choisir <i class="fa-solid fa-pencil text-2xs"></i>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label class="block text-xs uppercase tracking-wider text-white font-extrabold mb-1.5"><i class="fa-solid fa-lightbulb text-blood"></i> Idée d'intrigue (Optionnel)</label>
-                                        <textarea id="scenarioPitch" rows="2" class="w-full bg-noir-input border border-noir-border rounded-xl py-3 px-4 text-slate-200 text-sm focus:outline-none focus:border-blood transition-all resize-none font-medium" placeholder="Ex: Un parrain de la mafia est retrouvé mort dans son club clandestin..."></textarea>
-                                    </div>
+
+                                    <!-- Hidden inputs for form data extraction compatibility -->
+                                    <input type="hidden" id="scenarioTheme" value="">
+                                    <input type="hidden" id="scenarioEpoch" value="passé">
+                                    <input type="hidden" id="scenarioPitch" value="">
                                 </div>
 
                                 <!-- Sub-Form B: Select Existing Scenario (Notion) Fields -->
@@ -638,6 +668,103 @@
 
             </main>
 
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+       MODALS FOR SCENARIO CONFIGURATION (THEME, EPOCH, PITCH)
+       ========================================================================== -->
+
+    <!-- 1. Modal Thématique -->
+    <div id="modalTheme" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="glass-panel border-blood/30 w-full max-w-2xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(179,11,11,0.3)] my-auto">
+            <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                <h3 class="font-cinzel text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-masks-theater text-blood"></i> Choisir une Thématique / Ambiance
+                </h3>
+                <button class="close-modal-btn text-slate-400 hover:text-white transition-colors text-sm uppercase font-bold flex items-center gap-1" data-target="modalTheme">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-2">
+                <h4 class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mb-2">Suggestions d'Ambiance (Cliquez pour sélectionner)</h4>
+                <div id="themeTagCloud" class="flex flex-wrap gap-2">
+                    <!-- Dynamic tag buttons -->
+                </div>
+            </div>
+
+            <div class="space-y-2 border-t border-white/5 pt-4">
+                <label class="block text-3xs uppercase tracking-wider text-slate-400 font-bold mb-1">Thème personnalisé ou ajustement</label>
+                <input type="text" id="customThemeInput" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood transition-all font-medium" placeholder="Ex: Années 20, Prohibition, Chic & Mafia (ou entrez votre propre thème)">
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button class="close-modal-btn px-4 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-noir-input border border-noir-border text-slate-400 hover:text-white transition-colors" data-target="modalTheme">Fermer</button>
+                <button id="saveThemeBtn" class="px-5 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)]">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Modal Époque -->
+    <div id="modalEpoch" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="glass-panel border-blood/30 w-full max-w-xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(179,11,11,0.3)] my-auto">
+            <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                <h3 class="font-cinzel text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-clock text-blood"></i> Choisir l'Époque du Jeu
+                </h3>
+                <button class="close-modal-btn text-slate-400 hover:text-white transition-colors text-sm uppercase font-bold flex items-center gap-1" data-target="modalEpoch">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-2">
+                <h4 class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mb-2">Suggestions d'Époques (Cliquez pour sélectionner)</h4>
+                <div id="epochTagCloud" class="flex flex-wrap gap-2">
+                    <!-- Dynamic tag buttons -->
+                </div>
+            </div>
+
+            <div class="space-y-2 border-t border-white/5 pt-4">
+                <label class="block text-3xs uppercase tracking-wider text-slate-400 font-bold mb-1">Époque personnalisée ou ajustement</label>
+                <input type="text" id="customEpochInput" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood transition-all font-medium" placeholder="Ex: Années 20, Moyen-Âge (ou entrez votre propre époque)">
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button class="close-modal-btn px-4 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-noir-input border border-noir-border text-slate-400 hover:text-white transition-colors" data-target="modalEpoch">Fermer</button>
+                <button id="saveEpochBtn" class="px-5 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)]">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Modal Intrigue / Pitch -->
+    <div id="modalPitch" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="glass-panel border-blood/30 w-full max-w-2xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(179,11,11,0.3)] my-auto">
+            <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                <h3 class="font-cinzel text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-blood"></i> Choisir une Idée d'Intrigue
+                </h3>
+                <button class="close-modal-btn text-slate-400 hover:text-white transition-colors text-sm uppercase font-bold flex items-center gap-1" data-target="modalPitch">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-2">
+                <h4 class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mb-2">Suggestions d'Intrigues (Cliquez pour sélectionner)</h4>
+                <div id="pitchTagCloud" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1">
+                    <!-- Dynamic tag buttons -->
+                </div>
+            </div>
+
+            <div class="space-y-2 border-t border-white/5 pt-4">
+                <label class="block text-3xs uppercase tracking-wider text-slate-400 font-bold mb-1">Idée d'intrigue personnalisée ou détails additionnels</label>
+                <textarea id="customPitchInput" rows="3" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood transition-all resize-none font-medium" placeholder="Ex: Un parrain de la mafia est retrouvé mort dans son club clandestin... (ou saisissez vos propres détails)"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button class="close-modal-btn px-4 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-noir-input border border-noir-border text-slate-400 hover:text-white transition-colors" data-target="modalPitch">Fermer</button>
+                <button id="savePitchBtn" class="px-5 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)]">Enregistrer</button>
+            </div>
         </div>
     </div>
 
