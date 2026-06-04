@@ -976,7 +976,7 @@ async function handleLogin(e) {
                 if (playerIndex !== -1) {
                     appState.players[playerIndex].roleName = data.playerDetails.roleName || appState.players[playerIndex].roleName;
                     appState.players[playerIndex].avatarUrl = data.playerDetails.avatarUrl || appState.players[playerIndex].avatarUrl;
-                    appState.players[playerIndex].actionPoints = data.playerDetails.actionPoints ?? appState.players[playerIndex].actionPoints;
+                    appState.players[playerIndex].actionPoints = data.playerDetails.actionPoints !== undefined && data.playerDetails.actionPoints !== null ? Number(data.playerDetails.actionPoints) : appState.players[playerIndex].actionPoints;
                 }
             }
         } else {
