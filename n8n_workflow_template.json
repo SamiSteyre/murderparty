@@ -1,0 +1,141 @@
+{
+  "name": "Murder Party Backend - Webhooks & Notion API",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "request-otp",
+        "options": {}
+      },
+      "id": "76ea48d8-55fa-4340-85f8-89cbb6f18375",
+      "name": "Webhook: request-otp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "path": "verify-otp",
+        "options": {}
+      },
+      "id": "3bead988-75c1-4ff2-8d77-66a988d55ff2",
+      "name": "Webhook: verify-otp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "path": "generate-scenario",
+        "options": {}
+      },
+      "id": "efb39922-38d7-4630-9b88-12cd3bb55ff3",
+      "name": "Webhook: generate-scenario",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        550
+      ]
+    },
+    {
+      "parameters": {
+        "path": "send-invitations",
+        "options": {}
+      },
+      "id": "01ea3bc8-fbfa-45b7-8d2b-1a6e9a8f4c54",
+      "name": "Webhook: send-invitations",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        750
+      ]
+    },
+    {
+      "parameters": {
+        "path": "generate-avatar",
+        "options": {}
+      },
+      "id": "89ecbd3c-8cfa-46fb-a0cd-aa6e2b9c7d55",
+      "name": "Webhook: generate-avatar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        950
+      ]
+    },
+    {
+      "parameters": {
+        "path": "complete-mission",
+        "options": {}
+      },
+      "id": "52eb4b7d-cbfa-4a6c-9d6c-bb6e4b9c1d63",
+      "name": "Webhook: complete-mission",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        1150
+      ]
+    },
+    {
+      "parameters": {
+        "path": "reveal-index",
+        "options": {}
+      },
+      "id": "18eb4c7a-abfa-4c6c-bd6c-cb6e4b9c1d74",
+      "name": "Webhook: reveal-index",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        1350
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 🛠️ CONFIGURATION NOTION ET LOGIQUE METIER\nCe template contient les points d'entrée (Webhooks) pour le Frontend.\n\nPour chaque webhook :\n1. Connectez un nœud **Notion** (Lire, Créer ou Modifier une page).\n2. Utilisez le fichier `.env` pour récupérer les IDs de vos bases.\n3. Pour la génération d'images, connectez un nœud **OpenAI / DALL-E** après le Webhook `generate-avatar`.\n4. Pour l'envoi du mail OTP, connectez un nœud **Gmail** ou **SMTP** après le Webhook `request-otp`."
+      },
+      "id": "67fa890e-128a-4abf-b98a-534a78faefd1",
+      "name": "Note explicative",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        550,
+        150
+      ],
+      "notesWidth": 400,
+      "notesHeight": 300
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+            "__rl": true,
+            "value": "NOTION_DB_CHARACTERS",
+            "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "b3cd45ee-57fa-4e7a-97ab-43abef87de98",
+      "name": "Notion: Verifier Email",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        550,
+        480
+      ]
+    }
+  ],
+  "connections": {},
+  "active": false,
+  "settings": {}
+}

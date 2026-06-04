@@ -71,7 +71,8 @@ let appState = {
     logs: [],          // Live feed logs
     loginStep: 'email',// 'email' | 'otp'
     pendingEmail: '',  // email input in progress
-    mockOtp: ''        // generated OTP code for mock testing
+    mockOtp: '',       // generated OTP code for mock testing
+    n8nBaseUrl: 'http://localhost:5678' // default n8n Base URL
 };
 
 // Load State from LocalStorage
@@ -80,6 +81,9 @@ function loadPersistedState() {
     if (saved) {
         try {
             appState = JSON.parse(saved);
+            if (appState.n8nBaseUrl === undefined) {
+                appState.n8nBaseUrl = 'http://localhost:5678';
+            }
         } catch(e) {
             console.error("Failed to load local state", e);
         }
@@ -489,45 +493,55 @@ async function handleGenerateScenario(e) {
     
     addLiveLog(`Génération du scénario (Thème: "${theme}") via Webhook n8n...`);
     
-    // Simulate n8n asynchronous webhook call
-    await sleep(2000);
-    
-    // Generate mock response based on theme
-    let title = "Le Crime de l'Ombre";
-    let crimeRoom = "La Bibliothèque";
-    let cluesCount = 18;
-    let pitch = userPitch || "Un meurtre inexpliqué perturbe une réunion de la haute société. 16 personnes détiennent la vérité.";
+    try {
+        let title, crimeRoom, cluesCount, pitch, scenarioId;
 
-    if (theme.toLowerCase().includes(" prohibition") || theme.toLowerCase().includes("20")) {
-        title = "Le Dernier Souffle du Speakeasy";
-        crimeRoom = "Le Bureau de l'arrière-boutique";
-        cluesCount = 24;
-    } else if (theme.toLowerCase().includes("hanté") || theme.toLowerCase().includes("château")) {
-        title = "La Malédiction des Verrières";
-        crimeRoom = "La Serre aux orchidées";
-        cluesCount = 20;
-    } else if (theme.toLowerCase().includes("manoir") || theme.toLowerCase().includes("musique")) {
-        title = "Le Crime du Salon de Musique";
-        crimeRoom = "Le Salon de Musique";
-        cluesCount = 30;
+        if (appState.n8nBaseUrl) {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/generate-scenario`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    theme: theme,
+                    pitch_global: userPitch,
+                    organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com'
+                })
+            });
+            if (!response.ok) throw new Error("Erreur de connexion au serveur n8n.");
+            const data = await response.json();
+            title = data.title;
+            crimeRoom = data.murder_room;
+            cluesCount = data.clues_count;
+            pitch = data.pitch || userPitch || "Enquête générée via IA.";
+            scenarioId = data.scenario_id;
+        } else {
+            await sleep(2000);
+            title = "Le Dernier Souffle du Speakeasy";
+            crimeRoom = "Le Bureau de l'arrière-boutique";
+            cluesCount = 24;
+            pitch = userPitch || "Un parrain de la mafia est retrouvé mort dans son club de jazz clandestin.";
+            scenarioId = "sc_" + Math.random().toString(36).substr(2, 9);
+        }
+        
+        appState.scenario = {
+            id: scenarioId,
+            title: title,
+            theme: theme,
+            pitch: pitch,
+            crimeRoom: crimeRoom,
+            cluesCount: cluesCount
+        };
+        
+        addLiveLog(`Succès Webhook: Scénario "${title}" vérifié et injecté dans Notion ! (${cluesCount} indices générés).`);
+        savePersistedState();
+        
+    } catch(err) {
+        console.error(err);
+        showToast("Erreur de génération", err.message || "Impossible de contacter n8n.", "error");
+    } finally {
+        submitBtn.removeAttribute('disabled');
+        submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la génération IA (n8n)`;
+        renderOrganizerDashboard();
     }
-    
-    appState.scenario = {
-        id: "sc_" + Math.random().toString(36).substr(2, 9),
-        title: title,
-        theme: theme,
-        pitch: pitch,
-        crimeRoom: crimeRoom,
-        cluesCount: cluesCount
-    };
-    
-    addLiveLog(`Succès Webhook: Scénario "${title}" vérifié et injecté dans Notion ! (${cluesCount} indices générés).`);
-    savePersistedState();
-    
-    submitBtn.removeAttribute('disabled');
-    submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la génération IA (n8n)`;
-    
-    renderOrganizerDashboard();
 }
 
 // 2. Webhook: POST /webhook/send-invitations
@@ -551,85 +565,104 @@ async function handleSendInvitations(e) {
     
     addLiveLog(`Envoi des invitations et génération des rôles via Webhook n8n...`);
     
-    await sleep(2500);
-    
-    // Formula for starting action points: Points = (Total Clues / 16) / 1.5
-    const totalClues = appState.scenario ? appState.scenario.cluesCount : 24;
-    const pointsPerPlayer = Math.round((totalClues / 16) / 1.5) || 1; // Default to at least 1 PA
-    
-    appState.session = {
-        id: "sess_" + Math.random().toString(36).substr(2, 9),
-        name: name,
-        location: location,
-        totalClues: totalClues,
-        pointsPerPlayer: pointsPerPlayer,
-        status: "Invitations Envoyées"
-    };
+    try {
+        let totalClues = appState.scenario ? appState.scenario.cluesCount : 24;
+        let pointsPerPlayer = Math.round((totalClues / 16) / 1.5) || 1;
+        let sessionId = "sess_" + Math.random().toString(36).substr(2, 9);
 
-    // Distribute Roles: 1 Coupable, 2 Faux-Coupables, 13 Innocents
-    const shuffledEmails = [...emails];
-    shuffleArray(shuffledEmails);
-    
-    const rolesDist = [];
-    shuffledEmails.forEach((email, index) => {
-        let type = "Innocent";
-        if (index === 0) type = "Coupable";
-        else if (index === 1 || index === 2) type = "Faux-Coupable";
-        rolesDist.push({ email: email, type: type });
-    });
-
-    // Populate players list with character templates
-    appState.players = CHARACTER_TEMPLATES.map((charTemplate, index) => {
-        const assignment = rolesDist[index];
+        if (appState.n8nBaseUrl) {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/send-invitations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scenario_id: appState.scenario ? appState.scenario.id : 'sc_default',
+                    session_name: name,
+                    date: new Date().toISOString(),
+                    location: location,
+                    emails: emails
+                })
+            });
+            if (!response.ok) throw new Error("Erreur lors de l'envoi des invitations.");
+            const data = await response.json();
+            totalClues = data.total_clues || totalClues;
+            pointsPerPlayer = data.points_per_player || pointsPerPlayer;
+            sessionId = data.session_id || sessionId;
+        } else {
+            await sleep(2500);
+        }
         
-        // Assemble Knowledge list
-        const otherChars = CHARACTER_TEMPLATES.filter(c => c.name !== charTemplate.name);
-        const knowledge1 = `${otherChars[0].name} : Alibi suspect près de ${otherChars[0].alibi}.`;
-        const knowledge2 = `${otherChars[1].name} : A été vu(e) avec ${charTemplate.marker} en main.`;
-        
-        return {
-            email: assignment.email,
-            roleType: assignment.type,
-            roleName: charTemplate.name,
-            history: charTemplate.bio,
-            lienVictime: charTemplate.relation,
-            marker: charTemplate.marker,
-            characterTraits: "", // populated on onboarding
-            avatarUrl: "",       // populated on onboarding
-            actionPoints: pointsPerPlayer,
-            status: "Invité",
-            knowledge: [knowledge1, knowledge2],
-            missions: [
-                { id: `mission_${index}_1`, title: `Fouiller le lieu : ${Object.keys(ROOMS_DB)[index % 6]}`, completed: false, points: 2, targetRoom: Object.keys(ROOMS_DB)[index % 6] },
-                { id: `mission_${index}_2`, title: `Retrouver le suspect possédant le marqueur visuel : "${otherChars[2].marker}"`, completed: false, points: 2 }
-            ]
+        appState.session = {
+            id: sessionId,
+            name: name,
+            location: location,
+            totalClues: totalClues,
+            pointsPerPlayer: pointsPerPlayer,
+            status: "Invitations Envoyées"
         };
-    });
 
-    // Populate Clues list in Notion state
-    appState.clues = [];
-    Object.entries(ROOMS_DB).forEach(([roomName, cluesList]) => {
-        cluesList.forEach((c, idx) => {
-            appState.clues.push({
-                id: `clue_${roomName.replace(/\s+/g, '_')}_${idx}`,
-                name: c.name,
-                description: c.description,
-                type: c.type,
-                location: roomName,
-                status: "Caché",
-                foundBy: ""
+        const shuffledEmails = [...emails];
+        shuffleArray(shuffledEmails);
+        
+        const rolesDist = [];
+        shuffledEmails.forEach((email, index) => {
+            let type = "Innocent";
+            if (index === 0) type = "Coupable";
+            else if (index === 1 || index === 2) type = "Faux-Coupable";
+            rolesDist.push({ email: email, type: type });
+        });
+
+        appState.players = CHARACTER_TEMPLATES.map((charTemplate, index) => {
+            const assignment = rolesDist[index];
+            const otherChars = CHARACTER_TEMPLATES.filter(c => c.name !== charTemplate.name);
+            const knowledge1 = `${otherChars[0].name} : Alibi suspect près de ${otherChars[0].alibi}.`;
+            const knowledge2 = `${otherChars[1].name} : A été vu(e) avec ${charTemplate.marker} en main.`;
+            
+            return {
+                email: assignment.email,
+                roleType: assignment.type,
+                roleName: charTemplate.name,
+                history: charTemplate.bio,
+                lienVictime: charTemplate.relation,
+                marker: charTemplate.marker,
+                characterTraits: "",
+                avatarUrl: "",
+                actionPoints: pointsPerPlayer,
+                status: "Invité",
+                knowledge: [knowledge1, knowledge2],
+                missions: [
+                    { id: `mission_${index}_1`, title: `Fouiller le lieu : ${Object.keys(ROOMS_DB)[index % 6]}`, completed: false, points: 2, targetRoom: Object.keys(ROOMS_DB)[index % 6] },
+                    { id: `mission_${index}_2`, title: `Retrouver le suspect possédant le marqueur visuel : "${otherChars[2].marker}"`, completed: false, points: 2 }
+                ]
+            };
+        });
+
+        appState.clues = [];
+        Object.entries(ROOMS_DB).forEach(([roomName, cluesList]) => {
+            cluesList.forEach((c, idx) => {
+                appState.clues.push({
+                    id: `clue_${roomName.replace(/\s+/g, '_')}_${idx}`,
+                    name: c.name,
+                    description: c.description,
+                    type: c.type,
+                    location: roomName,
+                    status: "Caché",
+                    foundBy: ""
+                });
             });
         });
-    });
-    
-    addLiveLog(`Succès Webhook: Rôles attribués dans Notion. Économie de points initialisée (${pointsPerPlayer} PA par joueur).`);
-    savePersistedState();
-    
-    submitBtn.removeAttribute('disabled');
-    submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Distribuer les rôles & inviter (n8n)`;
-    
-    renderOrganizerDashboard();
-    showToast("Invitations envoyées !", "Les rôles et budgets de points ont été initialisés dans Notion.", "success");
+        
+        addLiveLog(`Succès Webhook: Rôles attribués dans Notion. Économie de points initialisée (${pointsPerPlayer} PA par joueur).`);
+        savePersistedState();
+        showToast("Invitations envoyées !", "Les rôles et budgets de points ont été initialisés dans Notion.", "success");
+
+    } catch(err) {
+        console.error(err);
+        showToast("Erreur d'invitation", err.message || "Impossible de contacter n8n.", "error");
+    } finally {
+        submitBtn.removeAttribute('disabled');
+        submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Distribuer les rôles & inviter (n8n)`;
+        renderOrganizerDashboard();
+    }
 }
 
 // 3. Webhook: POST /webhook/generate-avatar
@@ -647,31 +680,55 @@ async function handlePlayerOnboarding(e) {
     overlay.classList.remove('hidden');
     addLiveLog(`Joueur ${appState.currentUser.email} : Génération de l'avatar et du marqueur visuel via n8n...`);
     
-    await sleep(3000);
-    
-    // Update player status in State
-    const playerIndex = appState.players.findIndex(p => p.email === appState.currentUser.email);
-    if (playerIndex !== -1) {
-        appState.players[playerIndex].characterTraits = traits;
-        
-        // Random portrait placeholder style polar
-        const portraitPool = [
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop&q=80"
-        ];
-        
-        appState.players[playerIndex].avatarUrl = portraitPool[playerIndex % portraitPool.length];
-        appState.players[playerIndex].status = "Prêt";
-        
-        addLiveLog(`Succès Webhook: Avatar généré pour ${appState.players[playerIndex].roleName} (${appState.currentUser.email})`);
-        savePersistedState();
+    try {
+        let avatarUrl = "";
+        let visualMarker = "Une broche ancienne en argent poli";
+
+        if (appState.n8nBaseUrl) {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/generate-avatar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: appState.currentUser.email,
+                    traits: traits.split(',').map(t => t.trim()),
+                    photo_base64: "data:image/jpeg;base64,mock"
+                })
+            });
+            if (!response.ok) throw new Error("Erreur de génération d'avatar.");
+            const data = await response.json();
+            avatarUrl = data.avatar_url;
+            visualMarker = data.visual_marker || visualMarker;
+        } else {
+            await sleep(3000);
+            const portraitPool = [
+                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop&q=80"
+            ];
+            const playerIndex = appState.players.findIndex(p => p.email === appState.currentUser.email);
+            avatarUrl = portraitPool[playerIndex !== -1 ? playerIndex % portraitPool.length : 0];
+        }
+
+        const playerIndex = appState.players.findIndex(p => p.email === appState.currentUser.email);
+        if (playerIndex !== -1) {
+            appState.players[playerIndex].characterTraits = traits;
+            appState.players[playerIndex].avatarUrl = avatarUrl;
+            appState.players[playerIndex].marker = visualMarker;
+            appState.players[playerIndex].status = "Prêt";
+            
+            addLiveLog(`Succès Webhook: Avatar généré pour ${appState.players[playerIndex].roleName} (${appState.currentUser.email})`);
+            savePersistedState();
+        }
+        showToast("Avatar Généré !", "Votre personnage est prêt pour l'enquête.", "success");
+
+    } catch(err) {
+        console.error(err);
+        showToast("Erreur onboarding", err.message || "Impossible de contacter n8n.", "error");
+    } finally {
+        overlay.classList.add('hidden');
+        routeApp();
     }
-    
-    overlay.classList.add('hidden');
-    routeApp();
-    showToast("Avatar Généré !", "Votre personnage est prêt pour l'enquête.", "success");
 }
 
 // 4. Webhook: POST /webhook/complete-mission
@@ -684,30 +741,55 @@ async function completePlayerMission(missionId) {
     
     addLiveLog(`Joueur ${player.email} : Validation de la mission "${player.missions[missionIndex].title}"...`);
     
-    // Simulate n8n webhook response
-    await sleep(1000);
-    
-    player.missions[missionIndex].completed = true;
-    player.actionPoints += 2; // Reward 2 PA
-    
-    // Unlock a hidden clue somewhere in their targetRoom if applicable
-    const targetRoom = player.missions[missionIndex].targetRoom;
-    if (targetRoom) {
-        const hiddenClue = appState.clues.find(c => c.location === targetRoom && c.status === "Caché");
-        if (hiddenClue) {
-            hiddenClue.status = "Débloqué";
-            hiddenClue.foundBy = player.email;
-            addLiveLog(`Succès Webhook: Mission validée. +2 PA pour ${player.roleName}. Indice débloqué : "${hiddenClue.name}".`);
+    try {
+        let actionPoints = player.actionPoints + 2;
+        let unlockedClueName = "";
+
+        if (appState.n8nBaseUrl) {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/complete-mission`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: player.email,
+                    mission_id: missionId,
+                    points_earned: 2
+                })
+            });
+            if (!response.ok) throw new Error("Erreur de validation de mission.");
+            const data = await response.json();
+            actionPoints = data.new_action_points ?? actionPoints;
+            unlockedClueName = data.unlocked_clue_name;
         } else {
-            addLiveLog(`Succès Webhook: Mission validée. +2 PA pour ${player.roleName}. (Tous les indices de ce lieu sont déjà découverts).`);
+            await sleep(1000);
         }
-    } else {
-        addLiveLog(`Succès Webhook: Mission validée. +2 PA pour ${player.roleName}.`);
+
+        player.missions[missionIndex].completed = true;
+        player.actionPoints = actionPoints;
+
+        const targetRoom = player.missions[missionIndex].targetRoom;
+        if (targetRoom) {
+            const hiddenClue = appState.clues.find(c => c.location === targetRoom && c.status === "Caché");
+            if (hiddenClue) {
+                hiddenClue.status = "Débloqué";
+                hiddenClue.foundBy = player.email;
+                if (unlockedClueName) hiddenClue.name = unlockedClueName;
+                addLiveLog(`Succès Webhook: Mission validée. +2 PA pour ${player.roleName}. Indice débloqué : "${hiddenClue.name}".`);
+            } else {
+                addLiveLog(`Succès Webhook: Mission validée. +2 PA pour ${player.roleName}. (Tous les indices de ce lieu sont déjà découverts).`);
+            }
+        } else {
+            addLiveLog(`Succès Webhook: Mission validée. +2 PA pour ${player.roleName}.`);
+        }
+
+        savePersistedState();
+        showToast("Mission validée !", "Vous gagnez +2 Points d'Action et avez fait progresser l'enquête.", "success");
+
+    } catch(err) {
+        console.error(err);
+        showToast("Erreur mission", err.message || "Impossible de contacter n8n.", "error");
+    } finally {
+        renderPlayerDashboard(player);
     }
-    
-    savePersistedState();
-    renderPlayerDashboard(player);
-    showToast("Mission validée !", "Vous gagnez +2 Points d'Action et avez fait progresser l'enquête.", "success");
 }
 
 // 5. Webhook: POST /webhook/reveal-index
@@ -719,7 +801,6 @@ async function handleRoomSearch() {
     const selectedRoom = roomSelect.value;
     const feedback = document.getElementById('searchFeedbackMessage');
     
-    // Check Action Points balance
     if (player.actionPoints < 1) {
         feedback.className = "text-3xs font-semibold text-center text-blood";
         feedback.textContent = "Action impossible : Vous avez 0 PA. Échangez des indices ou validez des missions.";
@@ -731,33 +812,70 @@ async function handleRoomSearch() {
     feedback.className = "text-3xs font-semibold text-center text-slate-400";
     feedback.textContent = "Fouille de la pièce en cours...";
     
-    // Simulate n8n / Notion checking & deduction
-    await sleep(1200);
+    try {
+        let pointsRemaining = player.actionPoints - 1;
+        let webhookClues = null;
 
-    // Find next hidden clue in the selected room
-    const hiddenClue = appState.clues.find(c => c.location === selectedRoom && c.status === "Caché");
-    
-    player.actionPoints -= 1; // Deduct 1 PA
-    
-    if (hiddenClue) {
-        hiddenClue.status = "Débloqué";
-        hiddenClue.foundBy = player.email;
+        if (appState.n8nBaseUrl) {
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/reveal-index`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: player.email,
+                    location_name: selectedRoom
+                })
+            });
+            if (!response.ok) throw new Error("Erreur lors de la fouille.");
+            const data = await response.json();
+            pointsRemaining = data.points_remaining ?? pointsRemaining;
+            webhookClues = data.clues;
+        } else {
+            await sleep(1200);
+        }
+
+        player.actionPoints = pointsRemaining;
+
+        const hiddenClue = appState.clues.find(c => c.location === selectedRoom && c.status === "Caché");
         
-        feedback.className = "text-3xs font-semibold text-center text-emerald-400";
-        feedback.textContent = `🔍 Indice découvert: ${hiddenClue.name}`;
-        
-        addLiveLog(`${player.roleName} a fouillé ${selectedRoom} (-1 PA). Indice débloqué: "${hiddenClue.name}".`);
-        showToast("Indice Découvert !", `Vous avez trouvé : ${hiddenClue.name}`, "success");
-    } else {
-        feedback.className = "text-3xs font-semibold text-center text-gold";
-        feedback.textContent = "Pièce fouillée mais aucun nouvel indice trouvé.";
-        
-        addLiveLog(`${player.roleName} a fouillé ${selectedRoom} (-1 PA). Aucun nouvel indice trouvé.`);
-        showToast("Rien trouvé", "Tous les indices de ce lieu ont déjà été découverts.", "warning");
+        if (webhookClues && webhookClues.length > 0) {
+            const c = webhookClues[0];
+            const activeClue = appState.clues.find(lc => lc.name === c.name) || hiddenClue;
+            if (activeClue) {
+                activeClue.name = c.name;
+                activeClue.description = c.description;
+                activeClue.image = c.image;
+                activeClue.status = "Débloqué";
+                activeClue.foundBy = player.email;
+                
+                feedback.className = "text-3xs font-semibold text-center text-emerald-400";
+                feedback.textContent = `🔍 Indice découvert: ${activeClue.name}`;
+                addLiveLog(`${player.roleName} a fouillé ${selectedRoom} (-1 PA). Indice débloqué: "${activeClue.name}".`);
+                showToast("Indice Découvert !", `Vous avez trouvé : ${activeClue.name}`, "success");
+            }
+        } else if (!appState.n8nBaseUrl && hiddenClue) {
+            hiddenClue.status = "Débloqué";
+            hiddenClue.foundBy = player.email;
+            
+            feedback.className = "text-3xs font-semibold text-center text-emerald-400";
+            feedback.textContent = `🔍 Indice découvert: ${hiddenClue.name}`;
+            addLiveLog(`${player.roleName} a fouillé ${selectedRoom} (-1 PA). Indice débloqué: "${hiddenClue.name}".`);
+            showToast("Indice Découvert !", `Vous avez trouvé : ${hiddenClue.name}`, "success");
+        } else {
+            feedback.className = "text-3xs font-semibold text-center text-gold";
+            feedback.textContent = "Pièce fouillée mais aucun nouvel indice trouvé.";
+            addLiveLog(`${player.roleName} a fouillé ${selectedRoom} (-1 PA). Aucun nouvel indice trouvé.`);
+            showToast("Rien trouvé", "Tous les indices de ce lieu ont déjà été découverts.", "warning");
+        }
+
+    } catch(err) {
+        console.error(err);
+        showToast("Erreur de fouille", err.message || "Impossible de contacter n8n.", "error");
+        feedback.className = "text-3xs font-semibold text-center text-blood";
+        feedback.textContent = "Erreur de connexion avec n8n.";
+    } finally {
+        savePersistedState();
+        renderPlayerDashboard(player);
     }
-
-    savePersistedState();
-    renderPlayerDashboard(player);
 }
 
 /* ==========================================================================
@@ -776,7 +894,7 @@ async function handleRequestOtp(e) {
     addLiveLog(`Demande de code OTP pour l'adresse : ${email}...`);
 
     try {
-        const webhookUrl = localStorage.getItem('mp_requestOtpWebhook') || '';
+        const webhookUrl = appState.n8nBaseUrl ? `${appState.n8nBaseUrl}/webhook/request-otp` : '';
         
         if (webhookUrl) {
             const response = await fetch(webhookUrl, {
@@ -840,7 +958,7 @@ async function handleLogin(e) {
     submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Vérification...`;
 
     try {
-        const verifyWebhookUrl = localStorage.getItem('mp_verifyOtpWebhook') || '';
+        const verifyWebhookUrl = appState.n8nBaseUrl ? `${appState.n8nBaseUrl}/webhook/verify-otp` : '';
         let role = '';
 
         if (verifyWebhookUrl) {
@@ -918,6 +1036,28 @@ function logout() {
     routeApp();
 }
 
+function openSettings() {
+    document.getElementById('settingsN8nUrl').value = appState.n8nBaseUrl || '';
+    document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').classList.remove('open');
+}
+
+function handleSaveSettings(e) {
+    e.preventDefault();
+    let url = document.getElementById('settingsN8nUrl').value.trim();
+    if (url && url.endsWith('/')) {
+        url = url.slice(0, -1);
+    }
+    appState.n8nBaseUrl = url;
+    savePersistedState();
+    closeSettings();
+    showToast("Paramètres mis à jour", `Liaison n8n configurée sur ${url || 'Simulation Locale'}.`, "success");
+    addLiveLog(`[Paramètres] URL de base n8n configurée sur : ${url || 'Simulation'}`);
+}
+
 /* ==========================================================================
    HELPERS & TOASTS
    ========================================================================== */
@@ -985,6 +1125,13 @@ function init() {
     
     // Onboarding Form
     document.getElementById('onboardingForm').addEventListener('submit', handlePlayerOnboarding);
+    
+    // Settings Modal
+    document.getElementById('openLoginSettingsBtn').addEventListener('click', openSettings);
+    document.getElementById('openSettingsBtn').addEventListener('click', openSettings);
+    document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
+    document.getElementById('cancelSettingsBtn').addEventListener('click', closeSettings);
+    document.getElementById('settingsForm').addEventListener('submit', handleSaveSettings);
     
     // Player Gameplay trigger
     document.getElementById('searchRoomBtn').addEventListener('click', handleRoomSearch);

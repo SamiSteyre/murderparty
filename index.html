@@ -51,7 +51,10 @@
     <!-- ==========================================================================
        1. LOGIN SCREEN
        ========================================================================== -->
-    <div id="loginScreen" class="flex-1 flex items-center justify-center p-4">
+    <div id="loginScreen" class="flex-1 flex items-center justify-center p-4 relative">
+        <button id="openLoginSettingsBtn" class="absolute top-6 right-6 text-slate-500 hover:text-gold transition-colors text-lg" title="Configuration de base">
+            <i class="fa-solid fa-sliders"></i>
+        </button>
         <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-noir-border shadow-2xl relative overflow-hidden">
             <!-- Blood Accent Corner -->
             <div class="absolute top-0 right-0 w-24 h-24 bg-blood opacity-20 blur-2xl rounded-full"></div>
@@ -139,6 +142,10 @@
                     <i class="fa-solid fa-circle-user text-slate-400"></i>
                     <span id="currentUserEmail" class="text-xs font-semibold text-slate-300">user@email.com</span>
                 </div>
+                <button id="openSettingsBtn" class="text-xs text-slate-400 hover:text-gold font-bold transition-colors flex items-center gap-1.5 ml-2" title="Configuration de base">
+                    <i class="fa-solid fa-sliders"></i> <span class="hidden sm:inline">Configuration</span>
+                </button>
+                <div class="h-4 w-px bg-noir-border"></div>
                 <button id="logoutBtn" class="text-xs text-slate-400 hover:text-blood font-bold transition-colors flex items-center gap-1.5 ml-2" title="Se déconnecter">
                     <i class="fa-solid fa-power-off"></i> <span class="hidden sm:inline">Quitter</span>
                 </button>
@@ -501,6 +508,29 @@
 
             </main>
 
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-sliders"></i> Configuration n8n</h2>
+                <button class="close-modal-btn" id="closeSettingsBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label for="settingsN8nUrl">URL de base n8n (ex: http://localhost:5678)</label>
+                        <input type="url" id="settingsN8nUrl" placeholder="http://localhost:5678" required>
+                        <small class="form-help">Si vide, l'application s'exécute en mode simulation locale.</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary text-xs" id="cancelSettingsBtn">Annuler</button>
+                        <button type="submit" class="btn btn-accent bg-gold hover:bg-gold-hover text-noir-deep text-xs px-4 py-2">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
