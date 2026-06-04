@@ -58,15 +58,24 @@ Pour que la plateforme fonctionne, configurez 4 bases de données interconnecté
 Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
 
 ### 🌐 Webhook 1 : Génération du Scénario
-* **Endpoint :** `POST /webhook/generate-scenario`
+* **Endpoint :** `POST /webhook/mp-generate-scenario`
 * **Payload Envoyé par l'Organisateur :**
 ```json
 {
   "theme": "Années 20 / Prohibition",
   "pitch_global": "Un parrain de la mafia est retrouvé mort dans son club de jazz clandestin.",
+  "epoch": "passé",
+  "session_name": "Murder Spooky 2026",
+  "location": "Salon principal",
+  "emails": [
+    "invite1@email.com",
+    "invite2@email.com",
+    "... (16 emails)"
+  ],
   "organizer_email": "organisateur@email.com"
 }
 ```
+* **Rôle dans n8n :** Générer l'intrigue, insérer le scénario dans Notion, et mettre à jour le statut de la session de jeu Notion à `"initialisé"`.
 * **Payload de Réponse Attendu (n8n) :**
 ```json
 {
@@ -74,7 +83,9 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
   "scenario_id": "sc_12345",
   "title": "Le Dernier Souffle du Speakeasy",
   "murder_room": "Le Bureau de l'arrière-boutique",
-  "clues_count": 24
+  "clues_count": 24,
+  "session_id": "sess_98765",
+  "points_per_player": 2
 }
 ```
 

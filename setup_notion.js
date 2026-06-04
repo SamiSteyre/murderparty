@@ -95,6 +95,7 @@ async function run() {
                     select: {
                         options: [
                             { name: "Configuration", color: "yellow" },
+                            { name: "initialisé", color: "purple" },
                             { name: "Invitations Envoyées", color: "blue" },
                             { name: "En Cours", color: "green" },
                             { name: "Terminé", color: "gray" }

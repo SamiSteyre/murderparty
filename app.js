@@ -227,6 +227,7 @@ function renderOrganizerDashboard() {
         const createFields = document.getElementById('createScenarioFormFields');
         const selectFields = document.getElementById('selectScenarioFormFields');
 
+        const submitBtn = document.getElementById('unifiedSubmitBtn');
         if (modeInput && modeInput.value) {
             if (formContainer) formContainer.classList.remove('hidden');
             if (modeInput.value === 'create') {
@@ -234,11 +235,13 @@ function renderOrganizerDashboard() {
                 if (selectBtnCard) selectBtnCard.className = "orga-option-card p-6 rounded-xl text-center space-y-2";
                 if (createFields) createFields.classList.remove('hidden');
                 if (selectFields) selectFields.classList.add('hidden');
+                if (submitBtn) submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Générer un scénario`;
             } else {
                 if (createBtnCard) createBtnCard.className = "orga-option-card p-6 rounded-xl text-center space-y-2";
                 if (selectBtnCard) selectBtnCard.className = "orga-option-card active p-6 rounded-xl text-center space-y-2";
                 if (createFields) createFields.classList.add('hidden');
                 if (selectFields) selectFields.classList.remove('hidden');
+                if (submitBtn) submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la session`;
             }
         } else {
             if (formContainer) formContainer.classList.add('hidden');
@@ -549,6 +552,9 @@ async function handleUnifiedSessionSubmit(e) {
                         theme: theme,
                         pitch_global: userPitch,
                         epoch: epoch,
+                        session_name: name,
+                        location: location,
+                        emails: emails,
                         organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com'
                     })
                 });
@@ -654,7 +660,7 @@ async function handleUnifiedSessionSubmit(e) {
             location: location,
             totalClues: totalClues,
             pointsPerPlayer: pointsPerPlayer,
-            status: "Invitations Envoyées"
+            status: "initialisé"
         };
 
         // Distribute local state for roles
@@ -720,7 +726,12 @@ async function handleUnifiedSessionSubmit(e) {
         showToast("Erreur d'orchestration", err.message || "Une erreur est survenue.", "error");
     } finally {
         submitBtn.removeAttribute('disabled');
-        submitBtn.innerHTML = `<i class="fa-solid fa-skull"></i> Lancer la Session & Envoyer les Invitations`;
+        const mode = document.getElementById('scenarioMode').value;
+        if (mode === 'create') {
+            submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Générer un scénario`;
+        } else {
+            submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la session`;
+        }
         renderOrganizerDashboard();
     }
 }

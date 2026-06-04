@@ -236,19 +236,19 @@
                             <!-- Section 1: Scenario Configuration (Dynamic depending on choice) -->
                             <div class="border-b border-white/5 pb-5">
                                 <h3 class="font-cinzel text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <i class="fa-solid fa-scroll text-blood"></i> 1. Détails de l'Intrigue
+                                    <i class="fa-solid fa-scroll text-blood"></i> Détails de l'Intrigue
                                 </h3>
 
                                 <!-- Sub-Form A: Create Scenario (IA) Fields -->
-                                <div id="createScenarioFormFields" class="hidden space-y-4">
+                                <div id="createScenarioFormFields" class="hidden p-5 rounded-xl border border-blood/30 bg-blood/5 space-y-4 shadow-[0_0_15px_rgba(179,11,11,0.1)]">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-3xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Thématique / Ambiance</label>
-                                            <input type="text" id="scenarioTheme" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood transition-all font-medium" placeholder="Ex: Années 20, Prohibition, Chic & Mafia">
+                                            <label class="block text-xs uppercase tracking-wider text-white font-extrabold mb-1.5"><i class="fa-solid fa-masks-theater text-blood"></i> Thématique / Ambiance</label>
+                                            <input type="text" id="scenarioTheme" class="w-full bg-noir-input border border-noir-border rounded-xl py-3 px-4 text-slate-200 text-sm focus:outline-none focus:border-blood transition-all font-medium" placeholder="Ex: Années 20, Prohibition, Chic & Mafia">
                                         </div>
                                         <div>
-                                            <label class="block text-3xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Époque</label>
-                                            <select id="scenarioEpoch" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-250 text-xs focus:outline-none focus:border-blood transition-all font-medium">
+                                            <label class="block text-xs uppercase tracking-wider text-white font-extrabold mb-1.5"><i class="fa-solid fa-clock text-blood"></i> Époque du Jeu</label>
+                                            <select id="scenarioEpoch" class="w-full bg-noir-input border border-noir-border rounded-xl py-3 px-4 text-slate-200 text-sm focus:outline-none focus:border-blood transition-all font-medium">
                                                 <option value="passé" selected>Passé (Médiéval, Prohibition, Révolution...)</option>
                                                 <option value="présent">Présent (Manoir moderne, Contemporain...)</option>
                                                 <option value="futur">Futur (Cyberpunk, Space Opera...)</option>
@@ -256,15 +256,15 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-3xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Idée d'intrigue (Optionnel)</label>
-                                        <textarea id="scenarioPitch" rows="2" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood transition-all resize-none font-medium" placeholder="Ex: Un parrain de la mafia est retrouvé mort dans son club clandestin..."></textarea>
+                                        <label class="block text-xs uppercase tracking-wider text-white font-extrabold mb-1.5"><i class="fa-solid fa-lightbulb text-blood"></i> Idée d'intrigue (Optionnel)</label>
+                                        <textarea id="scenarioPitch" rows="2" class="w-full bg-noir-input border border-noir-border rounded-xl py-3 px-4 text-slate-200 text-sm focus:outline-none focus:border-blood transition-all resize-none font-medium" placeholder="Ex: Un parrain de la mafia est retrouvé mort dans son club clandestin..."></textarea>
                                     </div>
                                 </div>
 
                                 <!-- Sub-Form B: Select Existing Scenario (Notion) Fields -->
                                 <div id="selectScenarioFormFields" class="hidden space-y-4">
                                     <div>
-                                        <label class="block text-3xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Sélectionner un Scénario</label>
+                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Sélectionner un Scénario</label>
                                         <select id="existingScenarioSelect" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-250 text-xs focus:outline-none focus:border-blood transition-all font-medium">
                                             <option value="sc_default">-- Charger depuis Notion --</option>
                                             <option value="sc_speakeasy">Le Dernier Souffle du Speakeasy (Années 20)</option>
@@ -278,7 +278,7 @@
                             <!-- Section 2: Session Parameters (Always visible once mode chosen) -->
                             <div class="space-y-4">
                                 <h3 class="font-cinzel text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <i class="fa-solid fa-users-gear text-blood"></i> 2. Paramètres de la Session
+                                    <i class="fa-solid fa-users-gear text-blood"></i> Paramètres de la Session
                                 </h3>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -302,8 +302,8 @@
                             </div>
 
                             <!-- Submit Button -->
-                            <button type="submit" id="unifiedSubmitBtn" class="w-full bg-blood hover:bg-blood-hover text-white font-bold py-3 rounded-xl transition-all shadow-[0_4px_15px_rgba(179,11,11,0.2)] hover:shadow-[0_4px_25px_rgba(179,11,11,0.4)] flex justify-center items-center gap-2 text-xs uppercase tracking-wider">
-                                <i class="fa-solid fa-skull"></i> Lancer la Session & Envoyer les Invitations
+                            <button type="submit" id="unifiedSubmitBtn" class="w-full bg-blood hover:bg-blood-hover text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_4px_15px_rgba(179,11,11,0.25)] hover:shadow-[0_4px_25px_rgba(179,11,11,0.45)] flex justify-center items-center gap-2 text-xs uppercase tracking-wider">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Générer un scénario
                             </button>
                         </form>
                     </div>

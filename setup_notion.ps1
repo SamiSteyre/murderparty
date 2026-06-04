@@ -104,6 +104,7 @@ $sessionsBody = @{
             select = @{
                 options = @(
                     @{ name = "Configuration"; color = "yellow" }
+                    @{ name = "initialisé"; color = "purple" }
                     @{ name = "Invitations Envoyees"; color = "blue" }
                     @{ name = "En Cours"; color = "green" }
                     @{ name = "Termine"; color = "gray" }
