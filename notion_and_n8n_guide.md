@@ -33,6 +33,7 @@ Pour que la plateforme fonctionne, configurez 4 bases de données interconnecté
 * **Email Joueur** (Email) : Identifiant de connexion du vrai joueur.
 * **Relation Session** (Relation) -> Lié à `[MP] Sessions de Jeu`.
 * **Statut** (Select) : `Innocent` | `Coupable` | `Faux-Coupable`.
+* **Genre** (Select) : `Homme` | `Femme` | `Non-Binaire`.
 * **Lien avec la Victime** (Rich Text) : Nature de la relation (dettes, secrets, liens de sang).
 * **Rôle / Histoire** (Rich Text) : Biographie complète et contexte.
 * **Traits de Caractère** (Text) : 3 traits saisis lors de l'onboarding (ex: "Froid, Calculateur, Menteur").
@@ -130,12 +131,13 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
 ```json
 {
   "email": "invite1@email.com",
+  "genre": "Femme",
   "traits": ["Arrogant", "Observateur", "Froid"],
   "photo_base64": "data:image/jpeg;base64,... (ou URL)"
 }
 ```
 * **Payload de Réponse Attendu (n8n) :**
-*n8n envoie l'image à un modèle de génération d'image (ex: Stable Diffusion, DALL-E) pour créer un avatar style polar et génère le marqueur visuel.*
+*n8n envoie l'image à un modèle de génération d'image (ex: Stable Diffusion, DALL-E) pour créer un avatar style polar (en respectant le genre fourni) et génère le marqueur visuel.*
 ```json
 {
   "success": true,

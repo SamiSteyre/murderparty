@@ -4,22 +4,22 @@
 
 // 16 Suspect Characters profile templates
 const CHARACTER_TEMPLATES = [
-    { name: "Mlle Rose", role: "Invitée Mystère", marker: "Une plume de boa pourpre parfumée", bio: "Fille d'un riche industriel, elle voyage incognito et cache un lourd secret de famille.", relation: "Elle est la fille biologique illégitime de la victime, qui l'a déshéritée la veille.", alibi: "Elle prétend s'être reposée dans le Grand Salon au moment du crime." },
-    { name: "Colonel Moutarde", role: "Officier à la retraite", marker: "Une médaille militaire rayée", bio: "Héros de guerre décoré, homme fier au tempérament impulsif et autoritaire.", relation: "La victime détenait des preuves compromettantes de sa trahison passée.", alibi: "Il lisait un ouvrage d'histoire militaire dans la Bibliothèque." },
-    { name: "Madame Pervenche", role: "Amie d'enfance", marker: "Un étui à cigarettes en nacre", bio: "Veuve mondaine élégante, impliquée dans toutes les œuvres de charité de la haute société.", relation: "La victime faisait chanter son fils unique au sujet d'une dette colossale.", alibi: "Elle préparait une infusion de camomille dans la Cuisine." },
-    { name: "Professeur Violet", role: "Chercheur en chimie", marker: "Un carnet de notes à reliure violette", bio: "Universitaire brillant mais excentrique, travaillant sur des composants synthétiques.", relation: "La victime a volé ses brevets scientifiques pour faire fortune.", alibi: "Il faisait des prélèvements dans son bureau temporaire." },
-    { name: "Madame Leblanc", role: "Gouvernante en chef", marker: "Un trousseau de clés en laiton usé", bio: "Au service du domaine depuis 30 ans, elle connaît chaque recoin et chaque secret.", relation: "Elle protège sa fille, qui a été renvoyée injustement par la victime.", alibi: "Elle rangeait le linge de maison dans la lingerie." },
-    { name: "Monsieur Lenoir", role: "Médecin de famille", marker: "Un stéthoscope ancien argenté", bio: "Praticien réputé, discret, confident de toutes les maladies honteuses des environs.", relation: "Il a fourni des substances illégales à la victime sous la contrainte.", alibi: "Il rédigeait des ordonnances dans le Jardin d'Hiver." },
-    { name: "Dr Orchid", role: "Biologiste et botaniste", marker: "Une orchidée séchée dans sa poche", bio: "Chercheuse passionnée, elle étudie les plantes toxiques exotiques.", relation: "La victime menaçait de fermer ses laboratoires de recherche.", alibi: "Elle examinait les plantes dans la Serre principale." },
-    { name: "Inspecteur Adams", role: "Détective invité", marker: "Une loupe à manche d'ébène", bio: "Ami de la victime, invité pour assurer la sécurité mais arrivé trop tard.", relation: "Il menait une enquête secrète sur les affaires frauduleuses de la victime.", alibi: "Il fumait sa pipe sur la terrasse arrière." },
-    { name: "Baptiste le Valet", role: "Majordome particulier", marker: "Un gant blanc taché de cire", bio: "Froid et méticuleux, il orchestre le service de la maison d'une main de fer.", relation: "Il a été surpris en train de voler des bijoux par la victime juste avant le meurtre.", alibi: "Il servait des boissons dans le grand vestibule." },
-    { name: "Rosa la Cantatrice", role: "Artiste lyrique", marker: "Un éventail en dentelle noire", bio: "Cantatrice célèbre à la voix d'or, habituée des salons feutrés.", relation: "La victime menaçait de briser sa carrière en révélant sa perte de voix.", alibi: "Elle s'échauffait la voix dans la Salle de Musique." },
-    { name: "Gaston le Cuisinier", role: "Chef de cuisine", marker: "Un couteau d'office très affûté", bio: "Artiste culinaire colérique, passionné par les épices rares et toxiques.", relation: "La victime s'apprêtait à le licencier sans indemnités après un scandale.", alibi: "Il préparait le dessert de minuit dans la Cuisine." },
-    { name: "Jeanne la Secrétaire", role: "Assistante personnelle", marker: "Un poudrier en or ciselé", bio: "Jeune femme ambitieuse gérant les comptes et la correspondance privée.", relation: "Elle avait détourné des fonds et la victime s'en était rendu compte.", alibi: "Elle tapait des lettres confidentielles dans le Boudoir." },
-    { name: "Dupuis l'Avocat", role: "Conseiller juridique", marker: "Un stylo plume à plume d'or", bio: "Homme de loi cynique qui rédige les testaments et gère les litiges.", relation: "Il a falsifié le dernier testament de la victime à son avantage.", alibi: "Il révisait des documents légaux dans le petit salon." },
-    { name: "Agatha la Romancière", role: "Auteure de romans policiers", marker: "Un mini calepin en cuir usé", bio: "Elle cherche l'inspiration pour son prochain livre de meurtre.", relation: "La victime lui servait de modèle pour le rôle du coupable détestable.", alibi: "Elle observait discrètement les invités depuis la mezzanine." },
-    { name: "Pierre le Jardinier", role: "Jardinier du domaine", marker: "Un sécateur rouillé dans l'étui", bio: "Homme taciturne proche de la nature, qui déteste la haute société.", relation: "La victime voulait raser son jardin historique pour construire un garage.", alibi: "Il taillait les rosiers grimpants dans la Cour d'honneur." },
-    { name: "Clara la Journaliste", role: "Reporter d'investigation", marker: "Un carnet de presse jaune vif", bio: "Toujours à l'affût d'un scoop, elle s'est infiltrée parmi les invités.", relation: "Elle s'apprêtait à publier un article accablant sur les fraudes de la victime.", alibi: "Elle prenait des notes discrètes près du vestiaire." }
+    { name: "Mlle Rose", role: "Invitée Mystère", marker: "Une plume de boa pourpre parfumée", bio: "Fille d'un riche industriel, elle voyage incognito et cache un lourd secret de famille.", relation: "Elle est la fille biologique illégitime de la victime, qui l'a déshéritée la veille.", alibi: "Elle prétend s'être reposée dans le Grand Salon au moment du crime.", genre: "Femme" },
+    { name: "Colonel Moutarde", role: "Officier à la retraite", marker: "Une médaille militaire rayée", bio: "Héros de guerre décoré, homme fier au tempérament impulsif et autoritaire.", relation: "La victime détenait des preuves compromettantes de sa trahison passée.", alibi: "Il lisait un ouvrage d'histoire militaire dans la Bibliothèque.", genre: "Homme" },
+    { name: "Madame Pervenche", role: "Amie d'enfance", marker: "Un étui à cigarettes en nacre", bio: "Veuve mondaine élégante, impliquée dans toutes les œuvres de charité de la haute société.", relation: "La victime faisait chanter son fils unique au sujet d'une dette colossale.", alibi: "Elle préparait une infusion de camomille dans la Cuisine.", genre: "Femme" },
+    { name: "Professeur Violet", role: "Chercheur en chimie", marker: "Un carnet de notes à reliure violette", bio: "Universitaire brillant mais excentrique, travaillant sur des composants synthétiques.", relation: "La victime a volé ses brevets scientifiques pour faire fortune.", alibi: "Il faisait des prélèvements dans son bureau temporaire.", genre: "Homme" },
+    { name: "Madame Leblanc", role: "Gouvernante en chef", marker: "Un trousseau de clés en laiton usé", bio: "Au service du domaine depuis 30 ans, elle connaît chaque recoin et chaque secret.", relation: "Elle protège sa fille, qui a été renvoyée injustement par la victime.", alibi: "Elle rangeait le linge de maison dans la lingerie.", genre: "Femme" },
+    { name: "Monsieur Lenoir", role: "Médecin de famille", marker: "Un stéthoscope ancien argenté", bio: "Praticien réputé, discret, confident de toutes les maladies honteuses des environs.", relation: "Il a fourni des substances illégales à la victime sous la contrainte.", alibi: "Il rédigeait des ordonnances dans le Jardin d'Hiver.", genre: "Homme" },
+    { name: "Dr Orchid", role: "Biologiste et botaniste", marker: "Une orchidée séchée dans sa poche", bio: "Chercheuse passionnée, elle étudie les plantes toxiques exotiques.", relation: "La victime menaçait de fermer ses laboratoires de recherche.", alibi: "Elle examinait les plantes dans la Serre principale.", genre: "Non-Binaire" },
+    { name: "Inspecteur Adams", role: "Détective invité", marker: "Une loupe à manche d'ébène", bio: "Ami de la victime, invité pour assurer la sécurité mais arrivé trop tard.", relation: "Il menait une enquête secrète sur les affaires frauduleuses de la victime.", alibi: "Il fumait sa pipe sur la terrasse arrière.", genre: "Homme" },
+    { name: "Baptiste le Valet", role: "Majordome particulier", marker: "Un gant blanc taché de cire", bio: "Froid et méticuleux, il orchestre le service de la maison d'une main de fer.", relation: "Il a été surpris en train de voler des bijoux par la victime juste avant le meurtre.", alibi: "Il servait des boissons dans le grand vestibule.", genre: "Homme" },
+    { name: "Rosa la Cantatrice", role: "Artiste lyrique", marker: "Un éventail en dentelle noire", bio: "Cantatrice célèbre à la voix d'or, habituée des salons feutrés.", relation: "La victime menaçait de briser sa carrière en révélant sa perte de voix.", alibi: "Elle s'échauffait la voix dans la Salle de Musique.", genre: "Femme" },
+    { name: "Gaston le Cuisinier", role: "Chef de cuisine", marker: "Un couteau d'office très affûté", bio: "Artiste culinaire colérique, passionné par les épices rares et toxiques.", relation: "La victime s'apprêtait à le licencier sans indemnités après un scandale.", alibi: "Il préparait le dessert de minuit dans la Cuisine.", genre: "Homme" },
+    { name: "Jeanne la Secrétaire", role: "Assistante personnelle", marker: "Un poudrier en or ciselé", bio: "Jeune femme ambitieuse gérant les comptes et la correspondance privée.", relation: "Elle avait détourné des fonds et la victime s'en était rendu compte.", alibi: "Elle tapait des lettres confidentielles dans le Boudoir.", genre: "Femme" },
+    { name: "Dupuis l'Avocat", role: "Conseiller juridique", marker: "Un stylo plume à plume d'or", bio: "Homme de loi cynique qui rédige les testaments et gère les litiges.", relation: "Il a falsifié le dernier testament de la victime à son avantage.", alibi: "Il révisait des documents légaux dans le petit salon.", genre: "Homme" },
+    { name: "Agatha la Romancière", role: "Auteure de romans policiers", marker: "Un mini calepin en cuir usé", bio: "Elle cherche l'inspiration pour son prochain livre de meurtre.", relation: "La victime lui servait de modèle pour le rôle du coupable détestable.", alibi: "Elle observait discrètement les invités depuis la mezzanine.", genre: "Femme" },
+    { name: "Pierre le Jardinier", role: "Jardinier du domaine", marker: "Un sécateur rouillé dans l'étui", bio: "Homme taciturne proche de la nature, qui déteste la haute société.", relation: "La victime voulait raser son jardin historique pour construire un garage.", alibi: "Il taillait les rosiers grimpants dans la Cour d'honneur.", genre: "Homme" },
+    { name: "Clara la Journaliste", role: "Reporter d'investigation", marker: "Un carnet de presse jaune vif", bio: "Toujours à l'affût d'un scoop, elle s'est infiltrée parmi les invités.", relation: "Elle s'apprêtait à publier un article accablant sur les fraudes de la victime.", alibi: "Elle prenait des notes discrètes près du vestiaire.", genre: "Non-Binaire" }
 ];
 
 // List of rooms with potential clues
@@ -338,6 +338,9 @@ function renderOrganizerDashboard() {
                         <!-- Suspect silhouette placeholder -->
                         <div class="relative w-full aspect-[4/3] rounded-lg bg-black/45 border border-white/5 flex items-center justify-center mb-4 overflow-hidden">
                             <i class="fa-solid fa-user-secret text-3xl text-slate-700 transition-colors group-hover:text-blood"></i>
+                            <div class="absolute top-2 left-2">
+                                <span class="px-2 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-zinc-900 border border-zinc-700 text-zinc-400">${p.genre}</span>
+                            </div>
                             <div class="absolute bottom-2 right-2">
                                 <span class="px-2 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold ${roleBadgeClass}">${p.roleType}</span>
                             </div>
@@ -395,7 +398,7 @@ function renderOrganizerDashboard() {
             if (appState.players.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="py-6 text-center text-slate-500">Aucun joueur dans la session.</td>
+                        <td colspan="4" class="py-6 text-center text-slate-500">Aucun joueur dans la session.</td>
                     </tr>
                 `;
             } else {
@@ -412,6 +415,9 @@ function renderOrganizerDashboard() {
                                 <span class="w-2.5 h-2.5 rounded-full ${p.avatarUrl ? 'bg-blood shadow-[0_0_5px_#b30b0b]' : 'bg-red-900 animate-pulse'}" title="${p.avatarUrl ? 'Profil généré' : 'En attente d\'onboarding'}"></span>
                                 ${p.roleName}
                             </div>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-zinc-900 border border-zinc-700 text-zinc-400">${p.genre || 'Non-Binaire'}</span>
                         </td>
                         <td class="py-3 font-mono text-2xs text-slate-400">${p.email}</td>
                         <td class="py-3 text-right">
@@ -471,6 +477,10 @@ function updateTraitsInputFromTags() {
 function renderPlayerDashboard(player) {
     // 1. Stats and Gauges Row
     document.getElementById('dashPlayerRoleName').textContent = player.roleName;
+    const genderEl = document.getElementById('dashPlayerGender');
+    if (genderEl) {
+        genderEl.textContent = player.genre || 'Non-Binaire';
+    }
     document.getElementById('dashPlayerSecretStatus').textContent = player.roleType;
     document.getElementById('dashActionPointsDisplay').textContent = player.actionPoints;
 
@@ -683,6 +693,7 @@ async function handleUnifiedSessionSubmit(e) {
                         bio: char.bio,
                         relation: char.relation,
                         marker: char.marker,
+                        genre: char.genre,
                         status: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")
                     };
                 });
@@ -739,6 +750,7 @@ async function handleUnifiedSessionSubmit(e) {
                     history: s.bio || s.history || charTemplate.bio,
                     lienVictime: s.relation || s.lienVictime || charTemplate.relation,
                     marker: s.marker || charTemplate.marker,
+                    genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
                     characterTraits: "",
                     avatarUrl: "",
                     actionPoints: 1,
@@ -776,6 +788,7 @@ async function handleUnifiedSessionSubmit(e) {
                     history: char.bio,
                     lienVictime: char.relation,
                     marker: char.marker,
+                    genre: char.genre || "Non-Binaire",
                     characterTraits: "",
                     avatarUrl: "",
                     actionPoints: 1,
@@ -984,12 +997,17 @@ async function handlePlayerOnboarding(e) {
         let avatarUrl = "";
         let visualMarker = "Une broche ancienne en argent poli";
 
+        // Retrieve character's genre from local state to send to DALL-E webhook
+        const player = appState.players.find(p => p.email === appState.currentUser.email);
+        const genre = player ? (player.genre || "Non-Binaire") : "Non-Binaire";
+
         if (appState.n8nBaseUrl) {
             const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-avatar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: appState.currentUser.email,
+                    genre: genre,
                     traits: traits.split(',').map(t => t.trim()),
                     photo_base64: "data:image/jpeg;base64,mock"
                 })

@@ -457,6 +457,7 @@
                                         <thead>
                                             <tr class="border-b border-white/5 text-slate-500 uppercase tracking-wider text-3xs font-black">
                                                 <th class="py-2.5">Personnage</th>
+                                                <th class="py-2.5">Genre</th>
                                                 <th class="py-2.5">Email de connexion</th>
                                                 <th class="py-2.5 text-right">Rôle secret</th>
                                             </tr>
@@ -544,7 +545,10 @@
                                     ?
                                 </div>
                                 <div>
-                                    <h2 id="dashPlayerRoleName" class="font-cinzel text-xl font-black text-white leading-tight">Mlle Rose</h2>
+                                    <div class="flex items-center gap-2">
+                                        <h2 id="dashPlayerRoleName" class="font-cinzel text-xl font-black text-white leading-tight">Mlle Rose</h2>
+                                        <span id="dashPlayerGender" class="px-2 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-zinc-900 border border-zinc-700 text-zinc-400">Femme</span>
+                                    </div>
                                     <p class="text-2xs text-blood uppercase tracking-widest font-extrabold flex items-center gap-1">
                                         <i class="fa-solid fa-fingerprint"></i> <span id="dashPlayerSecretStatus">Statut secret</span>
                                     </p>

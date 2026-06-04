@@ -134,6 +134,15 @@ async function run() {
                         ]
                     }
                 },
+                "Genre": {
+                    select: {
+                        options: [
+                            { name: "Homme", color: "blue" },
+                            { name: "Femme", color: "pink" },
+                            { name: "Non-Binaire", color: "purple" }
+                        ]
+                    }
+                },
                 "Lien avec la Victime": { rich_text: {} },
                 "Rôle / Histoire": { rich_text: {} },
                 "Traits de Caractère": { rich_text: {} },
