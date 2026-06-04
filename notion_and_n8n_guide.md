@@ -65,17 +65,10 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
   "theme": "Années 20 / Prohibition",
   "pitch_global": "Un parrain de la mafia est retrouvé mort dans son club de jazz clandestin.",
   "epoch": "passé",
-  "session_name": "Murder Spooky 2026",
-  "location": "Salon principal",
-  "emails": [
-    "invite1@email.com",
-    "invite2@email.com",
-    "... (16 emails)"
-  ],
   "organizer_email": "organisateur@email.com"
 }
 ```
-* **Rôle dans n8n :** Générer l'intrigue, insérer le scénario dans Notion, et mettre à jour le statut de la session de jeu Notion à `"initialisé"`.
+* **Rôle dans n8n :** Générer l'intrigue (Agent 1), concevoir la scène de crime et les indices (Agent 2), profiler les 16 suspects (Agent 3), construire le fil des missions (Agent 4), générer l'illustration DALL-E (Agent 6 Illustrateur), et enregistrer la session Notion avec le statut `"initialisé"`.
 * **Payload de Réponse Attendu (n8n) :**
 ```json
 {
@@ -84,15 +77,25 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
   "title": "Le Dernier Souffle du Speakeasy",
   "murder_room": "Le Bureau de l'arrière-boutique",
   "clues_count": 24,
-  "session_id": "sess_98765",
-  "points_per_player": 2
+  "pitch": "Un parrain de la mafia est retrouvé mort dans son club de jazz clandestin...",
+  "illustration_url": "https://oaidalleapiprodscus.blob.core.windows.net/...png",
+  "suspects": [
+    {
+      "name": "Inspecteur Adams",
+      "bio": "Un détective usé par le vice...",
+      "relation": "Il surveillait la victime...",
+      "marker": "Un calepin usé",
+      "status": "Innocent"
+    },
+    "... (16 suspects)"
+  ]
 }
 ```
 
 ---
 
-### 🌐 Webhook 2 : Envoi des Invitations & Calcul de l'Économie
-* **Endpoint :** `POST /webhook/send-invitations`
+### 🌐 Webhook 2 : Envoi des Invitations & Distribution des Rôles
+* **Endpoint :** `POST /webhook/mp-send-invitations`
 * **Payload Envoyé par l'Organisateur :**
 ```json
 {
@@ -103,32 +106,19 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
   "emails": [
     "invite1@email.com",
     "invite2@email.com",
-    "invite3@email.com",
-    "invite4@email.com",
-    "invite5@email.com",
-    "invite6@email.com",
-    "invite7@email.com",
-    "invite8@email.com",
-    "invite9@email.com",
-    "invite10@email.com",
-    "invite11@email.com",
-    "invite12@email.com",
-    "invite13@email.com",
-    "invite14@email.com",
-    "invite15@email.com",
-    "invite16@email.com"
+    "... (16 emails)"
   ]
 }
 ```
+* **Rôle dans n8n :** Enregistrer la session définitive dans Notion, affecter les 16 e-mails aux personnages, définir le statut de l'événement à `"Invitations Envoyées"`, et envoyer les e-mails d'invitations avec les codes OTP.
 * **Payload de Réponse Attendu (n8n) :**
-*n8n doit répartir les rôles (1 Coupable, 2 Faux-Coupables, 13 Innocents), calculer l'économie de points d'action et populer Notion.*
 ```json
 {
   "success": true,
   "session_id": "sess_98765",
   "total_clues": 24,
   "players_count": 16,
-  "points_per_player": 1  // Formule: round((24 / 16) / 1.5) = 1 point par joueur
+  "points_per_player": 2
 }
 ```
 

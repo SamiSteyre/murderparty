@@ -185,6 +185,7 @@ function getActivePlayer() {
 function renderOrganizerDashboard() {
     const landingPanel = document.getElementById('orgaLandingPanel');
     const creationPanel = document.getElementById('sessionCreationPanel');
+    const generatedPanel = document.getElementById('scenarioGeneratedPanel');
     const activePanel = document.getElementById('sessionActivePanel');
     
     if (!appState.orgaView) {
@@ -195,6 +196,7 @@ function renderOrganizerDashboard() {
     if (appState.orgaView === 'landing') {
         if (landingPanel) landingPanel.classList.remove('hidden');
         if (creationPanel) creationPanel.classList.add('hidden');
+        if (generatedPanel) generatedPanel.classList.add('hidden');
         if (activePanel) activePanel.classList.add('hidden');
 
         // Show active session button only if session exists and is not 'A initier'
@@ -210,14 +212,8 @@ function renderOrganizerDashboard() {
     } else if (appState.orgaView === 'create') {
         if (landingPanel) landingPanel.classList.add('hidden');
         if (creationPanel) creationPanel.classList.remove('hidden');
+        if (generatedPanel) generatedPanel.classList.add('hidden');
         if (activePanel) activePanel.classList.add('hidden');
-
-        // Populate default 16 emails if empty
-        const emailArea = document.getElementById('sessionEmails');
-        if (emailArea && !emailArea.value.trim()) {
-            const dummyEmails = Array.from({length: 16}, (_, i) => `invite${i+1}@email.com`).join('\n');
-            emailArea.value = dummyEmails;
-        }
 
         // Stylize creation sub-buttons based on scenarioMode state
         const modeInput = document.getElementById('scenarioMode');
@@ -226,8 +222,8 @@ function renderOrganizerDashboard() {
         const formContainer = document.getElementById('unifiedSessionForm');
         const createFields = document.getElementById('createScenarioFormFields');
         const selectFields = document.getElementById('selectScenarioFormFields');
-
         const submitBtn = document.getElementById('unifiedSubmitBtn');
+
         if (modeInput && modeInput.value) {
             if (formContainer) formContainer.classList.remove('hidden');
             if (modeInput.value === 'create') {
@@ -248,9 +244,70 @@ function renderOrganizerDashboard() {
             if (createBtnCard) createBtnCard.className = "orga-option-card p-6 rounded-xl text-center space-y-2";
             if (selectBtnCard) selectBtnCard.className = "orga-option-card p-6 rounded-xl text-center space-y-2";
         }
+    } else if (appState.orgaView === 'generated') {
+        if (landingPanel) landingPanel.classList.add('hidden');
+        if (creationPanel) creationPanel.classList.add('hidden');
+        if (generatedPanel) generatedPanel.classList.remove('hidden');
+        if (activePanel) activePanel.classList.add('hidden');
+
+        // Render Generated Scenario details
+        if (appState.scenario) {
+            const coverImg = document.getElementById('genScenarioImage');
+            if (coverImg) coverImg.src = appState.scenario.imageUrl || "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+            document.getElementById('genScenarioTitle').textContent = appState.scenario.title;
+            document.getElementById('genScenarioPitch').textContent = appState.scenario.pitch;
+        }
+
+        // Render 16 suspects cards in grid
+        const grid = document.getElementById('genCharactersGrid');
+        if (grid) {
+            grid.innerHTML = '';
+            if (appState.players && appState.players.length > 0) {
+                appState.players.forEach((p, index) => {
+                    let roleBadgeClass = "bg-zinc-900 border border-zinc-700 text-zinc-400";
+                    if (p.roleType === "Coupable") roleBadgeClass = "bg-red-950/40 border border-red-900/60 text-red-500 font-black";
+                    if (p.roleType === "Faux-Coupable") roleBadgeClass = "bg-zinc-800/80 border border-zinc-700 text-zinc-350";
+
+                    const card = document.createElement('div');
+                    card.className = "glass-panel p-5 rounded-xl border border-white/5 flex flex-col justify-between hover:border-blood/50 hover:shadow-[0_0_20px_rgba(179,11,11,0.15)] transition-all duration-300 group transform hover:-translate-y-1 relative";
+                    card.innerHTML = `
+                        <!-- Suspect silhouette placeholder -->
+                        <div class="relative w-full aspect-[4/3] rounded-lg bg-black/45 border border-white/5 flex items-center justify-center mb-4 overflow-hidden">
+                            <i class="fa-solid fa-user-secret text-3xl text-slate-700 transition-colors group-hover:text-blood"></i>
+                            <div class="absolute bottom-2 right-2">
+                                <span class="px-2 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold ${roleBadgeClass}">${p.roleType}</span>
+                            </div>
+                        </div>
+                        <div class="space-y-2 flex-1">
+                            <h4 class="font-cinzel text-xs font-bold text-white tracking-wider group-hover:text-blood transition-colors">${p.roleName}</h4>
+                            <p class="text-[10px] text-slate-400 leading-normal font-light line-clamp-3" title="${p.history}">${p.history}</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-white/5 text-[9px] text-slate-500 uppercase font-semibold">
+                            <i class="fa-solid fa-fingerprint text-blood mr-1"></i> Signature : <span class="text-white">${p.marker}</span>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } else {
+                grid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500">Aucun suspect créé pour ce scénario.</div>';
+            }
+        }
+
+        // Prepopulate default 16 emails if empty
+        const setupEmailsArea = document.getElementById('setupSessionEmails');
+        if (setupEmailsArea && !setupEmailsArea.value.trim()) {
+            const dummyEmails = Array.from({length: 16}, (_, i) => `invite${i+1}@email.com`).join('\n');
+            setupEmailsArea.value = dummyEmails;
+        }
+
+        // Show/Hide forms
+        document.getElementById('sessionSetupFormContainer').classList.add('hidden');
+        document.getElementById('triggerSessionSetupBtnContainer').classList.remove('hidden');
+
     } else if (appState.orgaView === 'active') {
         if (landingPanel) landingPanel.classList.add('hidden');
         if (creationPanel) creationPanel.classList.add('hidden');
+        if (generatedPanel) generatedPanel.classList.add('hidden');
         if (activePanel) activePanel.classList.remove('hidden');
 
         // Render Active Scenario Details
@@ -288,7 +345,7 @@ function renderOrganizerDashboard() {
                     tr.innerHTML = `
                         <td class="py-3 font-semibold text-slate-200">
                             <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full ${p.avatarUrl ? 'bg-red-550 shadow-[0_0_5px_#b30b0b]' : 'bg-red-900 animate-pulse'}" title="${p.avatarUrl ? 'Profil généré' : 'En attente d\'onboarding'}"></span>
+                                <span class="w-2.5 h-2.5 rounded-full ${p.avatarUrl ? 'bg-blood shadow-[0_0_5px_#b30b0b]' : 'bg-red-900 animate-pulse'}" title="${p.avatarUrl ? 'Profil généré' : 'En attente d\'onboarding'}"></span>
                                 ${p.roleName}
                             </div>
                         </td>
@@ -505,16 +562,11 @@ function addLiveLog(message) {
 async function handleUnifiedSessionSubmit(e) {
     e.preventDefault();
     
-    const name = document.getElementById('sessionName').value.trim();
-    const location = document.getElementById('sessionLocation').value.trim();
-    const emailsText = document.getElementById('sessionEmails').value.trim();
     const scenarioMode = document.getElementById('scenarioMode').value;
     const submitBtn = document.getElementById('unifiedSubmitBtn');
 
-    const emails = emailsText.split('\n').map(email => email.trim()).filter(email => email.length > 0);
-    
-    if (emails.length !== 16) {
-        showToast("Erreur de joueurs", `Il faut exactement 16 adresses e-mail de joueurs invités (Actuellement: ${emails.length}).`, "error");
+    if (!scenarioMode) {
+        showToast("Erreur", "Veuillez sélectionner un mode de scénario.", "error");
         return;
     }
 
@@ -522,13 +574,12 @@ async function handleUnifiedSessionSubmit(e) {
     submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-sm"></i> Orchestration IA en cours...`;
     
     appState.logs = []; // Clear old logs
-    addLiveLog(`[Démarrage] Initialisation de la session "${name}"...`);
+    addLiveLog(`[Démarrage] Initialisation de la génération du scénario...`);
     renderOrganizerDashboard();
 
     try {
         let scenarioId = "";
         let totalClues = 24;
-        let pointsPerPlayer = 1;
 
         if (scenarioMode === 'create') {
             const theme = document.getElementById('scenarioTheme').value.trim();
@@ -552,9 +603,6 @@ async function handleUnifiedSessionSubmit(e) {
                         theme: theme,
                         pitch_global: userPitch,
                         epoch: epoch,
-                        session_name: name,
-                        location: location,
-                        emails: emails,
                         organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com'
                     })
                 });
@@ -563,13 +611,27 @@ async function handleUnifiedSessionSubmit(e) {
             } else {
                 // Local simulation fallback
                 await sleep(2000);
+                
+                // Simulate 16 suspects from CHARACTER_TEMPLATES
+                const simulatedSuspects = CHARACTER_TEMPLATES.map((char, index) => {
+                    return {
+                        name: char.name,
+                        bio: char.bio,
+                        relation: char.relation,
+                        marker: char.marker,
+                        status: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")
+                    };
+                });
+
                 dataScenario = {
                     success: true,
                     scenario_id: "sc_" + Math.random().toString(36).substr(2, 9),
                     title: "Le Dernier Souffle du Speakeasy",
                     murder_room: "Le Bureau de l'arrière-boutique",
                     clues_count: 24,
-                    pitch: userPitch || "Un meurtre mystérieux a eu lieu."
+                    pitch: userPitch || "Dans la pénombre d'un club de jazz clandestin, un parrain de la mafia a été assassiné de sang-froid.",
+                    illustration_url: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
+                    suspects: simulatedSuspects
                 };
             }
 
@@ -579,7 +641,8 @@ async function handleUnifiedSessionSubmit(e) {
                 theme: theme,
                 pitch: dataScenario.pitch,
                 crimeRoom: dataScenario.murder_room,
-                cluesCount: dataScenario.clues_count || 24
+                cluesCount: dataScenario.clues_count || 24,
+                imageUrl: dataScenario.illustration_url || "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop"
             };
 
             scenarioId = dataScenario.scenario_id;
@@ -587,23 +650,39 @@ async function handleUnifiedSessionSubmit(e) {
 
             addLiveLog(`[Agent 2: Légiste] Scène du crime et indices d'opportunité conçus.`);
             renderOrganizerDashboard();
-            await sleep(500);
+            await sleep(300);
             
             addLiveLog(`[Agent 3: Profiler] 16 biographies de personnages et indices personnels créés.`);
             renderOrganizerDashboard();
-            await sleep(500);
+            await sleep(300);
 
             addLiveLog(`[Agent 4: Chronologue] Fil d'Ariane des missions secrètes généré.`);
             renderOrganizerDashboard();
-            await sleep(500);
+            await sleep(300);
 
-            addLiveLog(`[Agent 5: Photographe] 3 portraits témoins IA générés (H/F/NB).`);
+            addLiveLog(`[Agent 6: Illustrateur] Image de couverture panoramique du scénario générée.`);
             renderOrganizerDashboard();
-            await sleep(500);
+            await sleep(300);
 
-            addLiveLog(`[Agent 5: Vision] Analyse et transcription des descriptions de style sauvegardées.`);
-            renderOrganizerDashboard();
-            await sleep(500);
+            // Suspects list mapping into appState.players
+            const suspectsData = dataScenario.suspects || CHARACTER_TEMPLATES;
+            appState.players = suspectsData.map((s, index) => {
+                const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+                return {
+                    email: "", // Unassigned initially
+                    roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
+                    roleName: s.name || s.roleName || charTemplate.name,
+                    history: s.bio || s.history || charTemplate.bio,
+                    lienVictime: s.relation || s.lienVictime || charTemplate.relation,
+                    marker: s.marker || charTemplate.marker,
+                    characterTraits: "",
+                    avatarUrl: "",
+                    actionPoints: 1,
+                    status: "Créé",
+                    knowledge: [],
+                    missions: []
+                };
+            });
 
             addLiveLog(`Succès : Scénario "${appState.scenario.title}" créé et injecté dans Notion !`);
             renderOrganizerDashboard();
@@ -620,86 +699,33 @@ async function handleUnifiedSessionSubmit(e) {
                 theme: "Chargé",
                 pitch: "Scénario pré-existant chargé depuis Notion.",
                 crimeRoom: "Le Bureau",
-                cluesCount: 24
+                cluesCount: 24,
+                imageUrl: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop"
             };
+
+            // Prepopulate 16 suspects from static template for fallback
+            appState.players = CHARACTER_TEMPLATES.map((char, index) => {
+                return {
+                    email: "",
+                    roleType: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent"),
+                    roleName: char.name,
+                    history: char.bio,
+                    lienVictime: char.relation,
+                    marker: char.marker,
+                    characterTraits: "",
+                    avatarUrl: "",
+                    actionPoints: 1,
+                    status: "Créé",
+                    knowledge: [],
+                    missions: []
+                };
+            });
 
             addLiveLog(`Scénario sélectionné : "${appState.scenario.title}".`);
             renderOrganizerDashboard();
         }
 
-        // Calculate economy
-        pointsPerPlayer = Math.round((totalClues / 16) / 1.5) || 1;
-
-        addLiveLog(`[Orchestrateur] Lancement des invitations et distribution des rôles...`);
-        renderOrganizerDashboard();
-
-        let sessionId = "sess_" + Math.random().toString(36).substr(2, 9);
-        if (appState.n8nBaseUrl) {
-            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-send-invitations`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    scenario_id: scenarioId,
-                    session_name: name,
-                    date: new Date().toISOString(),
-                    location: location,
-                    emails: emails
-                })
-            });
-            if (!response.ok) throw new Error("Erreur de communication lors de l'envoi des invitations.");
-            const dataInv = await response.json();
-            sessionId = dataInv.session_id || sessionId;
-            pointsPerPlayer = dataInv.points_per_player || pointsPerPlayer;
-        } else {
-            await sleep(1500);
-        }
-
-        appState.session = {
-            id: sessionId,
-            name: name,
-            location: location,
-            totalClues: totalClues,
-            pointsPerPlayer: pointsPerPlayer,
-            status: "initialisé"
-        };
-
-        // Distribute local state for roles
-        const shuffledEmails = [...emails];
-        shuffleArray(shuffledEmails);
-        
-        const rolesDist = [];
-        shuffledEmails.forEach((email, index) => {
-            let type = "Innocent";
-            if (index === 0) type = "Coupable";
-            else if (index === 1 || index === 2) type = "Faux-Coupable";
-            rolesDist.push({ email: email, type: type });
-        });
-
-        appState.players = CHARACTER_TEMPLATES.map((charTemplate, index) => {
-            const assignment = rolesDist[index];
-            const otherChars = CHARACTER_TEMPLATES.filter(c => c.name !== charTemplate.name);
-            const knowledge1 = `${otherChars[0].name} : Alibi suspect près de ${otherChars[0].alibi}.`;
-            const knowledge2 = `${otherChars[1].name} : A été vu(e) avec ${charTemplate.marker} en main.`;
-            
-            return {
-                email: assignment.email,
-                roleType: assignment.type,
-                roleName: charTemplate.name,
-                history: charTemplate.bio,
-                lienVictime: charTemplate.relation,
-                marker: charTemplate.marker,
-                characterTraits: "",
-                avatarUrl: "",
-                actionPoints: pointsPerPlayer,
-                status: "Invité",
-                knowledge: [knowledge1, knowledge2],
-                missions: [
-                    { id: `mission_${index}_1`, title: `Fouiller le lieu : ${Object.keys(ROOMS_DB)[index % 6]}`, completed: false, points: 2, targetRoom: Object.keys(ROOMS_DB)[index % 6] },
-                    { id: `mission_${index}_2`, title: `Retrouver le suspect possédant le marqueur visuel : "${otherChars[2].marker}"`, completed: false, points: 2 }
-                ]
-            };
-        });
-
+        // Initialize clues DB state
         appState.clues = [];
         Object.entries(ROOMS_DB).forEach(([roomName, cluesList]) => {
             cluesList.forEach((c, idx) => {
@@ -715,10 +741,10 @@ async function handleUnifiedSessionSubmit(e) {
             });
         });
 
-        addLiveLog(`Succès final : Session de jeu configurée et lancée !`);
-        appState.orgaView = 'active'; // Redirect to active dashboard
+        // Switch to the overview panel (2nd stage)
+        appState.orgaView = 'generated';
         savePersistedState();
-        showToast("Session Créée !", "Les invitations ont été envoyées et l'intrigue est prête.", "success");
+        showToast("Scénario Prêt !", "Vous pouvez maintenant lancer la session et distribuer les e-mails.", "success");
 
     } catch(err) {
         console.error(err);
@@ -736,6 +762,94 @@ async function handleUnifiedSessionSubmit(e) {
     }
 }
 
+// 2. Webhook: POST /webhook/mp-send-invitations
+async function handleLaunchSession(e) {
+    e.preventDefault();
+
+    const sessionName = document.getElementById('setupSessionName').value.trim();
+    const sessionLocation = document.getElementById('setupSessionLocation').value.trim();
+    const emailsText = document.getElementById('setupSessionEmails').value.trim();
+    const submitBtn = document.getElementById('setupLaunchBtn');
+
+    const emails = emailsText.split('\n').map(email => email.trim()).filter(email => email.length > 0);
+    
+    if (emails.length !== 16) {
+        showToast("Erreur de joueurs", `Il faut exactement 16 adresses e-mail de joueurs invités (Actuellement: ${emails.length}).`, "error");
+        return;
+    }
+
+    submitBtn.setAttribute('disabled', 'true');
+    submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Lancement de la session...`;
+
+    try {
+        let sessionId = "sess_" + Math.random().toString(36).substr(2, 9);
+        let pointsPerPlayer = Math.round((appState.scenario.cluesCount / 16) / 1.5) || 1;
+
+        if (appState.n8nBaseUrl) {
+            // Tell n8n to send invitations and populate database page
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-send-invitations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scenario_id: appState.scenario.id,
+                    session_name: sessionName,
+                    date: new Date().toISOString(),
+                    location: sessionLocation,
+                    emails: emails
+                })
+            });
+            if (!response.ok) throw new Error("Erreur de communication lors de l'envoi des invitations.");
+            const dataInv = await response.json();
+            sessionId = dataInv.session_id || sessionId;
+            pointsPerPlayer = dataInv.points_per_player || pointsPerPlayer;
+        } else {
+            await sleep(1500);
+        }
+
+        // Shuffle the player emails to assign roles randomly
+        const shuffledEmails = [...emails];
+        shuffleArray(shuffledEmails);
+
+        appState.players.forEach((p, idx) => {
+            p.email = shuffledEmails[idx];
+            p.actionPoints = pointsPerPlayer;
+            p.status = "Invité";
+
+            // Establish alibi knowledge based on other suspects
+            const otherChars = appState.players.filter(c => c.roleName !== p.roleName);
+            const knowledge1 = `${otherChars[0].roleName} : Alibi suspect près de ${otherChars[0].marker}.`;
+            const knowledge2 = `${otherChars[1].roleName} : A été vu(e) avec ${p.marker} en main.`;
+            p.knowledge = [knowledge1, knowledge2];
+            p.missions = [
+                { id: `mission_${idx}_1`, title: `Fouiller le lieu : ${Object.keys(ROOMS_DB)[idx % 6]}`, completed: false, points: 2, targetRoom: Object.keys(ROOMS_DB)[idx % 6] },
+                { id: `mission_${idx}_2`, title: `Retrouver le suspect possédant la signature : "${otherChars[2].marker}"`, completed: false, points: 2 }
+            ];
+        });
+
+        // Initialize active session
+        appState.session = {
+            id: sessionId,
+            name: sessionName,
+            location: sessionLocation,
+            totalClues: appState.scenario.cluesCount,
+            pointsPerPlayer: pointsPerPlayer,
+            status: "Invitations Envoyées"
+        };
+
+        appState.orgaView = 'active'; // Enter active game dashboard
+        savePersistedState();
+        showToast("Session Lancée !", "Les invitations ont été distribuées et l'enquête est ouverte.", "success");
+
+    } catch(err) {
+        console.error(err);
+        showToast("Erreur de lancement", err.message || "Une erreur est survenue lors de l'envoi des invitations.", "error");
+    } finally {
+        submitBtn.removeAttribute('disabled');
+        submitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Activer le jeu & Envoyer les Invitations`;
+        renderOrganizerDashboard();
+    }
+}
+
 function handleResetSession() {
     if (confirm("Voulez-vous vraiment réinitialiser la session en cours ? Toutes les données locales seront effacées.")) {
         appState.session = null;
@@ -747,9 +861,20 @@ function handleResetSession() {
         savePersistedState();
         
         // Reset inputs in creation form
-        document.getElementById('sessionName').value = '';
-        document.getElementById('sessionLocation').value = '';
-        const emailArea = document.getElementById('sessionEmails');
+        const themeInput = document.getElementById('scenarioTheme');
+        if (themeInput) themeInput.value = '';
+        const pitchInput = document.getElementById('scenarioPitch');
+        if (pitchInput) pitchInput.value = '';
+        const epochInput = document.getElementById('scenarioEpoch');
+        if (epochInput) epochInput.value = 'passé';
+        const modeInput = document.getElementById('scenarioMode');
+        if (modeInput) modeInput.value = '';
+
+        const setupName = document.getElementById('setupSessionName');
+        if (setupName) setupName.value = '';
+        const setupLoc = document.getElementById('setupSessionLocation');
+        if (setupLoc) setupLoc.value = '';
+        const emailArea = document.getElementById('setupSessionEmails');
         if (emailArea) {
             const dummyEmails = Array.from({length: 16}, (_, i) => `invite${i+1}@email.com`).join('\n');
             emailArea.value = dummyEmails;
@@ -1234,6 +1359,27 @@ function init() {
         });
     }
 
+    const orgaGenBackToLandingBtn = document.getElementById('orgaGenBackToLandingBtn');
+    if (orgaGenBackToLandingBtn) {
+        orgaGenBackToLandingBtn.addEventListener('click', () => {
+            appState.orgaView = 'landing';
+            savePersistedState();
+            renderOrganizerDashboard();
+        });
+    }
+
+    // Trigger Session Setup Button click
+    const triggerBtn = document.getElementById('triggerSessionSetupBtn');
+    const setupFormContainer = document.getElementById('sessionSetupFormContainer');
+    if (triggerBtn && setupFormContainer) {
+        triggerBtn.addEventListener('click', () => {
+            setupFormContainer.classList.remove('hidden');
+            const btnContainer = document.getElementById('triggerSessionSetupBtnContainer');
+            if (btnContainer) btnContainer.classList.add('hidden');
+            setupFormContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
     // Wizard Scenario Options Cards
     const orgaBtnCreateScenarioOption = document.getElementById('orgaBtnCreateScenarioOption');
     if (orgaBtnCreateScenarioOption) {
@@ -1258,6 +1404,9 @@ function init() {
     // Organizer Forms (Unified Panel)
     const unifiedForm = document.getElementById('unifiedSessionForm');
     if (unifiedForm) unifiedForm.addEventListener('submit', handleUnifiedSessionSubmit);
+
+    const setupForm = document.getElementById('sessionSetupForm');
+    if (setupForm) setupForm.addEventListener('submit', handleLaunchSession);
 
     const resetBtn = document.getElementById('resetSessionBtn');
     if (resetBtn) resetBtn.addEventListener('click', handleResetSession);
