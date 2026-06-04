@@ -152,165 +152,181 @@
                2. ORGANIZER VIEW
                ========================================================================== -->
             <main id="organizerView" class="hidden h-full overflow-y-auto p-6 space-y-6">
-                <!-- Top Row: Welcome & Simulation Banner -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-noir-panel to-noir-panel/50 p-6 rounded-2xl border border-noir-border">
-                    <div>
-                        <h2 class="font-cinzel text-2xl font-bold text-white mb-1">Tableau de bord de l'Organisateur</h2>
-                        <p class="text-xs text-slate-400">Configurez le scénario par IA, invitez vos joueurs et suivez l'avancement de l'enquête en temps réel.</p>
+                <!-- PANEL 1: SESSION CREATION (Visible when configuring) -->
+                <div id="sessionCreationPanel" class="space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-noir-panel to-noir-panel/50 p-6 rounded-2xl border border-noir-border">
+                        <div>
+                            <h2 class="font-cinzel text-2xl font-bold text-white mb-1">Créer une Session de Murder Party</h2>
+                            <p class="text-xs text-slate-400">Configurez une nouvelle session de jeu, invitez 16 joueurs et orchestrez les agents d'IA.</p>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2 bg-emerald-950/40 text-emerald-400 border border-emerald-800/60 px-4 py-2 rounded-xl text-xs font-bold">
-                        <i class="fa-solid fa-toggle-on text-sm"></i>
-                        <span>Simulation n8n/Notion Activée</span>
-                    </div>
-                </div>
 
-                <!-- Grid Layout for GM Actions -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    
-                    <!-- LEFT COLUMN: Generator & Settings (5 Cols) -->
-                    <div class="lg:col-span-5 space-y-6">
-                        
-                        <!-- Block 1: Scenario Generation -->
-                        <section class="glass-panel p-6 rounded-2xl border border-noir-border flex flex-col gap-4">
-                            <h3 class="font-cinzel text-lg font-bold text-white border-b border-noir-border pb-3 flex items-center gap-2">
-                                <i class="fa-solid fa-wand-magic-sparkles text-gold"></i> 1. Générer le Scénario
-                            </h3>
-                            
-                            <form id="generateScenarioForm" class="space-y-4">
-                                <div>
-                                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Thématique / Ambiance</label>
-                                    <input type="text" id="scenarioTheme" 
-                                           class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all"
-                                           placeholder="Ex: Années 20, Prohibition, Chic & Mafia" required>
-                                </div>
-                                <div>
-                                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Pitch de départ (Optionnel)</label>
-                                    <textarea id="scenarioPitch" rows="3"
-                                              class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all resize-none"
-                                              placeholder="Ex: Le parrain d'un club de jazz est empoisonné dans son bureau secret. 16 invités sont confinés dans la pièce..."></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Époque du Scénario</label>
-                                    <select id="scenarioEpoch" 
-                                            class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all">
-                                        <option value="passé" selected>Passé (Médiéval, Années 20, Révolution...)</option>
-                                        <option value="présent">Présent (Manoir Moderne, Contemporain...)</option>
-                                        <option value="futur">Futur (Cyberpunk, Station Spatiale...)</option>
-                                    </select>
-                                </div>
-                                
-                                <button type="submit" id="generateScenarioBtn" 
-                                        class="w-full bg-gold hover:bg-gold-hover text-noir-deep font-bold py-2.5 rounded-xl transition-all shadow-[0_4px_15px_rgba(212,175,55,0.15)] flex justify-center items-center gap-2">
-                                    <i class="fa-solid fa-gears"></i> Lancer la génération IA (n8n)
-                                </button>
-                            </form>
-                            
-                            <!-- Scenario Generation Loading / Result State -->
-                            <div id="scenarioResultBox" class="hidden mt-2 p-4 rounded-xl bg-noir-input border border-noir-border text-sm space-y-2">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-xs text-gold uppercase tracking-wider font-extrabold">Scénario Actif</span>
-                                    <span class="text-2xs bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded font-bold">Vérifié</span>
-                                </div>
-                                <h4 id="activeScenarioTitle" class="font-bold text-white text-base">Le Dernier Souffle du Speakeasy</h4>
-                                <p id="activeScenarioPitch" class="text-xs text-slate-400 line-clamp-3">L'histoire dramatique...</p>
-                                <div class="grid grid-cols-2 gap-2 text-2xs pt-2 border-t border-noir-border/50 text-slate-400">
-                                    <div><i class="fa-solid fa-skull-crossbones mr-1 text-blood"></i> Meurtre: <span id="activeScenarioCrimeRoom" class="text-slate-200">Salon</span></div>
-                                    <div><i class="fa-solid fa-receipt mr-1 text-gold"></i> Indices: <span id="activeScenarioCluesCount" class="text-slate-200 font-bold">0</span></div>
-                                </div>
-                            </div>
-                        </section>
-                        
-                        <!-- Block 2: Sessions Invitations -->
-                        <section class="glass-panel p-6 rounded-2xl border border-noir-border flex flex-col gap-4">
-                            <h3 class="font-cinzel text-lg font-bold text-white border-b border-noir-border pb-3 flex items-center gap-2">
-                                <i class="fa-solid fa-envelope-open-text text-blood"></i> 2. Session & Invitations
-                            </h3>
-                            
-                            <form id="sessionForm" class="space-y-4">
-                                <div class="grid grid-cols-2 gap-3">
+                    <form id="unifiedSessionForm" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <!-- Left side: Creation settings (7 Cols) -->
+                        <div class="lg:col-span-7 space-y-6">
+                            <!-- Block A: Session Info -->
+                            <div class="glass-panel p-6 rounded-2xl border border-noir-border space-y-4">
+                                <h3 class="font-cinzel text-md font-bold text-white border-b border-noir-border/30 pb-2.5 flex items-center gap-2">
+                                    <i class="fa-solid fa-calendar-check text-gold"></i> 1. Paramètres de la Session
+                                </h3>
+                                <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Nom de Session</label>
-                                        <input type="text" id="sessionName" class="w-full bg-noir-input border border-noir-border rounded-xl py-2 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood" placeholder="Ex: Murder Spooky 2026" required>
+                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Nom de la Session</label>
+                                        <input type="text" id="sessionName" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all" placeholder="Ex: Murder Spooky 2026" required>
                                     </div>
                                     <div>
                                         <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Lieu Réel</label>
-                                        <input type="text" id="sessionLocation" class="w-full bg-noir-input border border-noir-border rounded-xl py-2 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood" placeholder="Ex: Salon principal" required>
+                                        <input type="text" id="sessionLocation" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all" placeholder="Ex: Salon principal" required>
                                     </div>
                                 </div>
-                                
                                 <div>
                                     <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">E-mails des Invités (16 requis)</label>
-                                    <span class="text-3xs text-slate-500 block mb-1.5 uppercase">Entrez une adresse par ligne. 16 lignes.</span>
+                                    <span class="text-3xs text-slate-500 block mb-1.5 uppercase">Entrez une adresse e-mail par ligne. (16 joueurs nécessaires)</span>
                                     <textarea id="sessionEmails" rows="8"
-                                              class="w-full bg-noir-input border border-noir-border rounded-xl py-2 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood font-mono resize-none leading-relaxed"
+                                              class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-xs focus:outline-none focus:border-gold font-mono resize-none leading-relaxed"
                                               required></textarea>
                                 </div>
-                                
-                                <button type="submit" id="sendInvitationsBtn" disabled
-                                        class="w-full bg-blood hover:bg-blood-hover disabled:opacity-40 disabled:hover:bg-blood text-white font-bold py-2.5 rounded-xl transition-all shadow-[0_4px_15px_rgba(217,56,56,0.15)] flex justify-center items-center gap-2">
-                                    <i class="fa-solid fa-paper-plane"></i> Distribuer les rôles & inviter (n8n)
-                                </button>
-                            </form>
+                            </div>
 
-                            <!-- Live Session Summary Card -->
-                            <div id="sessionStatsBox" class="hidden p-4 rounded-xl bg-noir-input border border-noir-border text-sm flex flex-col gap-2">
-                                <div class="text-xs text-slate-400 uppercase tracking-widest font-extrabold border-b border-noir-border pb-1.5">Économie de la partie</div>
-                                <div class="grid grid-cols-2 gap-4 text-center">
-                                    <div class="p-2 bg-noir-panel rounded-lg border border-noir-border">
-                                        <div id="statTotalClues" class="text-lg font-black text-gold">24</div>
-                                        <div class="text-3xs text-slate-500 uppercase tracking-wider">Indices Totaux</div>
+                            <!-- Block B: Scenario Selection / Creation -->
+                            <div class="glass-panel p-6 rounded-2xl border border-noir-border space-y-4">
+                                <h3 class="font-cinzel text-md font-bold text-white border-b border-noir-border/30 pb-2.5 flex items-center gap-2">
+                                    <i class="fa-solid fa-scroll text-gold"></i> 2. Choix du Scénario
+                                </h3>
+                                
+                                <div class="flex gap-4 p-1 bg-noir-input rounded-xl border border-noir-border/50">
+                                    <button type="button" id="toggleCreateScenarioBtn" class="flex-1 py-2 text-xs font-bold rounded-lg bg-gold text-noir-deep transition-all">
+                                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Créer un nouveau scénario (IA)
+                                    </button>
+                                    <button type="button" id="toggleSelectScenarioBtn" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all">
+                                        <i class="fa-solid fa-folder-open mr-1"></i> Choisir un scénario existant
+                                    </button>
+                                </div>
+
+                                <input type="hidden" id="scenarioMode" value="create">
+
+                                <!-- Sub-Form A: Create Scenario (IA) -->
+                                <div id="createScenarioFormFields" class="space-y-4">
+                                    <div>
+                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Thématique / Ambiance</label>
+                                        <input type="text" id="scenarioTheme" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all" placeholder="Ex: Années 20, Prohibition, Chic & Mafia">
                                     </div>
-                                    <div class="p-2 bg-noir-panel rounded-lg border border-noir-border">
-                                        <div id="statPointsPerPlayer" class="text-lg font-black text-blood">1</div>
-                                        <div class="text-3xs text-slate-500 uppercase tracking-wider">P.A. Initial / Joueur</div>
+                                    <div>
+                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Idée d'intrigue (Optionnel)</label>
+                                        <textarea id="scenarioPitch" rows="3" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all resize-none" placeholder="Ex: Un parrain de la mafia est retrouvé mort dans son club clandestin..."></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Époque</label>
+                                        <select id="scenarioEpoch" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all">
+                                            <option value="passé" selected>Passé (Médiéval, Prohibition, Révolution...)</option>
+                                            <option value="présent">Présent (Manoir moderne, Contemporain...)</option>
+                                            <option value="futur">Futur (Cyberpunk, Space Opera...)</option>
+                                        </select>
                                     </div>
                                 </div>
-                                <div class="text-3xs text-slate-500 text-center mt-1">
-                                    ⚖️ Ratio de points respecté : <strong class="text-slate-300">1.50</strong>
+
+                                <!-- Sub-Form B: Select Existing Scenario (Notion) -->
+                                <div id="selectScenarioFormFields" class="hidden space-y-4">
+                                    <div>
+                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Sélectionner un Scénario</label>
+                                        <select id="existingScenarioSelect" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all">
+                                            <option value="sc_default">-- Charger depuis Notion --</option>
+                                            <option value="sc_speakeasy">Le Dernier Souffle du Speakeasy (Années 20)</option>
+                                            <option value="sc_croft">Meurtre au Manoir Croft (Présent)</option>
+                                            <option value="sc_neon">Néon Noir à Neo-Tokyo (Futur)</option>
+                                        </select>
+                                        <span class="text-3xs text-slate-500 mt-1 block">Les scénarios validés dans votre base Notion s'affichent ici.</span>
+                                    </div>
                                 </div>
                             </div>
-                        </section>
+
+                            <button type="submit" id="unifiedSubmitBtn" class="w-full bg-gold hover:bg-gold-hover text-noir-deep font-bold py-3 rounded-xl transition-all shadow-[0_4px_15px_rgba(212,175,55,0.2)] flex justify-center items-center gap-2 text-sm">
+                                <i class="fa-solid fa-gears"></i> Lancer la Session & Orchestrer les Agents IA
+                            </button>
+                        </div>
+
+                        <!-- Right side: Quick Feed logs (5 Cols) -->
+                        <div class="lg:col-span-5 space-y-6 flex flex-col justify-between">
+                            <div class="glass-panel p-6 rounded-2xl border border-noir-border flex flex-col gap-4 flex-1 h-full min-h-[350px]">
+                                <h3 class="font-cinzel text-md font-bold text-white border-b border-noir-border/30 pb-2.5 flex items-center justify-between">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-blood animate-pulse"></i> Console d'Orchestration</span>
+                                </h3>
+                                <div id="monitoringConsole" class="flex-1 bg-noir-input rounded-xl border border-noir-border p-4 font-mono text-2xs overflow-y-auto space-y-2 text-emerald-500 h-80">
+                                    <div class="text-slate-500">>> En attente de configuration de la session...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- PANEL 2: ACTIVE SESSION STATUS PANEL (Visible when session is running) -->
+                <div id="sessionActivePanel" class="hidden space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-noir-panel to-noir-panel/50 p-6 rounded-2xl border border-noir-border">
+                        <div>
+                            <h2 class="font-cinzel text-2xl font-bold text-white mb-1">Session Murder Party Active</h2>
+                            <p class="text-xs text-slate-400">Suivi en temps réel des actions des joueurs et de l'orchestration Notion.</p>
+                        </div>
+                        <button id="resetSessionBtn" class="bg-noir-input hover:bg-noir-border text-slate-300 hover:text-white border border-noir-border px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-rotate-left"></i> Réinitialiser & Nouvelle Session
+                        </button>
                     </div>
 
-                    <!-- RIGHT COLUMN: Monitoring & Players list (7 Cols) -->
-                    <div class="lg:col-span-7 space-y-6 flex flex-col">
-                        
-                        <!-- Block 3: Live Feed & Monitoring -->
-                        <section class="glass-panel p-6 rounded-2xl border border-noir-border flex-1 flex flex-col gap-4 min-h-[350px]">
-                            <h3 class="font-cinzel text-lg font-bold text-white border-b border-noir-border pb-3 flex items-center justify-between">
-                                <span class="flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-blood animate-pulse"></i> Console de Monitoring Live</span>
-                                <span class="text-3xs bg-noir-border text-slate-400 px-2 py-0.5 rounded uppercase tracking-wider">Mises à jour en direct</span>
-                            </h3>
-                            
-                            <div id="monitoringConsole" class="flex-1 bg-noir-input rounded-xl border border-noir-border p-4 font-mono text-xs overflow-y-auto space-y-2 h-64 text-emerald-500">
-                                <div class="text-slate-500">>> En attente du démarrage de la session...</div>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <!-- Left: Status Summaries (5 Cols) -->
+                        <div class="lg:col-span-5 space-y-6">
+                            <!-- Scenario Card -->
+                            <div id="scenarioResultBox" class="glass-panel p-6 rounded-2xl border border-noir-border space-y-4">
+                                <div class="flex justify-between items-center border-b border-noir-border/30 pb-2.5">
+                                    <span class="text-xs text-gold uppercase tracking-wider font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-scroll"></i> Scénario Généré</span>
+                                    <span class="text-3xs bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded font-bold">Vérifié</span>
+                                </div>
+                                <h4 id="activeScenarioTitle" class="font-cinzel text-base font-bold text-white">Speakeasy</h4>
+                                <p id="activeScenarioPitch" class="text-xs text-slate-400 leading-relaxed">Pitch...</p>
+                                <div class="grid grid-cols-2 gap-4 text-2xs pt-2 border-t border-noir-border/30 text-slate-400">
+                                    <div><i class="fa-solid fa-skull-crossbones mr-1 text-blood"></i> Meurtre : <span id="activeScenarioCrimeRoom" class="text-slate-200">Salon</span></div>
+                                    <div><i class="fa-solid fa-receipt mr-1 text-gold"></i> Indices : <span id="activeScenarioCluesCount" class="text-slate-200 font-bold">24</span></div>
+                                </div>
                             </div>
-                        </section>
 
-                        <!-- Block 4: Characters Config Summary -->
-                        <section class="glass-panel p-6 rounded-2xl border border-noir-border flex-1 flex flex-col gap-4">
-                            <h3 class="font-cinzel text-lg font-bold text-white border-b border-noir-border pb-3 flex items-center gap-2">
-                                <i class="fa-solid fa-users-viewfinder text-gold"></i> Rôles attribués de la Session
-                            </h3>
-                            
-                            <div class="overflow-x-auto flex-1 max-h-80">
-                                <table class="w-full text-left text-xs border-collapse">
-                                    <thead>
-                                        <tr class="border-b border-noir-border text-slate-400 uppercase tracking-wider">
-                                            <th class="py-2.5 font-bold">Personnage</th>
-                                            <th class="py-2.5 font-bold">Email</th>
-                                            <th class="py-2.5 font-bold">Statut secret</th>
-                                            <th class="py-2.5 font-bold text-right">Points</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="orgPlayersTableBody" class="divide-y divide-noir-border/30">
-                                        <tr>
-                                            <td colspan="4" class="py-6 text-center text-slate-500">Aucune session active. Distribuez les invitations pour populer les rôles.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <!-- Session Card -->
+                            <div id="sessionStatsBox" class="glass-panel p-6 rounded-2xl border border-noir-border space-y-4">
+                                <h3 class="font-cinzel text-md font-bold text-white border-b border-noir-border/30 pb-2.5"><i class="fa-solid fa-chart-line text-gold"></i> Économie de la Partie</h3>
+                                <div class="grid grid-cols-2 gap-4 text-center">
+                                    <div class="p-3 bg-noir-panel rounded-xl border border-noir-border">
+                                        <div id="statTotalClues" class="text-xl font-black text-gold">24</div>
+                                        <div class="text-3xs text-slate-500 uppercase tracking-wider mt-1">Indices Totaux</div>
+                                    </div>
+                                    <div class="p-3 bg-noir-panel rounded-xl border border-noir-border">
+                                        <div id="statPointsPerPlayer" class="text-xl font-black text-blood">1</div>
+                                        <div class="text-3xs text-slate-500 uppercase tracking-wider mt-1">P.A. Initial / Joueur</div>
+                                    </div>
+                                </div>
                             </div>
-                        </section>
+                        </div>
+
+                        <!-- Right: Players and Monitoring Logs (7 Cols) -->
+                        <div class="lg:col-span-7 space-y-6 flex flex-col">
+                            <!-- Players list table -->
+                            <div class="glass-panel p-6 rounded-2xl border border-noir-border space-y-4">
+                                <h3 class="font-cinzel text-md font-bold text-white border-b border-noir-border/30 pb-2.5 flex items-center gap-2">
+                                    <i class="fa-solid fa-users text-gold"></i> Rôles attribués de la Session
+                                </h3>
+                                <div class="overflow-x-auto max-h-80">
+                                    <table class="w-full text-left text-xs border-collapse">
+                                        <thead>
+                                            <tr class="border-b border-noir-border/50 text-slate-400 uppercase tracking-wider font-bold">
+                                                <th class="py-2.5">Personnage</th>
+                                                <th class="py-2.5">Email</th>
+                                                <th class="py-2.5">Statut secret</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="orgPlayersTableBody" class="divide-y divide-noir-border/30">
+                                            <!-- List dynamically populated -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>

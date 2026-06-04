@@ -182,104 +182,101 @@ function getActivePlayer() {
    ORGANIZER DASHBOARD RENDERING
    ========================================================================== */
 function renderOrganizerDashboard() {
-    // 1. Scenario Info Box
-    const resultBox = document.getElementById('scenarioResultBox');
-    const sendInvitationsBtn = document.getElementById('sendInvitationsBtn');
-    
-    if (appState.scenario) {
-        resultBox.classList.remove('hidden');
-        document.getElementById('activeScenarioTitle').textContent = appState.scenario.title;
-        document.getElementById('activeScenarioPitch').textContent = appState.scenario.pitch;
-        document.getElementById('activeScenarioCrimeRoom').textContent = appState.scenario.crimeRoom;
-        document.getElementById('activeScenarioCluesCount').textContent = appState.scenario.cluesCount;
-        sendInvitationsBtn.removeAttribute('disabled');
-    } else {
-        resultBox.classList.add('hidden');
-        sendInvitationsBtn.setAttribute('disabled', 'true');
-    }
+    const creationPanel = document.getElementById('sessionCreationPanel');
+    const activePanel = document.getElementById('sessionActivePanel');
 
-    // 2. Session Info & Economy Stats Card
-    const statsBox = document.getElementById('sessionStatsBox');
+    // 1. Toggle panels based on active session status
     if (appState.session && appState.session.status !== 'Configuration') {
-        statsBox.classList.remove('hidden');
+        if (creationPanel) creationPanel.classList.add('hidden');
+        if (activePanel) activePanel.classList.remove('hidden');
+
+        // Render Active Scenario
+        if (appState.scenario) {
+            document.getElementById('activeScenarioTitle').textContent = appState.scenario.title;
+            document.getElementById('activeScenarioPitch').textContent = appState.scenario.pitch;
+            document.getElementById('activeScenarioCrimeRoom').textContent = appState.scenario.crimeRoom;
+            document.getElementById('activeScenarioCluesCount').textContent = appState.scenario.cluesCount;
+        }
+
+        // Render Session Economy Stats
         document.getElementById('statTotalClues').textContent = appState.session.totalClues;
         document.getElementById('statPointsPerPlayer').textContent = appState.session.pointsPerPlayer;
-        
-        // Populate inputs with existing values
-        document.getElementById('sessionName').value = appState.session.name;
-        document.getElementById('sessionLocation').value = appState.session.location;
-    } else {
-        statsBox.classList.add('hidden');
-    }
 
-    // Populate default 16 emails if empty
-    const emailArea = document.getElementById('sessionEmails');
-    if (!emailArea.value.trim()) {
-        const dummyEmails = Array.from({length: 16}, (_, i) => `invite${i+1}@email.com`).join('\n');
-        emailArea.value = dummyEmails;
-    }
+        // Render Players list
+        const tbody = document.getElementById('orgPlayersTableBody');
+        if (tbody) {
+            tbody.innerHTML = '';
 
-    // 3. Render Players list
-    const tbody = document.getElementById('orgPlayersTableBody');
-    tbody.innerHTML = '';
-    
-    if (appState.players.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="py-6 text-center text-slate-500">Aucune session active. Distribuez les invitations pour populer les rôles.</td>
-            </tr>
-        `;
-    } else {
-        appState.players.forEach(p => {
-            let roleBadgeClass = "bg-slate-900 border border-slate-700 text-slate-400";
-            if (p.roleType === "Coupable") roleBadgeClass = "bg-red-950 border border-red-800 text-red-400 font-extrabold";
-            if (p.roleType === "Faux-Coupable") roleBadgeClass = "bg-amber-950 border border-amber-800 text-amber-400";
-            
-            const tr = document.createElement('tr');
-            tr.className = "border-b border-noir-border/30 hover:bg-noir-card/50 transition-colors";
-            tr.innerHTML = `
-                <td class="py-3 font-semibold text-slate-200">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full ${p.avatarUrl ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : 'bg-yellow-500'}" title="${p.avatarUrl ? 'Profil généré' : 'En attente d\'onboarding'}"></span>
-                        ${p.roleName}
-                    </div>
-                </td>
-                <td class="py-3 font-mono text-2xs text-slate-400">${p.email}</td>
-                <td class="py-3">
-                    <span class="px-2 py-0.5 text-3xs uppercase tracking-wider rounded font-semibold ${roleBadgeClass}">${p.roleType}</span>
-                </td>
-                <td class="py-3 text-right font-bold text-blood">${p.actionPoints} PA</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
+            if (appState.players.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-6 text-center text-slate-500">Aucun joueur dans la session.</td>
+                    </tr>
+                `;
+            } else {
+                appState.players.forEach(p => {
+                    let roleBadgeClass = "bg-slate-900 border border-slate-700 text-slate-400";
+                    if (p.roleType === "Coupable") roleBadgeClass = "bg-red-950 border border-red-800 text-red-400 font-extrabold";
+                    if (p.roleType === "Faux-Coupable") roleBadgeClass = "bg-amber-950 border border-amber-800 text-amber-400";
 
-    // 4. Render Live Console Logs
-    const consoleDiv = document.getElementById('monitoringConsole');
-    consoleDiv.innerHTML = '';
-    
-    if (appState.logs.length === 0) {
-        consoleDiv.innerHTML = '<div class="text-slate-500">>> En attente du démarrage de la session...</div>';
-    } else {
-        appState.logs.forEach(log => {
-            const div = document.createElement('div');
-            
-            // Format log colors based on content keywords
-            if (log.includes("Génération") || log.includes("créée")) {
-                div.className = "log-info";
-            } else if (log.includes("Succès") || log.includes("accompli") || log.includes("débloqué")) {
-                div.className = "log-success";
-            } else if (log.includes("fouillé")) {
-                div.className = "log-warning";
-            } else if (log.includes("bloquée") || log.includes("0 PA")) {
-                div.className = "log-danger";
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-noir-border/30 hover:bg-noir-card/50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="py-3 font-semibold text-slate-200">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full ${p.avatarUrl ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : 'bg-yellow-500'}" title="${p.avatarUrl ? 'Profil généré' : 'En attente d\'onboarding'}"></span>
+                                ${p.roleName}
+                            </div>
+                        </td>
+                        <td class="py-3 font-mono text-2xs text-slate-400">${p.email}</td>
+                        <td class="py-3">
+                            <span class="px-2 py-0.5 text-3xs uppercase tracking-wider rounded font-semibold ${roleBadgeClass}">${p.roleType}</span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             }
-            
-            div.textContent = log;
-            consoleDiv.appendChild(div);
-        });
-        // Auto scroll to bottom
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+    } else {
+        if (creationPanel) creationPanel.classList.remove('hidden');
+        if (activePanel) activePanel.classList.add('hidden');
+
+        // Populate default 16 emails if empty
+        const emailArea = document.getElementById('sessionEmails');
+        if (emailArea && !emailArea.value.trim()) {
+            const dummyEmails = Array.from({length: 16}, (_, i) => `invite${i+1}@email.com`).join('\n');
+            emailArea.value = dummyEmails;
+        }
+    }
+
+    // 2. Render Live Console Logs
+    const consoleDiv = document.getElementById('monitoringConsole');
+    if (consoleDiv) {
+        consoleDiv.innerHTML = '';
+        if (appState.logs.length === 0) {
+            consoleDiv.innerHTML = '<div class="text-slate-500">>> En attente de configuration de la session...</div>';
+        } else {
+            appState.logs.forEach(log => {
+                const div = document.createElement('div');
+                div.className = "border-b border-noir-border/10 py-1 last:border-0 text-slate-300";
+                
+                // Colorize logs based on content
+                if (log.includes("Succès") || log.includes("terminée") || log.includes("configurée")) {
+                    div.className = "border-b border-noir-border/10 py-1 last:border-0 text-emerald-400 font-semibold";
+                } else if (log.includes("Agent") || log.includes("Démarrage")) {
+                    div.className = "border-b border-noir-border/10 py-1 last:border-0 text-gold font-bold";
+                } else if (log.includes("Erreur")) {
+                    div.className = "border-b border-noir-border/10 py-1 last:border-0 text-blood font-bold";
+                } else if (log.includes("En attente") || log.includes(">>")) {
+                    div.className = "border-b border-noir-border/10 py-1 last:border-0 text-slate-500";
+                }
+                
+                div.textContent = log;
+                consoleDiv.appendChild(div);
+            });
+            // Auto scroll console
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
     }
 }
 
@@ -479,118 +476,177 @@ function addLiveLog(message) {
 }
 
 // 1. Webhook: POST /webhook/generate-scenario
-async function handleGenerateScenario(e) {
-    e.preventDefault();
-    
-    const theme = document.getElementById('scenarioTheme').value.trim();
-    const userPitch = document.getElementById('scenarioPitch').value.trim();
-    const epoch = document.getElementById('scenarioEpoch').value;
-    const submitBtn = document.getElementById('generateScenarioBtn');
-    
-    submitBtn.setAttribute('disabled', 'true');
-    submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Génération par n8n en cours...`;
-    
-    addLiveLog(`Génération du scénario (Thème: "${theme}", Époque: "${epoch}") via Webhook n8n...`);
-    
-    try {
-        let title, crimeRoom, cluesCount, pitch, scenarioId;
+function handleToggleScenarioMode(mode) {
+    const createFields = document.getElementById('createScenarioFormFields');
+    const selectFields = document.getElementById('selectScenarioFormFields');
+    const toggleCreateBtn = document.getElementById('toggleCreateScenarioBtn');
+    const toggleSelectBtn = document.getElementById('toggleSelectScenarioBtn');
+    const modeInput = document.getElementById('scenarioMode');
 
-        if (appState.n8nBaseUrl) {
-            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    theme: theme,
-                    pitch_global: userPitch,
-                    epoch: epoch,
-                    organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com'
-                })
-            });
-            if (!response.ok) throw new Error("Erreur de connexion au serveur n8n.");
-            const data = await response.json();
-            title = data.title;
-            crimeRoom = data.murder_room;
-            cluesCount = data.clues_count;
-            pitch = data.pitch || userPitch || "Enquête générée via IA.";
-            scenarioId = data.scenario_id;
-        } else {
-            await sleep(2000);
-            title = "Le Dernier Souffle du Speakeasy";
-            crimeRoom = "Le Bureau de l'arrière-boutique";
-            cluesCount = 24;
-            pitch = userPitch || "Un parrain de la mafia est retrouvé mort dans son club de jazz clandestin.";
-            scenarioId = "sc_" + Math.random().toString(36).substr(2, 9);
-        }
-        
-        appState.scenario = {
-            id: scenarioId,
-            title: title,
-            theme: theme,
-            pitch: pitch,
-            crimeRoom: crimeRoom,
-            cluesCount: cluesCount
-        };
-        
-        addLiveLog(`Succès Webhook: Scénario "${title}" vérifié et injecté dans Notion ! (${cluesCount} indices générés).`);
-        savePersistedState();
-        
-    } catch(err) {
-        console.error(err);
-        showToast("Erreur de génération", err.message || "Impossible de contacter n8n.", "error");
-    } finally {
-        submitBtn.removeAttribute('disabled');
-        submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la génération IA (n8n)`;
-        renderOrganizerDashboard();
+    if (modeInput) modeInput.value = mode;
+
+    if (mode === 'create') {
+        if (createFields) createFields.classList.remove('hidden');
+        if (selectFields) selectFields.classList.add('hidden');
+        if (toggleCreateBtn) toggleCreateBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-gold text-noir-deep transition-all";
+        if (toggleSelectBtn) toggleSelectBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+    } else {
+        if (createFields) createFields.classList.add('hidden');
+        if (selectFields) selectFields.classList.remove('hidden');
+        if (toggleCreateBtn) toggleCreateBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+        if (toggleSelectBtn) toggleSelectBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-gold text-noir-deep transition-all";
     }
 }
 
-// 2. Webhook: POST /webhook/send-invitations
-async function handleSendInvitations(e) {
+async function handleUnifiedSessionSubmit(e) {
     e.preventDefault();
     
     const name = document.getElementById('sessionName').value.trim();
     const location = document.getElementById('sessionLocation').value.trim();
     const emailsText = document.getElementById('sessionEmails').value.trim();
-    const submitBtn = document.getElementById('sendInvitationsBtn');
-    
+    const scenarioMode = document.getElementById('scenarioMode').value;
+    const submitBtn = document.getElementById('unifiedSubmitBtn');
+
     const emails = emailsText.split('\n').map(email => email.trim()).filter(email => email.length > 0);
     
     if (emails.length !== 16) {
-        alert(`Il faut exactement 16 adresses e-mail de joueurs invités (Actuellement: ${emails.length}).`);
+        showToast("Erreur de joueurs", `Il faut exactement 16 adresses e-mail de joueurs invités (Actuellement: ${emails.length}).`, "error");
         return;
     }
-    
-    submitBtn.setAttribute('disabled', 'true');
-    submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Distribution n8n & Notion...`;
-    
-    addLiveLog(`Envoi des invitations et génération des rôles via Webhook n8n...`);
-    
-    try {
-        let totalClues = appState.scenario ? appState.scenario.cluesCount : 24;
-        let pointsPerPlayer = Math.round((totalClues / 16) / 1.5) || 1;
-        let sessionId = "sess_" + Math.random().toString(36).substr(2, 9);
 
+    submitBtn.setAttribute('disabled', 'true');
+    submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-sm"></i> Orchestration IA en cours...`;
+    
+    appState.logs = []; // Clear old logs
+    addLiveLog(`[Démarrage] Initialisation de la session "${name}"...`);
+    renderOrganizerDashboard();
+
+    try {
+        let scenarioId = "";
+        let totalClues = 24;
+        let pointsPerPlayer = 1;
+
+        if (scenarioMode === 'create') {
+            const theme = document.getElementById('scenarioTheme').value.trim();
+            const userPitch = document.getElementById('scenarioPitch').value.trim();
+            const epoch = document.getElementById('scenarioEpoch').value;
+
+            if (!theme) {
+                throw new Error("Veuillez renseigner un thème pour la génération de scénario.");
+            }
+
+            addLiveLog(`[Agent 1: Scénariste] Génération de l'intrigue (Thème: "${theme}", Époque: "${epoch}")...`);
+            renderOrganizerDashboard();
+            
+            let dataScenario = null;
+            if (appState.n8nBaseUrl) {
+                // Call real n8n agent orchestration
+                const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        theme: theme,
+                        pitch_global: userPitch,
+                        epoch: epoch,
+                        organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com'
+                    })
+                });
+                if (!response.ok) throw new Error("Erreur de communication avec l'Agent Scénariste.");
+                dataScenario = await response.json();
+            } else {
+                // Local simulation fallback
+                await sleep(2000);
+                dataScenario = {
+                    success: true,
+                    scenario_id: "sc_" + Math.random().toString(36).substr(2, 9),
+                    title: "Le Dernier Souffle du Speakeasy",
+                    murder_room: "Le Bureau de l'arrière-boutique",
+                    clues_count: 24,
+                    pitch: userPitch || "Un meurtre mystérieux a eu lieu."
+                };
+            }
+
+            appState.scenario = {
+                id: dataScenario.scenario_id,
+                title: dataScenario.title,
+                theme: theme,
+                pitch: dataScenario.pitch,
+                crimeRoom: dataScenario.murder_room,
+                cluesCount: dataScenario.clues_count || 24
+            };
+
+            scenarioId = dataScenario.scenario_id;
+            totalClues = dataScenario.clues_count || 24;
+
+            addLiveLog(`[Agent 2: Légiste] Scène du crime et indices d'opportunité conçus.`);
+            renderOrganizerDashboard();
+            await sleep(500);
+            
+            addLiveLog(`[Agent 3: Profiler] 16 biographies de personnages et indices personnels créés.`);
+            renderOrganizerDashboard();
+            await sleep(500);
+
+            addLiveLog(`[Agent 4: Chronologue] Fil d'Ariane des missions secrètes généré.`);
+            renderOrganizerDashboard();
+            await sleep(500);
+
+            addLiveLog(`[Agent 5: Photographe] 3 portraits témoins IA générés (H/F/NB).`);
+            renderOrganizerDashboard();
+            await sleep(500);
+
+            addLiveLog(`[Agent 5: Vision] Analyse et transcription des descriptions de style sauvegardées.`);
+            renderOrganizerDashboard();
+            await sleep(500);
+
+            addLiveLog(`Succès : Scénario "${appState.scenario.title}" créé et injecté dans Notion !`);
+            renderOrganizerDashboard();
+
+        } else {
+            // Select scenario mode
+            const existingSelect = document.getElementById('existingScenarioSelect');
+            scenarioId = existingSelect.value;
+            const scenarioTitle = existingSelect.options[existingSelect.selectedIndex].text;
+
+            appState.scenario = {
+                id: scenarioId,
+                title: scenarioTitle.split(' (')[0],
+                theme: "Chargé",
+                pitch: "Scénario pré-existant chargé depuis Notion.",
+                crimeRoom: "Le Bureau",
+                cluesCount: 24
+            };
+
+            addLiveLog(`Scénario sélectionné : "${appState.scenario.title}".`);
+            renderOrganizerDashboard();
+        }
+
+        // Calculate economy
+        pointsPerPlayer = Math.round((totalClues / 16) / 1.5) || 1;
+
+        addLiveLog(`[Orchestrateur] Lancement des invitations et distribution des rôles...`);
+        renderOrganizerDashboard();
+
+        let sessionId = "sess_" + Math.random().toString(36).substr(2, 9);
         if (appState.n8nBaseUrl) {
             const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-send-invitations`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    scenario_id: appState.scenario ? appState.scenario.id : 'sc_default',
+                    scenario_id: scenarioId,
                     session_name: name,
                     date: new Date().toISOString(),
                     location: location,
                     emails: emails
                 })
             });
-            if (!response.ok) throw new Error("Erreur lors de l'envoi des invitations.");
-            const data = await response.json();
-            totalClues = data.total_clues || totalClues;
-            pointsPerPlayer = data.points_per_player || pointsPerPlayer;
-            sessionId = data.session_id || sessionId;
+            if (!response.ok) throw new Error("Erreur de communication lors de l'envoi des invitations.");
+            const dataInv = await response.json();
+            sessionId = dataInv.session_id || sessionId;
+            pointsPerPlayer = dataInv.points_per_player || pointsPerPlayer;
         } else {
-            await sleep(2500);
+            await sleep(1500);
         }
-        
+
         appState.session = {
             id: sessionId,
             name: name,
@@ -600,6 +656,7 @@ async function handleSendInvitations(e) {
             status: "Invitations Envoyées"
         };
 
+        // Distribute local state for roles
         const shuffledEmails = [...emails];
         shuffleArray(shuffledEmails);
         
@@ -650,18 +707,48 @@ async function handleSendInvitations(e) {
                 });
             });
         });
-        
-        addLiveLog(`Succès Webhook: Rôles attribués dans Notion. Économie de points initialisée (${pointsPerPlayer} PA par joueur).`);
+
+        addLiveLog(`Succès final : Session de jeu configurée et lancée !`);
         savePersistedState();
-        showToast("Invitations envoyées !", "Les rôles et budgets de points ont été initialisés dans Notion.", "success");
+        showToast("Session Créée !", "Les invitations ont été envoyées et l'intrigue est prête.", "success");
 
     } catch(err) {
         console.error(err);
-        showToast("Erreur d'invitation", err.message || "Impossible de contacter n8n.", "error");
+        addLiveLog(`Erreur : ${err.message}`);
+        showToast("Erreur d'orchestration", err.message || "Une erreur est survenue.", "error");
     } finally {
         submitBtn.removeAttribute('disabled');
-        submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Distribuer les rôles & inviter (n8n)`;
+        submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la Session & Orchestrer les Agents IA`;
         renderOrganizerDashboard();
+    }
+}
+
+function handleResetSession() {
+    if (confirm("Voulez-vous vraiment réinitialiser la session en cours ? Toutes les données locales seront effacées.")) {
+        appState.session = null;
+        appState.scenario = null;
+        appState.players = [];
+        appState.clues = [];
+        appState.logs = [];
+        savePersistedState();
+        
+        // Reset inputs in creation form
+        document.getElementById('sessionName').value = '';
+        document.getElementById('sessionLocation').value = '';
+        const emailArea = document.getElementById('sessionEmails');
+        if (emailArea) {
+            const dummyEmails = Array.from({length: 16}, (_, i) => `invite${i+1}@email.com`).join('\n');
+            emailArea.value = dummyEmails;
+        }
+        
+        // Reset console log
+        const consoleEl = document.getElementById('monitoringConsole');
+        if (consoleEl) {
+            consoleEl.innerHTML = '<div class="text-slate-500">>> En attente de configuration de la session...</div>';
+        }
+        
+        renderOrganizerDashboard();
+        showToast("Session réinitialisée", "Vous pouvez maintenant créer une nouvelle session.", "info");
     }
 }
 
@@ -1099,9 +1186,18 @@ function init() {
     document.getElementById('backToEmailBtn').addEventListener('click', handleBackToEmail);
     document.getElementById('logoutBtn').addEventListener('click', logout);
     
-    // Organizer Forms
-    document.getElementById('generateScenarioForm').addEventListener('submit', handleGenerateScenario);
-    document.getElementById('sessionForm').addEventListener('submit', handleSendInvitations);
+    // Organizer Forms (Unified Panel)
+    const unifiedForm = document.getElementById('unifiedSessionForm');
+    if (unifiedForm) unifiedForm.addEventListener('submit', handleUnifiedSessionSubmit);
+
+    const toggleCreateBtn = document.getElementById('toggleCreateScenarioBtn');
+    if (toggleCreateBtn) toggleCreateBtn.addEventListener('click', () => handleToggleScenarioMode('create'));
+
+    const toggleSelectBtn = document.getElementById('toggleSelectScenarioBtn');
+    if (toggleSelectBtn) toggleSelectBtn.addEventListener('click', () => handleToggleScenarioMode('select'));
+
+    const resetBtn = document.getElementById('resetSessionBtn');
+    if (resetBtn) resetBtn.addEventListener('click', handleResetSession);
     
     // Onboarding Form
     document.getElementById('onboardingForm').addEventListener('submit', handlePlayerOnboarding);
