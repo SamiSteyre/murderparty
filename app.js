@@ -68,7 +68,10 @@ let appState = {
     session: null,     // { id, name, location, totalClues, pointsPerPlayer, status }
     players: [],       // Array of 16 players
     clues: [],         // Global clues state
-    logs: []           // Live feed logs
+    logs: [],          // Live feed logs
+    loginStep: 'email',// 'email' | 'otp'
+    pendingEmail: '',  // email input in progress
+    mockOtp: ''        // generated OTP code for mock testing
 };
 
 // Load State from LocalStorage
@@ -103,6 +106,21 @@ function routeApp() {
         // Show Login Screen
         loginScreen.classList.remove('hidden');
         appShell.classList.add('hidden');
+
+        // Manage OTP step vs Email step
+        const loginEmailStep = document.getElementById('loginEmailStep');
+        const loginOtpStep = document.getElementById('loginOtpStep');
+        if (appState.loginStep === 'otp') {
+            loginEmailStep.classList.add('hidden');
+            loginOtpStep.classList.remove('hidden');
+            document.getElementById('sentOtpEmailDisplay').textContent = appState.pendingEmail;
+            document.getElementById('loginOtp').setAttribute('required', 'true');
+            document.getElementById('loginOtp').focus();
+        } else {
+            loginEmailStep.classList.remove('hidden');
+            loginOtpStep.classList.add('hidden');
+            document.getElementById('loginOtp').removeAttribute('required');
+        }
         return;
     }
 
@@ -745,41 +763,157 @@ async function handleRoomSearch() {
 /* ==========================================================================
    AUTHENTICATION LOGIC
    ========================================================================== */
-function handleLogin(e) {
+async function handleRequestOtp(e) {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     
     if (!email) return;
 
-    if (email === 'organisateur@email.com') {
-        appState.currentUser = { email: email, role: 'organizer' };
-    } else {
-        // Must check if a session is created and if player exists
-        if (!appState.session || appState.players.length === 0) {
-            alert("Aucune session n'est active. Demandez à l'organisateur de lancer la partie.");
-            return;
-        }
+    const requestBtn = document.getElementById('requestOtpBtn');
+    requestBtn.setAttribute('disabled', 'true');
+    requestBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Envoi en cours...`;
+
+    addLiveLog(`Demande de code OTP pour l'adresse : ${email}...`);
+
+    try {
+        const webhookUrl = localStorage.getItem('mp_requestOtpWebhook') || '';
         
-        const exists = appState.players.find(p => p.email === email);
-        if (!exists) {
-            alert(`L'adresse e-mail "${email}" n'est pas sur la liste des invités de cette session.`);
-            return;
+        if (webhookUrl) {
+            const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || "Erreur lors de la requete de l'OTP.");
+            }
+        } else {
+            // Local simulation
+            await sleep(1500); // Simulate network latency
+
+            const isOrga = email === 'organisateur@email.com';
+            const isGuest = appState.players.some(p => p.email === email);
+
+            if (!isOrga && (!appState.session || appState.players.length === 0)) {
+                throw new Error("Aucune session n'est active. Demandez à l'organisateur d'initialiser la partie.");
+            }
+
+            if (!isOrga && !isGuest) {
+                throw new Error("Cette adresse e-mail n'est pas répertoriée pour cette session.");
+            }
+            
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            appState.mockOtp = otpCode;
         }
 
-        appState.currentUser = { email: email, role: 'player' };
-    }
+        appState.pendingEmail = email;
+        appState.loginStep = 'otp';
+        savePersistedState();
+        routeApp();
 
+        if (!webhookUrl) {
+            showToast("Code de test généré !", `Le code envoyé par mail est : ${appState.mockOtp}`, "warning");
+            addLiveLog(`[Simulation Auth] Code OTP généré pour ${email} : ${appState.mockOtp}`);
+        } else {
+            showToast("Code envoyé !", "Veuillez vérifier votre boîte de réception.", "success");
+        }
+
+    } catch(err) {
+        console.error(err);
+        showToast("Erreur de connexion", err.message || "Impossible d'envoyer le code.", "error");
+    } finally {
+        requestBtn.removeAttribute('disabled');
+        requestBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Obtenir un code de connexion`;
+    }
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const otp = document.getElementById('loginOtp').value.trim();
+    const email = appState.pendingEmail;
+
+    if (!email || !otp) return;
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.setAttribute('disabled', 'true');
+    submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Vérification...`;
+
+    try {
+        const verifyWebhookUrl = localStorage.getItem('mp_verifyOtpWebhook') || '';
+        let role = '';
+
+        if (verifyWebhookUrl) {
+            const response = await fetch(verifyWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, otp: otp })
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || "Code OTP invalide.");
+            }
+            const data = await response.json();
+            role = data.role;
+            if (data.playerDetails) {
+                const playerIndex = appState.players.findIndex(p => p.email === email);
+                if (playerIndex !== -1) {
+                    appState.players[playerIndex].roleName = data.playerDetails.roleName || appState.players[playerIndex].roleName;
+                    appState.players[playerIndex].avatarUrl = data.playerDetails.avatarUrl || appState.players[playerIndex].avatarUrl;
+                    appState.players[playerIndex].actionPoints = data.playerDetails.actionPoints ?? appState.players[playerIndex].actionPoints;
+                }
+            }
+        } else {
+            await sleep(1000);
+            
+            if (otp !== appState.mockOtp && otp !== "123456") {
+                throw new Error("Le code de connexion est incorrect ou expiré.");
+            }
+            
+            role = email === 'organisateur@email.com' ? 'organizer' : 'player';
+        }
+
+        appState.currentUser = { email: email, role: role };
+        appState.loginStep = 'email';
+        appState.pendingEmail = '';
+        appState.mockOtp = '';
+        savePersistedState();
+        
+        document.getElementById('loginEmail').value = '';
+        document.getElementById('loginOtp').value = '';
+
+        routeApp();
+        showToast("Connexion réussie", `Bienvenue sur votre espace.`, "success");
+        addLiveLog(`${email} connecté avec succès via OTP.`);
+
+    } catch(err) {
+        console.error(err);
+        showToast("Code invalide", err.message || "Erreur de validation.", "error");
+        document.getElementById('loginOtp').value = '';
+        document.getElementById('loginOtp').focus();
+    } finally {
+        submitBtn.removeAttribute('disabled');
+        submitBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> Valider et se connecter`;
+    }
+}
+
+function handleBackToEmail() {
+    appState.loginStep = 'email';
+    appState.pendingEmail = '';
+    appState.mockOtp = '';
     savePersistedState();
     routeApp();
-    showToast("Connexion réussie", `Bienvenue sur votre espace.`, "success");
 }
 
 function logout() {
     appState.currentUser = null;
+    appState.loginStep = 'email';
+    appState.pendingEmail = '';
+    appState.mockOtp = '';
     savePersistedState();
     
-    // Reset forms
     document.getElementById('loginEmail').value = '';
+    document.getElementById('loginOtp').value = '';
     
     routeApp();
 }
@@ -841,6 +975,8 @@ function init() {
 
     // Event Listeners
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
+    document.getElementById('requestOtpBtn').addEventListener('click', handleRequestOtp);
+    document.getElementById('backToEmailBtn').addEventListener('click', handleBackToEmail);
     document.getElementById('logoutBtn').addEventListener('click', logout);
     
     // Organizer Forms

@@ -199,3 +199,62 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
   "points_remaining": 0
 }
 ```
+
+---
+
+### 🌐 Webhook 6 : Demande de Code OTP (Connexion)
+* **Endpoint :** `POST /webhook/request-otp`
+* **Payload Envoyé par l'Utilisateur :**
+```json
+{
+  "email": "invite1@email.com"
+}
+```
+* **Payload de Réponse Attendu (n8n) :**
+*n8n doit vérifier si cet e-mail est l'adresse organisateur ou est présent dans la table Notion `[MP] Personnages`. Si oui, il génère un code à 6 chiffres, l'envoie au joueur par e-mail, et enregistre temporairement ce code pour vérification.*
+```json
+{
+  "success": true,
+  "message": "Un code de connexion a été envoyé à votre adresse e-mail."
+}
+```
+* **En cas d'e-mail non répertorié :**
+```json
+{
+  "success": false,
+  "error": "Cette adresse e-mail n'est pas répertoriée pour cette session."
+}
+```
+
+---
+
+### 🌐 Webhook 7 : Vérification du Code OTP
+* **Endpoint :** `POST /webhook/verify-otp`
+* **Payload Envoyé par l'Utilisateur :**
+```json
+{
+  "email": "invite1@email.com",
+  "otp": "123456"
+}
+```
+* **Payload de Réponse Attendu (n8n) :**
+*n8n valide le code. S'il est correct, il renvoie le rôle (organizer ou player) et l'état d'onboarding.*
+```json
+{
+  "success": true,
+  "role": "player", // "organizer" | "player"
+  "onboarded": true, // true si l'avatar est déjà généré
+  "playerDetails": {
+    "roleName": "Mlle Rose",
+    "avatarUrl": "https://storage.googleapis.com/...",
+    "actionPoints": 2
+  }
+}
+```
+* **En cas de code erroné :**
+```json
+{
+  "success": false,
+  "error": "Code incorrect ou expiré."
+}
+```
