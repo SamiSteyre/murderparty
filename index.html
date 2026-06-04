@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Murder Party - Tableau d'Enquête</title>
+    <!-- Google Fonts: Cinzel (headers) and Inter (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <i class="fa-solid fa-magnifying-glass-retro logo-icon"></i>
+                <h1 class="game-title">MURDER<span>PARTY</span></h1>
+            </div>
+            <div class="header-actions">
+                <div class="player-info-badge">
+                    <i class="fa-solid fa-user-secret"></i>
+                    <span id="headerPlayerName">Détective</span>
+                </div>
+                <button id="openSettingsBtn" class="btn btn-icon" title="Configuration">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Panel: Investigation & Clues -->
+            <section class="panel clue-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-clipboard-list header-icon"></i> Carnet d'Indices</h2>
+                </div>
+                <div class="panel-body">
+                    <!-- Code Submission Box -->
+                    <div class="clue-submission-box">
+                        <label for="clueCodeInput">Entrer un code d'indice</label>
+                        <form id="clueForm" class="input-group">
+                            <input type="text" id="clueCodeInput" placeholder="Ex: ROUGE2026" autocomplete="off" required>
+                            <button type="submit" class="btn btn-accent">
+                                <i class="fa-solid fa-unlock-keyhole"></i> Analyser
+                            </button>
+                        </form>
+                        <div id="clueSubmitFeedback" class="feedback-message"></div>
+                    </div>
+
+                    <!-- Clues List -->
+                    <div class="clues-container">
+                        <h3>Indices Découverts</h3>
+                        <div id="cluesList" class="clues-list">
+                            <!-- Empty State -->
+                            <div class="empty-state">
+                                <i class="fa-solid fa-receipt empty-icon"></i>
+                                <p>Aucun indice n'a encore été analysé.</p>
+                                <p class="sub-text">Parcourez le lieu de l'enquête pour trouver des codes d'indices.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Interrogation Room -->
+            <section class="panel interrogation-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-comments header-icon"></i> Salle d'Interrogatoire</h2>
+                </div>
+                <div class="interrogation-container">
+                    
+                    <!-- Suspect Selector Sidebar -->
+                    <div class="suspects-sidebar">
+                        <div class="sidebar-title">Suspects</div>
+                        <div class="suspects-list" id="suspectsList">
+                            <!-- Suspects will be populated by JS -->
+                            <div class="suspect-item active" data-suspect="Mlle Rose">
+                                <div class="avatar bg-rose">MR</div>
+                                <div class="suspect-details">
+                                    <div class="suspect-name">Mlle Rose</div>
+                                    <div class="suspect-status">Disponible</div>
+                                </div>
+                            </div>
+                            <div class="suspect-item" data-suspect="Colonel Moutarde">
+                                <div class="avatar bg-mustard">CM</div>
+                                <div class="suspect-details">
+                                    <div class="suspect-name">Col. Moutarde</div>
+                                    <div class="suspect-status">Disponible</div>
+                                </div>
+                            </div>
+                            <div class="suspect-item" data-suspect="Madame Pervenche">
+                                <div class="avatar bg-periwinkle">MP</div>
+                                <div class="suspect-details">
+                                    <div class="suspect-name">Mme Pervenche</div>
+                                    <div class="suspect-status">Disponible</div>
+                                </div>
+                            </div>
+                            <div class="suspect-item" data-suspect="Professeur Violet">
+                                <div class="avatar bg-violet">PV</div>
+                                <div class="suspect-details">
+                                    <div class="suspect-name">Prof. Violet</div>
+                                    <div class="suspect-status">Disponible</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interrogation Chat Area -->
+                    <div class="chat-area">
+                        <!-- Chat Suspect Header -->
+                        <div class="chat-header">
+                            <div class="active-suspect-info">
+                                <div id="activeSuspectAvatar" class="avatar bg-rose">MR</div>
+                                <div>
+                                    <h3 id="activeSuspectName">Mlle Rose</h3>
+                                    <p class="suspect-role">Rôle : Invitée Mystère</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Messages List -->
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="message system-message">
+                                Vous commencez l'interrogatoire de Mlle Rose. Soyez perspicace.
+                            </div>
+                            <div class="message incoming">
+                                <div class="message-content">
+                                    Bonjour Détective. Que voulez-vous savoir ? Je n'ai absolument rien à me reprocher...
+                                </div>
+                                <div class="message-time">10:00</div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input -->
+                        <form id="chatForm" class="chat-input-container">
+                            <input type="text" id="chatMessageInput" placeholder="Posez une question au suspect..." autocomplete="off" required>
+                            <button type="submit" class="btn btn-round" id="sendChatBtn">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-sliders"></i> Paramètres d'intégration</h2>
+                <button class="close-modal-btn" id="closeSettingsBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label for="settingsPlayerId">Nom du Détective / Joueur</label>
+                        <input type="text" id="settingsPlayerId" placeholder="Détective Adams" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="settingsChatWebhook">n8n Webhook URL : Chat (Interrogation)</label>
+                        <input type="url" id="settingsChatWebhook" placeholder="https://votre-n8n.com/webhook/chat" required>
+                        <small class="form-help">Webhook de type POST recevant { suspectId, message, playerId }</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="settingsClueWebhook">n8n Webhook URL : Analyse d'indices</label>
+                        <input type="url" id="settingsClueWebhook" placeholder="https://votre-n8n.com/webhook/inspect-code" required>
+                        <small class="form-help">Webhook de type POST recevant { code, playerId }</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelSettingsBtn">Annuler</button>
+                        <button type="submit" class="btn btn-accent">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
