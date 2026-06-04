@@ -1,82 +1,78 @@
-# 🕵️‍♂️ murderParty - Jeu d'Enquête Interactif
+# 🕵️‍♂️ murderParty - Plateforme d'Enquête Assistée par IA
 
-Bienvenue dans le projet **murderParty** ! Cette application est une interface moderne de tableau d'enquête (Investigation Board) connectée à **n8n** pour l'intelligence des suspects et **Notion** pour le stockage de l'état du jeu.
+Bienvenue dans le projet **murderParty** ! Cette application est une interface moderne de type Single Page Application (SPA) connectée à **n8n** pour l'orchestration des agents IA et **Notion** pour le stockage persistant de l'état du jeu.
 
-## 🛠️ Architecture du Projet
+---
+
+## 🛠️ Architecture de la Plateforme
 
 ```mermaid
 graph TD
-    A[Frontend: HTML/JS] <-->|API Webhooks| B(n8n: Agent & Workflows)
-    B <-->|API Integration| C[Notion: Base de données]
+    A[Frontend: HTML/JS/Tailwind] <-->|5 Webhooks POST| B(n8n Workflows & Agents IA)
+    B <-->|API Notion| C[(Notion: 4 Bases de données)]
 ```
 
 ---
 
 ## 💾 1. Configuration de Notion (Base de Données)
 
-Créez une page Notion contenant les bases de données suivantes :
+Pour vous éviter de créer les 4 tables et leurs relations à la main, un script d'initialisation automatique est fourni.
 
-### 📋 A. Table `Joueurs`
-Stocke l'état et l'avancement de chaque joueur.
-* **Nom** (Title) : Nom ou pseudonyme du joueur.
-* **Rôle** (Select) : Détective, Complice, Témoin, etc.
-* **Indices Trouvés** (Relation) : Lien vers la table `Indices`.
-* **Statut** (Status) : En cours, Suspendu, Résolu.
+### ⚙️ Création Automatique via Script PowerShell
+1. Créez une intégration Notion interne sur [developers.notion.com](https://developers.notion.com).
+2. Créez une page Notion dans votre espace de travail et connectez-la à votre intégration (*Bouton `...` en haut à droite > Ajouter des connexions > Sélectionner votre intégration*).
+3. Renseignez votre token Notion et l'ID de cette page dans le fichier `.env` à la racine du projet :
+   ```env
+   NOTION_TOKEN=secret_xxx...
+   NOTION_PARENT_PAGE_ID=votre_page_id_32_caracteres
+   ```
+4. Exécutez le script PowerShell dans votre terminal pour générer instantanément les 4 tables reliées :
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File setup_notion.ps1
+   ```
+5. Le script ajoutera automatiquement les IDs des bases de données créées à la fin de votre fichier `.env` :
+   - `NOTION_DB_SCENARIOS`
+   - `NOTION_DB_SESSIONS`
+   - `NOTION_DB_CHARACTERS`
+   - `NOTION_DB_CLUES`
 
-### 🔍 B. Table `Indices`
-Contient l'ensemble des indices découverts ou à découvrir.
-* **Nom** (Title) : Nom de l'indice (ex: "Lettre déchirée").
-* **Description** (Text) : Contenu ou détail de l'indice.
-* **Trouvé** (Checkbox) : Coche si l'indice a été découvert.
-* **Image URL** (URL) : Lien vers une image de l'indice.
-
-### 🎭 C. Table `Suspects`
-Définit les profils et secrets des suspects incarnés par les agents n8n.
-* **Nom** (Title) : Nom du suspect (ex: "Inspecteur Adams").
-* **Description** (Text) : Description physique ou rôle.
-* **Alibi** (Text) : Son alibi officiel.
-* **Secret** (Text) : Ce qu'il essaie de cacher (accessible uniquement à l'IA).
-* **Instructions IA** (Text) : Directives système pour formater le comportement de l'agent n8n.
+*Ces IDs vous serviront dans n8n pour lire et écrire dans Notion.*
 
 ---
 
-## 🤖 2. Configuration de n8n (Workflows & Agents)
+## 🤖 2. Les 5 Webhooks n8n Requis
 
-Votre workflow n8n doit exposer deux Webhooks principaux pour communiquer avec le frontend :
+Pour animer la partie, configurez vos workflows n8n pour écouter les endpoints suivants :
 
-### 💬 Webhook 1 : `/chat` (POST)
-Permet de discuter avec un suspect IA.
-* **Entrées attendues :**
-  ```json
-  {
-    "suspectId": "Nom du Suspect",
-    "message": "Votre question ici...",
-    "playerId": "ID du Joueur"
-  }
-  ```
-* **Logique n8n :**
-  1. Requête dans la table Notion `Suspects` pour récupérer l'alibi, la bio et le secret du suspect.
-  2. Appel à un nœud **Advanced AI Agent** utilisant le modèle de votre choix (OpenAI, Anthropic, Gemini, etc.).
-  3. Fournir la bio et le secret dans le prompt système de l'agent.
-  4. Répondre au webhook avec le message généré par le suspect.
+1. **`POST /webhook/generate-scenario`**
+   - *Rôle :* Générer un pitch et une liste d'indices selon la thématique saisie par l'organisateur.
+   - *Entrée :* `{ theme, pitch_global, organizer_email }`
+   - *Notion :* Crée une entrée dans `[MP] Scenarios`.
 
-### 🔑 Webhook 2 : `/inspect-code` (POST)
-Permet de soumettre un code d'indice trouvé dans le monde réel ou le jeu.
-* **Entrées attendues :**
-  ```json
-  {
-    "code": "CODE123",
-    "playerId": "ID du Joueur"
-  }
-  ```
-* **Logique n8n :**
-  1. Recherche du code dans la table Notion `Indices`.
-  2. Si trouvé, cocher `Trouvé` à vrai et le lier au joueur.
-  3. Retourner les détails de l'indice (nom, description, URL image) au frontend.
+2. **`POST /webhook/send-invitations`**
+   - *Rôle :* Assigner aléatoirement les rôles (1 Coupable, 2 Faux-Coupables, 13 Innocents), calculer l'économie de points de départ de la session, et populer Notion.
+   - *Entrée :* `{ scenario_id, session_name, date, location, emails }`
+   - *Notion :* Crée une entrée dans `[MP] Sessions de Jeu` et les 16 entrées de `[MP] Personnages`.
+
+3. **`POST /webhook/generate-avatar`**
+   - *Rôle :* Générer un portrait IA (DALL-E, Stable Diffusion) et un marqueur visuel pour le joueur selon ses traits de caractère.
+   - *Entrée :* `{ email, traits, photo_base64 }`
+   - *Notion :* Met à jour le portrait et le marqueur dans `[MP] Personnages`.
+
+4. **`POST /webhook/complete-mission`**
+   - *Rôle :* Valider la réussite d'un objectif de joueur, lui attribuer des Points d'Action et rendre visible un indice caché.
+   - *Entrée :* `{ email, mission_id, points_earned }`
+   - *Notion :* Met à jour `[MP] Personnages` (PA) et débloque un indice dans `[MP] Indices et Lieux`.
+
+5. **`POST /webhook/reveal-index`**
+   - *Rôle :* Déduire 1 Point d'Action à un joueur s'il fouille une pièce et lui renvoyer les indices disponibles.
+   - *Entrée :* `{ email, location_name }`
+   - *Notion :* Déduit 1 PA dans `[MP] Personnages` et récupère les données de `[MP] Indices et Lieux`.
 
 ---
 
 ## 🌐 3. Lancement Local
 
 1. Ouvrez simplement `index.html` dans votre navigateur.
-2. Configurez l'URL de votre instance n8n dans l'interface ou modifiez la variable `N8N_WEBHOOK_URL` au début de `app.js`.
+2. Pour tester la simulation hors ligne sans n8n configuré, l'application utilise une simulation locale complète stockée dans le `localStorage` de votre navigateur.
+3. Pour connecter l'application à vos vrais webhooks n8n, renseignez les adresses de vos webhooks n8n directement dans le code ou l'interface de paramétrage.
