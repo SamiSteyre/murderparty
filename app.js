@@ -484,12 +484,13 @@ async function handleGenerateScenario(e) {
     
     const theme = document.getElementById('scenarioTheme').value.trim();
     const userPitch = document.getElementById('scenarioPitch').value.trim();
+    const epoch = document.getElementById('scenarioEpoch').value;
     const submitBtn = document.getElementById('generateScenarioBtn');
     
     submitBtn.setAttribute('disabled', 'true');
     submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Génération par n8n en cours...`;
     
-    addLiveLog(`Génération du scénario (Thème: "${theme}") via Webhook n8n...`);
+    addLiveLog(`Génération du scénario (Thème: "${theme}", Époque: "${epoch}") via Webhook n8n...`);
     
     try {
         let title, crimeRoom, cluesCount, pitch, scenarioId;
@@ -501,6 +502,7 @@ async function handleGenerateScenario(e) {
                 body: JSON.stringify({
                     theme: theme,
                     pitch_global: userPitch,
+                    epoch: epoch,
                     organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com'
                 })
             });

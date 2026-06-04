@@ -80,6 +80,12 @@ $scenariosBody = @{
             }
         }
         "Nombre Total d'Indices" = @{ number = @{ format = "number" } }
+        "Photo Homme" = @{ files = @{} }
+        "Json Photo Homme" = @{ rich_text = @{} }
+        "Photo Femme" = @{ files = @{} }
+        "Json Photo Femme" = @{ rich_text = @{} }
+        "Photo NBinaire" = @{ files = @{} }
+        "Json Photo NBinaire" = @{ rich_text = @{} }
     }
 }
 $scenariosDbId = Create-NotionDb $scenariosBody "[MP] Scenarios"

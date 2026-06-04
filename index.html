@@ -189,6 +189,15 @@
                                               class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all resize-none"
                                               placeholder="Ex: Le parrain d'un club de jazz est empoisonné dans son bureau secret. 16 invités sont confinés dans la pièce..."></textarea>
                                 </div>
+                                <div>
+                                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Époque du Scénario</label>
+                                    <select id="scenarioEpoch" 
+                                            class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all">
+                                        <option value="passé" selected>Passé (Médiéval, Années 20, Révolution...)</option>
+                                        <option value="présent">Présent (Manoir Moderne, Contemporain...)</option>
+                                        <option value="futur">Futur (Cyberpunk, Station Spatiale...)</option>
+                                    </select>
+                                </div>
                                 
                                 <button type="submit" id="generateScenarioBtn" 
                                         class="w-full bg-gold hover:bg-gold-hover text-noir-deep font-bold py-2.5 rounded-xl transition-all shadow-[0_4px_15px_rgba(212,175,55,0.15)] flex justify-center items-center gap-2">
