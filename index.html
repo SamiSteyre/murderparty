@@ -3,186 +3,486 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Murder Party - Tableau d'Enquête</title>
-    <!-- Google Fonts: Cinzel (headers) and Inter (body) -->
+    <title>Murder Party - Plateforme d'Enquête IA</title>
+    <!-- Google Fonts: Cinzel (Headers) and Inter (UI text) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        noir: {
+                            deep: '#07080c',
+                            panel: '#10121d',
+                            card: '#161926',
+                            border: '#23283c',
+                            input: '#0d0f17'
+                        },
+                        blood: {
+                            DEFAULT: '#d93838',
+                            hover: '#b22929',
+                            glow: 'rgba(217, 56, 56, 0.4)'
+                        },
+                        gold: {
+                            DEFAULT: '#d4af37',
+                            hover: '#bfa032',
+                            glow: 'rgba(212, 175, 55, 0.3)'
+                        }
+                    },
+                    fontFamily: {
+                        cinzel: ['Cinzel', 'serif'],
+                        inter: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Custom Style Sheet for advanced glassmorphism and effects -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <div class="header-logo">
-                <i class="fa-solid fa-magnifying-glass-retro logo-icon"></i>
-                <h1 class="game-title">MURDER<span>PARTY</span></h1>
+<body class="bg-noir-deep text-slate-200 min-h-screen flex flex-col font-inter selection:bg-blood selection:text-white">
+
+    <!-- ==========================================================================
+       1. LOGIN SCREEN
+       ========================================================================== -->
+    <div id="loginScreen" class="flex-1 flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-md p-8 rounded-2xl border border-noir-border shadow-2xl relative overflow-hidden">
+            <!-- Blood Accent Corner -->
+            <div class="absolute top-0 right-0 w-24 h-24 bg-blood opacity-20 blur-2xl rounded-full"></div>
+            
+            <div class="text-center mb-8">
+                <i class="fa-solid fa-magnifying-glass-retro text-4xl text-blood mb-3 drop-shadow-[0_0_8px_rgba(217,56,56,0.5)]"></i>
+                <h1 class="font-cinzel text-3xl font-extrabold tracking-wider text-white">MURDER<span class="text-blood">PARTY</span></h1>
+                <p class="text-xs text-slate-400 mt-2 uppercase tracking-widest font-semibold">Plateforme d'Enquête Assistée par IA</p>
             </div>
-            <div class="header-actions">
-                <div class="player-info-badge">
-                    <i class="fa-solid fa-user-secret"></i>
-                    <span id="headerPlayerName">Détective</span>
+            
+            <form id="loginForm" class="space-y-5">
+                <div>
+                    <label for="loginEmail" class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">Adresse E-mail de Connexion</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                            <i class="fa-solid fa-envelope"></i>
+                        </span>
+                        <input type="email" id="loginEmail" 
+                               class="w-full bg-noir-input border border-noir-border rounded-xl py-3 pl-10 pr-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blood transition-all font-medium"
+                               placeholder="votre-email@exemple.com" required autocomplete="email">
+                    </div>
                 </div>
-                <button id="openSettingsBtn" class="btn btn-icon" title="Configuration">
-                    <i class="fa-solid fa-sliders"></i>
+                
+                <button type="submit" class="w-full bg-blood hover:bg-blood-hover text-white font-bold py-3 px-4 rounded-xl transition-all shadow-[0_4px_20px_rgba(217,56,56,0.25)] hover:shadow-[0_6px_25px_rgba(217,56,56,0.45)] transform hover:-translate-y-0.5 flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Rejoindre la Partie
+                </button>
+            </form>
+
+            <div class="mt-8 pt-6 border-t border-noir-border/50 text-center">
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    💡 <strong>Astuce :</strong> Entrez <code class="text-gold font-bold px-1 bg-noir-input rounded border border-noir-border">organisateur@email.com</code> pour accéder au dashboard Maître du Jeu, ou toute autre adresse pour votre fiche joueur.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+       MAIN APP SHELL (Hidden on start)
+       ========================================================================== -->
+    <div id="appShell" class="hidden flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- TOP NAVIGATION BAR -->
+        <header class="bg-noir-panel/90 backdrop-blur-md border-b border-noir-border/80 px-6 py-4 flex justify-between items-center z-10">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-mask text-2xl text-blood"></i>
+                <span class="font-cinzel text-xl font-bold tracking-widest text-white">MURDER<span class="text-blood">PARTY</span></span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div id="roleBadge" class="px-3 py-1 text-2xs uppercase tracking-widest font-black rounded-full border">
+                    ROLE
+                </div>
+                <div class="h-4 w-px bg-noir-border"></div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-user text-slate-400"></i>
+                    <span id="currentUserEmail" class="text-xs font-semibold text-slate-300">user@email.com</span>
+                </div>
+                <button id="logoutBtn" class="text-xs text-slate-400 hover:text-blood font-bold transition-colors flex items-center gap-1.5 ml-2" title="Se déconnecter">
+                    <i class="fa-solid fa-power-off"></i> <span class="hidden sm:inline">Quitter</span>
                 </button>
             </div>
         </header>
 
-        <!-- Main Dashboard Grid -->
-        <main class="dashboard-grid">
+        <!-- CONTAINER FOR MAIN VIEWS -->
+        <div class="flex-1 overflow-hidden relative">
             
-            <!-- Left Panel: Investigation & Clues -->
-            <section class="panel clue-panel">
-                <div class="panel-header">
-                    <h2><i class="fa-solid fa-clipboard-list header-icon"></i> Carnet d'Indices</h2>
-                </div>
-                <div class="panel-body">
-                    <!-- Code Submission Box -->
-                    <div class="clue-submission-box">
-                        <label for="clueCodeInput">Entrer un code d'indice</label>
-                        <form id="clueForm" class="input-group">
-                            <input type="text" id="clueCodeInput" placeholder="Ex: ROUGE2026" autocomplete="off" required>
-                            <button type="submit" class="btn btn-accent">
-                                <i class="fa-solid fa-unlock-keyhole"></i> Analyser
-                            </button>
-                        </form>
-                        <div id="clueSubmitFeedback" class="feedback-message"></div>
+            <!-- ==========================================================================
+               2. ORGANIZER VIEW
+               ========================================================================== -->
+            <main id="organizerView" class="hidden h-full overflow-y-auto p-6 space-y-6">
+                <!-- Top Row: Welcome & Simulation Banner -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-noir-panel to-noir-panel/50 p-6 rounded-2xl border border-noir-border">
+                    <div>
+                        <h2 class="font-cinzel text-2xl font-bold text-white mb-1">Tableau de bord de l'Organisateur</h2>
+                        <p class="text-xs text-slate-400">Configurez le scénario par IA, invitez vos joueurs et suivez l'avancement de l'enquête en temps réel.</p>
                     </div>
-
-                    <!-- Clues List -->
-                    <div class="clues-container">
-                        <h3>Indices Découverts</h3>
-                        <div id="cluesList" class="clues-list">
-                            <!-- Empty State -->
-                            <div class="empty-state">
-                                <i class="fa-solid fa-receipt empty-icon"></i>
-                                <p>Aucun indice n'a encore été analysé.</p>
-                                <p class="sub-text">Parcourez le lieu de l'enquête pour trouver des codes d'indices.</p>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-2 bg-emerald-950/40 text-emerald-400 border border-emerald-800/60 px-4 py-2 rounded-xl text-xs font-bold">
+                        <i class="fa-solid fa-toggle-on text-sm"></i>
+                        <span>Simulation n8n/Notion Activée</span>
                     </div>
                 </div>
-            </section>
 
-            <!-- Right Panel: Interrogation Room -->
-            <section class="panel interrogation-panel">
-                <div class="panel-header">
-                    <h2><i class="fa-solid fa-comments header-icon"></i> Salle d'Interrogatoire</h2>
-                </div>
-                <div class="interrogation-container">
+                <!-- Grid Layout for GM Actions -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     
-                    <!-- Suspect Selector Sidebar -->
-                    <div class="suspects-sidebar">
-                        <div class="sidebar-title">Suspects</div>
-                        <div class="suspects-list" id="suspectsList">
-                            <!-- Suspects will be populated by JS -->
-                            <div class="suspect-item active" data-suspect="Mlle Rose">
-                                <div class="avatar bg-rose">MR</div>
-                                <div class="suspect-details">
-                                    <div class="suspect-name">Mlle Rose</div>
-                                    <div class="suspect-status">Disponible</div>
-                                </div>
-                            </div>
-                            <div class="suspect-item" data-suspect="Colonel Moutarde">
-                                <div class="avatar bg-mustard">CM</div>
-                                <div class="suspect-details">
-                                    <div class="suspect-name">Col. Moutarde</div>
-                                    <div class="suspect-status">Disponible</div>
-                                </div>
-                            </div>
-                            <div class="suspect-item" data-suspect="Madame Pervenche">
-                                <div class="avatar bg-periwinkle">MP</div>
-                                <div class="suspect-details">
-                                    <div class="suspect-name">Mme Pervenche</div>
-                                    <div class="suspect-status">Disponible</div>
-                                </div>
-                            </div>
-                            <div class="suspect-item" data-suspect="Professeur Violet">
-                                <div class="avatar bg-violet">PV</div>
-                                <div class="suspect-details">
-                                    <div class="suspect-name">Prof. Violet</div>
-                                    <div class="suspect-status">Disponible</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Interrogation Chat Area -->
-                    <div class="chat-area">
-                        <!-- Chat Suspect Header -->
-                        <div class="chat-header">
-                            <div class="active-suspect-info">
-                                <div id="activeSuspectAvatar" class="avatar bg-rose">MR</div>
+                    <!-- LEFT COLUMN: Generator & Settings (5 Cols) -->
+                    <div class="lg:col-span-5 space-y-6">
+                        
+                        <!-- Block 1: Scenario Generation -->
+                        <section class="glass-panel p-6 rounded-2xl border border-noir-border flex flex-col gap-4">
+                            <h3 class="font-cinzel text-lg font-bold text-white border-b border-noir-border pb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles text-gold"></i> 1. Générer le Scénario
+                            </h3>
+                            
+                            <form id="generateScenarioForm" class="space-y-4">
                                 <div>
-                                    <h3 id="activeSuspectName">Mlle Rose</h3>
-                                    <p class="suspect-role">Rôle : Invitée Mystère</p>
+                                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Thématique / Ambiance</label>
+                                    <input type="text" id="scenarioTheme" 
+                                           class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all"
+                                           placeholder="Ex: Années 20, Prohibition, Chic & Mafia" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Pitch de départ (Optionnel)</label>
+                                    <textarea id="scenarioPitch" rows="3"
+                                              class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-200 text-sm focus:outline-none focus:border-gold transition-all resize-none"
+                                              placeholder="Ex: Le parrain d'un club de jazz est empoisonné dans son bureau secret. 16 invités sont confinés dans la pièce..."></textarea>
+                                </div>
+                                
+                                <button type="submit" id="generateScenarioBtn" 
+                                        class="w-full bg-gold hover:bg-gold-hover text-noir-deep font-bold py-2.5 rounded-xl transition-all shadow-[0_4px_15px_rgba(212,175,55,0.15)] flex justify-center items-center gap-2">
+                                    <i class="fa-solid fa-gears"></i> Lancer la génération IA (n8n)
+                                </button>
+                            </form>
+                            
+                            <!-- Scenario Generation Loading / Result State -->
+                            <div id="scenarioResultBox" class="hidden mt-2 p-4 rounded-xl bg-noir-input border border-noir-border text-sm space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gold uppercase tracking-wider font-extrabold">Scénario Actif</span>
+                                    <span class="text-2xs bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded font-bold">Vérifié</span>
+                                </div>
+                                <h4 id="activeScenarioTitle" class="font-bold text-white text-base">Le Dernier Souffle du Speakeasy</h4>
+                                <p id="activeScenarioPitch" class="text-xs text-slate-400 line-clamp-3">L'histoire dramatique...</p>
+                                <div class="grid grid-cols-2 gap-2 text-2xs pt-2 border-t border-noir-border/50 text-slate-400">
+                                    <div><i class="fa-solid fa-skull-crossbones mr-1 text-blood"></i> Meurtre: <span id="activeScenarioCrimeRoom" class="text-slate-200">Salon</span></div>
+                                    <div><i class="fa-solid fa-receipt mr-1 text-gold"></i> Indices: <span id="activeScenarioCluesCount" class="text-slate-200 font-bold">0</span></div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Chat Messages List -->
-                        <div class="chat-messages" id="chatMessages">
-                            <div class="message system-message">
-                                Vous commencez l'interrogatoire de Mlle Rose. Soyez perspicace.
-                            </div>
-                            <div class="message incoming">
-                                <div class="message-content">
-                                    Bonjour Détective. Que voulez-vous savoir ? Je n'ai absolument rien à me reprocher...
+                        </section>
+                        
+                        <!-- Block 2: Sessions Invitations -->
+                        <section class="glass-panel p-6 rounded-2xl border border-noir-border flex flex-col gap-4">
+                            <h3 class="font-cinzel text-lg font-bold text-white border-b border-noir-border pb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-envelope-open-text text-blood"></i> 2. Session & Invitations
+                            </h3>
+                            
+                            <form id="sessionForm" class="space-y-4">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Nom de Session</label>
+                                        <input type="text" id="sessionName" class="w-full bg-noir-input border border-noir-border rounded-xl py-2 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood" placeholder="Ex: Murder Spooky 2026" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Lieu Réel</label>
+                                        <input type="text" id="sessionLocation" class="w-full bg-noir-input border border-noir-border rounded-xl py-2 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood" placeholder="Ex: Salon principal" required>
+                                    </div>
                                 </div>
-                                <div class="message-time">10:00</div>
-                            </div>
-                        </div>
+                                
+                                <div>
+                                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">E-mails des Invités (16 requis)</label>
+                                    <span class="text-3xs text-slate-500 block mb-1.5 uppercase">Entrez une adresse par ligne. 16 lignes.</span>
+                                    <textarea id="sessionEmails" rows="8"
+                                              class="w-full bg-noir-input border border-noir-border rounded-xl py-2 px-3 text-slate-200 text-xs focus:outline-none focus:border-blood font-mono resize-none leading-relaxed"
+                                              required></textarea>
+                                </div>
+                                
+                                <button type="submit" id="sendInvitationsBtn" disabled
+                                        class="w-full bg-blood hover:bg-blood-hover disabled:opacity-40 disabled:hover:bg-blood text-white font-bold py-2.5 rounded-xl transition-all shadow-[0_4px_15px_rgba(217,56,56,0.15)] flex justify-center items-center gap-2">
+                                    <i class="fa-solid fa-paper-plane"></i> Distribuer les rôles & inviter (n8n)
+                                </button>
+                            </form>
 
-                        <!-- Chat Input -->
-                        <form id="chatForm" class="chat-input-container">
-                            <input type="text" id="chatMessageInput" placeholder="Posez une question au suspect..." autocomplete="off" required>
-                            <button type="submit" class="btn btn-round" id="sendChatBtn">
-                                <i class="fa-solid fa-paper-plane"></i>
-                            </button>
-                        </form>
+                            <!-- Live Session Summary Card -->
+                            <div id="sessionStatsBox" class="hidden p-4 rounded-xl bg-noir-input border border-noir-border text-sm flex flex-col gap-2">
+                                <div class="text-xs text-slate-400 uppercase tracking-widest font-extrabold border-b border-noir-border pb-1.5">Économie de la partie</div>
+                                <div class="grid grid-cols-2 gap-4 text-center">
+                                    <div class="p-2 bg-noir-panel rounded-lg border border-noir-border">
+                                        <div id="statTotalClues" class="text-lg font-black text-gold">24</div>
+                                        <div class="text-3xs text-slate-500 uppercase tracking-wider">Indices Totaux</div>
+                                    </div>
+                                    <div class="p-2 bg-noir-panel rounded-lg border border-noir-border">
+                                        <div id="statPointsPerPlayer" class="text-lg font-black text-blood">1</div>
+                                        <div class="text-3xs text-slate-500 uppercase tracking-wider">P.A. Initial / Joueur</div>
+                                    </div>
+                                </div>
+                                <div class="text-3xs text-slate-500 text-center mt-1">
+                                    ⚖️ Ratio de points respecté : <strong class="text-slate-300">1.50</strong>
+                                </div>
+                            </div>
+                        </section>
                     </div>
 
+                    <!-- RIGHT COLUMN: Monitoring & Players list (7 Cols) -->
+                    <div class="lg:col-span-7 space-y-6 flex flex-col">
+                        
+                        <!-- Block 3: Live Feed & Monitoring -->
+                        <section class="glass-panel p-6 rounded-2xl border border-noir-border flex-1 flex flex-col gap-4 min-h-[350px]">
+                            <h3 class="font-cinzel text-lg font-bold text-white border-b border-noir-border pb-3 flex items-center justify-between">
+                                <span class="flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-blood animate-pulse"></i> Console de Monitoring Live</span>
+                                <span class="text-3xs bg-noir-border text-slate-400 px-2 py-0.5 rounded uppercase tracking-wider">Mises à jour en direct</span>
+                            </h3>
+                            
+                            <div id="monitoringConsole" class="flex-1 bg-noir-input rounded-xl border border-noir-border p-4 font-mono text-xs overflow-y-auto space-y-2 h-64 text-emerald-500">
+                                <div class="text-slate-500">>> En attente du démarrage de la session...</div>
+                            </div>
+                        </section>
+
+                        <!-- Block 4: Characters Config Summary -->
+                        <section class="glass-panel p-6 rounded-2xl border border-noir-border flex-1 flex flex-col gap-4">
+                            <h3 class="font-cinzel text-lg font-bold text-white border-b border-noir-border pb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-users-viewfinder text-gold"></i> Rôles attribués de la Session
+                            </h3>
+                            
+                            <div class="overflow-x-auto flex-1 max-h-80">
+                                <table class="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr class="border-b border-noir-border text-slate-400 uppercase tracking-wider">
+                                            <th class="py-2.5 font-bold">Personnage</th>
+                                            <th class="py-2.5 font-bold">Email</th>
+                                            <th class="py-2.5 font-bold">Statut secret</th>
+                                            <th class="py-2.5 font-bold text-right">Points</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="orgPlayersTableBody" class="divide-y divide-noir-border/30">
+                                        <tr>
+                                            <td colspan="4" class="py-6 text-center text-slate-500">Aucune session active. Distribuez les invitations pour populer les rôles.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
                 </div>
-            </section>
+            </main>
 
-        </main>
-    </div>
+            <!-- ==========================================================================
+               3. PLAYER VIEW
+               ========================================================================== -->
+            <main id="playerView" class="hidden h-full overflow-hidden flex flex-col p-6">
+                
+                <!-- 3A. PLAYER ONBOARDING (Visible if not onboarded yet) -->
+                <div id="playerOnboarding" class="hidden max-w-2xl mx-auto w-full my-auto glass-panel p-8 rounded-2xl border border-noir-border space-y-6 relative">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-gold opacity-10 blur-2xl rounded-full"></div>
+                    
+                    <div class="text-center">
+                        <i class="fa-solid fa-user-plus text-3xl text-gold mb-2"></i>
+                        <h2 class="font-cinzel text-2xl font-bold text-white">Création du Profil Personnage</h2>
+                        <p class="text-xs text-slate-400 mt-1">Vous avez été invité à participer. Finalisez la génération de votre avatar pour entrer en jeu.</p>
+                    </div>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fa-solid fa-sliders"></i> Paramètres d'intégration</h2>
-                <button class="close-modal-btn" id="closeSettingsBtn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="settingsForm">
-                    <div class="form-group">
-                        <label for="settingsPlayerId">Nom du Détective / Joueur</label>
-                        <input type="text" id="settingsPlayerId" placeholder="Détective Adams" required>
+                    <form id="onboardingForm" class="space-y-6">
+                        <!-- Step Details -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <!-- Left: Character description & Traits input -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">Choisissez vos 3 traits de caractère</label>
+                                    <div class="flex flex-wrap gap-2 mb-3" id="traitSuggestionTags">
+                                        <!-- Will populate default click tags -->
+                                    </div>
+                                    <input type="text" id="playerTraitsInput" 
+                                           class="w-full bg-noir-input border border-noir-border rounded-xl py-2 px-3 text-slate-200 text-xs focus:outline-none focus:border-gold font-medium"
+                                           placeholder="Ex: Froid, Menteur, Calculateur" required>
+                                    <span class="text-3xs text-slate-500 mt-1 block">Séparez par des virgules ou cliquez sur les étiquettes ci-dessus.</span>
+                                </div>
+                            </div>
+
+                            <!-- Right: Simulated Image Upload -->
+                            <div class="space-y-4">
+                                <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">Votre Photo Source (Pour Portrait IA)</label>
+                                <div id="photoUploadContainer" class="border border-dashed border-noir-border rounded-xl p-6 text-center cursor-pointer hover:border-gold transition-colors bg-noir-input flex flex-col items-center justify-center gap-2 h-44">
+                                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-500" id="photoUploadIcon"></i>
+                                    <div class="text-xs font-semibold text-slate-300" id="photoUploadText">Sélectionner ou prendre une photo</div>
+                                    <div class="text-3xs text-slate-500">Fichier de test simulé par le navigateur</div>
+                                    <input type="file" id="playerPhotoFile" class="hidden" accept="image/*">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="onboardingSubmitBtn"
+                                class="w-full bg-gold hover:bg-gold-hover text-noir-deep font-bold py-3 rounded-xl transition-all shadow-[0_4px_15px_rgba(212,175,55,0.15)] flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-palette"></i> Générer mon Avatar & Marqueur Visuel (n8n)
+                        </button>
+                    </form>
+
+                    <!-- Generating Animation Overlay -->
+                    <div id="onboardingLoadingOverlay" class="hidden absolute inset-0 bg-noir-panel/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center gap-4 z-20">
+                        <div class="loading-ring"></div>
+                        <h3 class="font-cinzel text-lg font-bold text-white text-center">Génération de l'avatar par l'IA...</h3>
+                        <p class="text-xs text-slate-400 text-center max-w-sm px-4">Le workflow n8n assemble vos traits et votre photo pour composer votre portrait de suspect des années 20...</p>
                     </div>
-                    <div class="form-group">
-                        <label for="settingsChatWebhook">n8n Webhook URL : Chat (Interrogation)</label>
-                        <input type="url" id="settingsChatWebhook" placeholder="https://votre-n8n.com/webhook/chat" required>
-                        <small class="form-help">Webhook de type POST recevant { suspectId, message, playerId }</small>
+                </div>
+
+                <!-- 3B. PLAYER DASHBOARD (Visible after onboarding) -->
+                <div id="playerDashboard" class="hidden h-full flex-1 flex flex-col gap-6 overflow-hidden">
+                    
+                    <!-- Top stats header: Action Points Tracker -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 bg-gradient-to-r from-noir-panel to-noir-panel/30 p-5 rounded-2xl border border-noir-border items-center">
+                        <div class="md:col-span-7">
+                            <div class="flex items-center gap-3">
+                                <div id="dashPlayerAvatarCircle" class="w-10 h-10 rounded-full border border-gold flex items-center justify-center font-bold text-gold text-lg overflow-hidden bg-noir-input">
+                                    ?
+                                </div>
+                                <div>
+                                    <h2 id="dashPlayerRoleName" class="font-cinzel text-xl font-black text-white leading-tight">Mlle Rose</h2>
+                                    <p class="text-2xs text-gold uppercase tracking-widest font-extrabold flex items-center gap-1">
+                                        <i class="fa-solid fa-fingerprint"></i> <span id="dashPlayerSecretStatus">Statut secret</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- PA Gauge Area -->
+                        <div class="md:col-span-5 flex items-center justify-start md:justify-end gap-4">
+                            <div class="text-right">
+                                <div class="text-2xs uppercase tracking-widest font-black text-slate-400 mb-0.5">Points d'Action Restants</div>
+                                <div class="text-xs text-slate-500">Pour fouiller les pièces du manoir</div>
+                            </div>
+                            
+                            <!-- Large Circular-ish Progress bar -->
+                            <div class="relative w-16 h-16 flex items-center justify-center bg-noir-input rounded-full border-2 border-noir-border shadow-inner">
+                                <div id="dashActionPointsDisplay" class="text-xl font-black text-blood">0</div>
+                                <svg class="absolute inset-0 w-full h-full transform -rotate-90">
+                                    <circle cx="32" cy="32" r="28" fill="transparent" stroke="#d93838" stroke-width="3" stroke-dasharray="175" id="dashProgressCircle" />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="settingsClueWebhook">n8n Webhook URL : Analyse d'indices</label>
-                        <input type="url" id="settingsClueWebhook" placeholder="https://votre-n8n.com/webhook/inspect-code" required>
-                        <small class="form-help">Webhook de type POST recevant { code, playerId }</small>
+
+                    <!-- Main Player Grid Workspace -->
+                    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden min-h-0">
+                        
+                        <!-- Left Block: Character Sheet & Backstory (4 Cols) -->
+                        <section class="lg:col-span-4 glass-panel rounded-2xl border border-noir-border flex flex-col overflow-hidden">
+                            <div class="p-4 border-b border-noir-border bg-noir-panel/40">
+                                <h3 class="font-cinzel text-sm font-black tracking-wider text-slate-300 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-address-card text-gold"></i> Fiche Personnage
+                                </h3>
+                            </div>
+                            <div class="p-5 overflow-y-auto space-y-5 flex-1 leading-relaxed">
+                                <!-- Generated Avatar Box -->
+                                <div class="relative rounded-xl overflow-hidden border border-noir-border group aspect-[16/10]">
+                                    <img id="dashAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover">
+                                    <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black to-transparent p-3 pt-6">
+                                        <div class="text-3xs text-gold uppercase tracking-wider font-extrabold">Marqueur Visuel</div>
+                                        <div id="dashVisualMarker" class="text-2xs text-slate-200 mt-0.5 italic">Chargement...</div>
+                                    </div>
+                                </div>
+
+                                <!-- Background Bio -->
+                                <div>
+                                    <h4 class="text-xs uppercase tracking-wider text-gold font-bold mb-1">Mon Histoire / Contexte</h4>
+                                    <p id="dashPlayerHistory" class="text-xs text-slate-300 bg-noir-input/50 border border-noir-border/50 p-3 rounded-lg"></p>
+                                </div>
+
+                                <!-- Relation with Victim -->
+                                <div>
+                                    <h4 class="text-xs uppercase tracking-wider text-blood font-bold mb-1">Mon Lien avec la Victime</h4>
+                                    <p id="dashPlayerLienVictime" class="text-xs text-slate-300 bg-blood/5 border border-blood/20 p-3 rounded-lg"></p>
+                                </div>
+
+                                <!-- Knowledge of others -->
+                                <div>
+                                    <h4 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Ce que je sais des autres</h4>
+                                    <div id="dashPlayerKnowledge" class="space-y-1.5 text-2xs">
+                                        <!-- List of information -->
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Middle Block: Chronological Missions (4 Cols) -->
+                        <section class="lg:col-span-4 glass-panel rounded-2xl border border-noir-border flex flex-col overflow-hidden">
+                            <div class="p-4 border-b border-noir-border bg-noir-panel/40">
+                                <h3 class="font-cinzel text-sm font-black tracking-wider text-slate-300 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-flag text-blood"></i> Fil d'Ariane : Mes Missions
+                                </h3>
+                            </div>
+                            <div class="p-5 overflow-y-auto space-y-4 flex-1">
+                                <p class="text-3xs uppercase tracking-widest text-slate-500 font-bold">Accomplissez vos missions pour gagner des points d'action.</p>
+                                
+                                <div id="playerMissionsList" class="space-y-3">
+                                    <!-- List of missions generated dynamically -->
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Right Block: Room Search & Clues (4 Cols) -->
+                        <section class="lg:col-span-4 glass-panel rounded-2xl border border-noir-border flex flex-col overflow-hidden">
+                            <div class="p-4 border-b border-noir-border bg-noir-panel/40">
+                                <h3 class="font-cinzel text-sm font-black tracking-wider text-slate-300 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-door-open text-gold"></i> Fouiller les lieux
+                                </h3>
+                            </div>
+                            <div class="p-5 flex flex-col gap-4 flex-1 overflow-hidden">
+                                
+                                <!-- Search Action Trigger -->
+                                <div class="bg-noir-input border border-noir-border rounded-xl p-4 flex flex-col gap-3">
+                                    <label class="block text-2xs uppercase tracking-wider text-slate-400 font-bold">Sélectionner un Lieu à fouiller</label>
+                                    <div class="flex gap-2">
+                                        <select id="searchRoomSelect" class="flex-1 bg-noir-panel border border-noir-border rounded-lg py-2 px-3 text-xs text-slate-300 focus:outline-none focus:border-gold">
+                                            <!-- Rooms list populated dynamically -->
+                                        </select>
+                                        <button id="searchRoomBtn" class="bg-gold hover:bg-gold-hover text-noir-deep font-bold text-xs py-2 px-4 rounded-lg flex items-center gap-1.5 transition-colors">
+                                            <i class="fa-solid fa-magnifying-glass"></i> Fouiller
+                                        </button>
+                                    </div>
+                                    <div id="searchFeedbackMessage" class="text-3xs font-semibold text-center min-h-[14px]"></div>
+                                </div>
+
+                                <!-- Personal / Discovered Clues scrollable -->
+                                <div class="flex-1 flex flex-col gap-3 min-h-0">
+                                    <h4 class="text-2xs uppercase tracking-widest text-slate-400 font-extrabold flex items-center gap-1">
+                                        <i class="fa-solid fa-receipt text-gold"></i> Indices Débloqués
+                                    </h4>
+                                    <div id="playerCluesContainer" class="flex-1 overflow-y-auto space-y-3 pr-1">
+                                        <!-- Cards of discovered clues -->
+                                    </div>
+                                </div>
+
+                            </div>
+                        </section>
+
                     </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" id="cancelSettingsBtn">Annuler</button>
-                        <button type="submit" class="btn btn-accent">Enregistrer</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+
+            </main>
+
         </div>
     </div>
-    
+
+    <!-- Alert / Toast Banner for global notifications -->
+    <div id="toastNotification" class="toast-hidden fixed bottom-6 right-6 z-50 bg-noir-panel border border-blood/50 text-slate-100 py-3 px-5 rounded-xl shadow-[0_5px_25px_rgba(0,0,0,0.5)] flex items-center gap-3 max-w-sm">
+        <i id="toastIcon" class="fa-solid fa-circle-exclamation text-blood text-lg"></i>
+        <div>
+            <div id="toastTitle" class="text-xs font-bold text-white">Notification</div>
+            <div id="toastMessage" class="text-2xs text-slate-400">Message content...</div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
