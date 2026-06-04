@@ -81,13 +81,11 @@ function loadPersistedState() {
     if (saved) {
         try {
             appState = JSON.parse(saved);
-            if (appState.n8nBaseUrl === undefined) {
-                appState.n8nBaseUrl = 'http://localhost:5678';
-            }
         } catch(e) {
             console.error("Failed to load local state", e);
         }
     }
+    appState.n8nBaseUrl = 'http://localhost:5678'; // Hardcoded to run "for real" on localhost:5678
 }
 
 // Save State to LocalStorage
@@ -1036,27 +1034,7 @@ function logout() {
     routeApp();
 }
 
-function openSettings() {
-    document.getElementById('settingsN8nUrl').value = appState.n8nBaseUrl || '';
-    document.getElementById('settingsModal').classList.add('open');
-}
 
-function closeSettings() {
-    document.getElementById('settingsModal').classList.remove('open');
-}
-
-function handleSaveSettings(e) {
-    e.preventDefault();
-    let url = document.getElementById('settingsN8nUrl').value.trim();
-    if (url && url.endsWith('/')) {
-        url = url.slice(0, -1);
-    }
-    appState.n8nBaseUrl = url;
-    savePersistedState();
-    closeSettings();
-    showToast("Paramètres mis à jour", `Liaison n8n configurée sur ${url || 'Simulation Locale'}.`, "success");
-    addLiveLog(`[Paramètres] URL de base n8n configurée sur : ${url || 'Simulation'}`);
-}
 
 /* ==========================================================================
    HELPERS & TOASTS
@@ -1126,12 +1104,7 @@ function init() {
     // Onboarding Form
     document.getElementById('onboardingForm').addEventListener('submit', handlePlayerOnboarding);
     
-    // Settings Modal
-    document.getElementById('openLoginSettingsBtn').addEventListener('click', openSettings);
-    document.getElementById('openSettingsBtn').addEventListener('click', openSettings);
-    document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
-    document.getElementById('cancelSettingsBtn').addEventListener('click', closeSettings);
-    document.getElementById('settingsForm').addEventListener('submit', handleSaveSettings);
+
     
     // Player Gameplay trigger
     document.getElementById('searchRoomBtn').addEventListener('click', handleRoomSearch);

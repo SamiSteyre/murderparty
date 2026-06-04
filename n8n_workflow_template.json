@@ -1,15 +1,20 @@
 {
-  "name": "Murder Party Backend - Webhooks & Notion API",
+  "meta": {
+    "instanceId": "8gzDN6D5Ua5a7xKS",
+    "templateCredsSetupCompleted": true
+  },
   "nodes": [
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "request-otp",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "76ea48d8-55fa-4340-85f8-89cbb6f18375",
       "name": "Webhook: request-otp",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         150
@@ -17,13 +22,15 @@
     },
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "verify-otp",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "3bead988-75c1-4ff2-8d77-66a988d55ff2",
       "name": "Webhook: verify-otp",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         350
@@ -31,13 +38,15 @@
     },
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "generate-scenario",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "efb39922-38d7-4630-9b88-12cd3bb55ff3",
       "name": "Webhook: generate-scenario",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         550
@@ -45,13 +54,15 @@
     },
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "send-invitations",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "01ea3bc8-fbfa-45b7-8d2b-1a6e9a8f4c54",
       "name": "Webhook: send-invitations",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         750
@@ -59,13 +70,15 @@
     },
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "generate-avatar",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "89ecbd3c-8cfa-46fb-a0cd-aa6e2b9c7d55",
       "name": "Webhook: generate-avatar",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         950
@@ -73,13 +86,15 @@
     },
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "complete-mission",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "52eb4b7d-cbfa-4a6c-9d6c-bb6e4b9c1d63",
       "name": "Webhook: complete-mission",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         1150
@@ -87,13 +102,15 @@
     },
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "reveal-index",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "18eb4c7a-abfa-4c6c-bd6c-cb6e4b9c1d74",
       "name": "Webhook: reveal-index",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         1350
@@ -119,9 +136,9 @@
         "resource": "databasePage",
         "operation": "getAll",
         "databaseId": {
-            "__rl": true,
-            "value": "NOTION_DB_CHARACTERS",
-            "mode": "id"
+          "__rl": true,
+          "value": "NOTION_DB_CHARACTERS",
+          "mode": "id"
         },
         "options": {}
       },
@@ -137,5 +154,7 @@
   ],
   "connections": {},
   "active": false,
-  "settings": {}
+  "settings": {
+    "executionOrder": "v1"
+  }
 }
