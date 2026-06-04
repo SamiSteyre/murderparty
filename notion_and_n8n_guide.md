@@ -68,7 +68,7 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
   "organizer_email": "organisateur@email.com"
 }
 ```
-* **Rôle dans n8n :** Générer l'intrigue (Agent 1), concevoir la scène de crime et les indices (Agent 2), profiler les 16 suspects (Agent 3), construire le fil des missions (Agent 4), générer l'illustration DALL-E (Agent 6 Illustrateur), et enregistrer la session Notion avec le statut `"initialisé"`.
+* **Rôle dans n8n :** Profiler les 16 suspects (Agent 1), concevoir l'intrigue et affecter les rôles de coupables (Agent 2), concevoir la scène de crime et les indices (Agent 3), construire le fil des missions (Agent 4), générer l'illustration DALL-E (Agent 6 Illustrateur).
 * **Payload de Réponse Attendu (n8n) :**
 ```json
 {
