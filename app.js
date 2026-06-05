@@ -320,6 +320,8 @@ function renderOrganizerDashboard() {
             if (coverImg) coverImg.src = appState.scenario.imageUrl || "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
             document.getElementById('genScenarioTitle').textContent = appState.scenario.title;
             document.getElementById('genScenarioPitch').textContent = appState.scenario.pitch;
+            const victimEl = document.getElementById('genScenarioVictim');
+            if (victimEl) victimEl.textContent = appState.scenario.victim || "Non définie";
         }
 
         // Render 16 suspects cards in grid
@@ -383,6 +385,8 @@ function renderOrganizerDashboard() {
             document.getElementById('activeScenarioPitch').textContent = appState.scenario.pitch;
             document.getElementById('activeScenarioCrimeRoom').textContent = appState.scenario.crimeRoom;
             document.getElementById('activeScenarioCluesCount').textContent = appState.scenario.cluesCount;
+            const victimEl = document.getElementById('activeScenarioVictim');
+            if (victimEl) victimEl.textContent = appState.scenario.victim || "Non définie";
         }
 
         // Render Session Economy Stats
@@ -796,6 +800,7 @@ async function handleUnifiedSessionSubmit(e) {
                     title: "Le Dernier Souffle du Speakeasy",
                     general_location: "Un Speakeasy clandestin",
                     murder_room: "Le Bureau de l'arrière-boutique",
+                    victim_name: "Lord James Lenoir (Le Propriétaire du Speakeasy)",
                     clues_count: simulatedRooms.length * 3,
                     pitch: userPitch || "Dans la pénombre d'un club de jazz clandestin, un parrain de la mafia a été assassiné de sang-froid.",
                     illustration_url: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
@@ -810,6 +815,7 @@ async function handleUnifiedSessionSubmit(e) {
                 theme: theme,
                 pitch: dataScenario.pitch,
                 crimeRoom: dataScenario.murder_room,
+                victim: dataScenario.victim_name || (dataScenario.victim ? (typeof dataScenario.victim === 'string' ? dataScenario.victim : dataScenario.victim.name) : "Non définie"),
                 cluesCount: dataScenario.clues_count || 24,
                 imageUrl: dataScenario.illustration_url || "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop"
             };
@@ -870,6 +876,7 @@ async function handleUnifiedSessionSubmit(e) {
                 theme: "Chargé",
                 pitch: "Scénario pré-existant chargé depuis Notion.",
                 crimeRoom: "Le Bureau",
+                victim: "M. Lenoir (cadavre)",
                 cluesCount: 24,
                 imageUrl: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop"
             };

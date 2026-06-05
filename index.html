@@ -332,9 +332,12 @@
 
                     <!-- Synopsis -->
                     <div class="glass-panel p-6 rounded-2xl border border-white/5 space-y-3">
-                        <h3 class="font-cinzel text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
-                            <i class="fa-solid fa-book-open text-blood"></i> Intrigue Principale
-                        </h3>
+                        <div class="flex justify-between items-center border-b border-white/5 pb-2.5">
+                            <h3 class="font-cinzel text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-book-open text-blood"></i> Intrigue Principale
+                            </h3>
+                            <span class="text-2xs text-slate-400 uppercase tracking-wider font-extrabold"><i class="fa-solid fa-skull text-blood mr-1"></i> Victime : <span id="genScenarioVictim" class="text-white font-black">--</span></span>
+                        </div>
                         <p id="genScenarioPitch" class="text-xs text-slate-300 leading-relaxed font-light">Résumé de l'intrigue...</p>
                     </div>
 
@@ -424,8 +427,9 @@
                                 </div>
                                 <h4 id="activeScenarioTitle" class="font-cinzel text-lg font-bold text-white">Le Dernier Souffle</h4>
                                 <p id="activeScenarioPitch" class="text-xs text-slate-400 leading-relaxed font-light">Description...</p>
-                                <div class="grid grid-cols-2 gap-4 text-2xs pt-3 border-t border-white/5 text-slate-400">
+                                <div class="grid grid-cols-3 gap-4 text-2xs pt-3 border-t border-white/5 text-slate-400">
                                     <div><i class="fa-solid fa-skull-crossbones mr-1.5 text-blood"></i> Crime : <span id="activeScenarioCrimeRoom" class="text-white font-medium">--</span></div>
+                                    <div><i class="fa-solid fa-skull mr-1.5 text-blood"></i> Victime : <span id="activeScenarioVictim" class="text-white font-medium">--</span></div>
                                     <div><i class="fa-solid fa-receipt mr-1.5 text-blood"></i> Indices : <span id="activeScenarioCluesCount" class="text-white font-bold">--</span></div>
                                 </div>
                             </div>
