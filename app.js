@@ -2,24 +2,24 @@
    MOCK DATABASES & CONSTANTS
    ========================================================================== */
 
-// 16 Suspect Characters profile templates
+/// 16 Suspect Characters profile templates
 const CHARACTER_TEMPLATES = [
-    { name: "Mlle Rose", role: "Invitée Mystère", marker: "Une plume de boa pourpre parfumée", bio: "Fille d'un riche industriel, elle voyage incognito et cache un lourd secret de famille.", relation: "Elle est la fille biologique illégitime de la victime, qui l'a déshéritée la veille.", alibi: "Elle prétend s'être reposée dans le Grand Salon au moment du crime.", genre: "Femme", secret: "A dérobé des bijoux de famille dans le bureau de la victime quelques heures avant le drame." },
-    { name: "Colonel Moutarde", role: "Officier à la retraite", marker: "Une médaille militaire rayée", bio: "Héros de guerre décoré, homme fier au tempérament impulsif et autoritaire.", relation: "La victime détenait des preuves compromettantes de sa trahison passée.", alibi: "Il lisait un ouvrage d'histoire militaire dans la Bibliothèque.", genre: "Homme", secret: "A falsifié ses états de service militaire pour dissimuler une ancienne désertion." },
-    { name: "Madame Pervenche", role: "Amie d'enfance", marker: "Un étui à cigarettes en nacre", bio: "Veuve mondaine élégante, impliquée dans toutes les œuvres de charité de la haute société.", relation: "La victime faisait chanter son fils unique au sujet d'une dette colossale.", alibi: "Elle préparait une infusion de camomille dans la Cuisine.", genre: "Femme", secret: "A souscrit un emprunt illégal auprès d'un usurier mafieux pour couvrir les dettes de son fils." },
-    { name: "Professeur Violet", role: "Chercheur en chimie", marker: "Un carnet de notes à reliure violette", bio: "Universitaire brillant mais excentrique, travaillant sur des composants synthétiques.", relation: "La victime a volé ses brevets scientifiques pour faire fortune.", alibi: "Il faisait des prélèvements dans son bureau temporaire.", genre: "Homme", secret: "A volé des substances chimiques classées secrètes dans le laboratoire de l'université." },
-    { name: "Madame Leblanc", role: "Gouvernante en chef", marker: "Un trousseau de clés en laiton usé", bio: "Au service du domaine depuis 30 ans, elle connaît chaque recoin et chaque secret.", relation: "Elle protège sa fille, qui a été renvoyée injustement par la victime.", alibi: "Elle rangeait le linge de maison dans la lingerie.", genre: "Femme", secret: "A aidé sa fille à fuir la police en la cachant temporairement dans les combles du manoir." },
-    { name: "Monsieur Lenoir", role: "Médecin de famille", marker: "Un stéthoscope ancien argenté", bio: "Praticien réputé, discret, confident de toutes les maladies honteuses des environs.", relation: "Il a fourni des substances illégales à la victime sous la contrainte.", alibi: "Il rédigeait des ordonnances dans le Jardin d'Hiver.", genre: "Homme", secret: "A prescrit des substances interdites à des membres influents de la haute société." },
-    { name: "Dr Orchid", role: "Biologiste et botaniste", marker: "Une orchidée séchée dans sa poche", bio: "Chercheuse passionnée, elle étudie les plantes toxiques exotiques.", relation: "La victime menaçait de fermer ses laboratoires de recherche.", alibi: "Elle examinait les plantes dans la Serre principale.", genre: "Non-Binaire", secret: "A importé clandestinement des graines d'orchidées vénéneuses interdites par la convention sanitaire." },
-    { name: "Inspecteur Adams", role: "Détective invité", marker: "Une loupe à manche d'ébène", bio: "Ami de la victime, invité pour assurer la sécurité mais arrivé trop tard.", relation: "Il menait une enquête secrète sur les affaires frauduleuses de la victime.", alibi: "Il fumait sa pipe sur la terrasse arrière.", genre: "Homme", secret: "A effacé des preuves liant un de ses informateurs à un cambriolage récent." },
-    { name: "Baptiste le Valet", role: "Majordome particulier", marker: "Un gant blanc taché de cire", bio: "Froid et méticuleux, il orchestre le service de la maison d'une main de fer.", relation: "Il a été surpris en train de voler des bijoux par la victime juste avant le meurtre.", alibi: "Il servait des boissons dans le grand vestibule.", genre: "Homme", secret: "A volé de l'argenterie fine du domaine pour la revendre à un receleur local." },
-    { name: "Rosa la Cantatrice", role: "Artiste lyrique", marker: "Un éventail en dentelle noire", bio: "Cantatrice célèbre à la voix d'or, habituée des salons feutrés.", relation: "La victime menaçait de briser sa carrière en révélant sa perte de voix.", alibi: "Elle s'échauffait la voix dans la Salle de Musique.", genre: "Femme", secret: "Chante en playback lors de ses concerts officiels pour cacher son extinction de voix." },
-    { name: "Gaston le Cuisinier", role: "Chef de cuisine", marker: "Un couteau d'office très affûté", bio: "Artiste culinaire colérique, passionné par les épices rares et toxiques.", relation: "La victime s'apprêtait à le licencier sans indemnités après un scandale.", alibi: "Il préparait le dessert de minuit dans la Cuisine.", genre: "Homme", secret: "A utilisé des ingrédients avariés maquillés avec des épices fortes lors du grand banquet." },
-    { name: "Jeanne la Secrétaire", role: "Assistante personnelle", marker: "Un poudrier en or ciselé", bio: "Jeune femme ambitieuse gérant les comptes et la correspondance privée.", relation: "Elle avait détourné des fonds et la victime s'en était rendu compte.", alibi: "Elle tapait des lettres confidentielles dans le Boudoir.", genre: "Femme", secret: "A falsifié les comptes de la fondation pour financer sa dépendance aux jeux d'argent." },
-    { name: "Dupuis l'Avocat", role: "Conseiller juridique", marker: "Un stylo plume à plume d'or", bio: "Homme de loi cynique qui rédige les testaments et gère les litiges.", relation: "Il a falsifié le dernier testament de la victime à son avantage.", alibi: "Il révisait des documents légaux dans le petit salon.", genre: "Homme", secret: "A rédigé un faux testament pour un autre client décédé le mois dernier." },
-    { name: "Agatha la Romancière", role: "Auteure de romans policiers", marker: "Un mini calepin en cuir usé", bio: "Elle cherche l'inspiration pour son prochain livre de meurtre.", relation: "La victime lui servait de modèle pour le rôle du coupable détestable.", alibi: "Elle observait discrètement les invités depuis la mezzanine.", genre: "Femme", secret: "A plagié l'intrigue de son best-seller à partir du journal intime volé d'un confrère." },
-    { name: "Pierre le Jardinier", role: "Jardinier du domaine", marker: "Un sécateur rouillé dans l'étui", bio: "Homme taciturne proche de la nature, qui déteste la haute société.", relation: "La victime voulait raser son jardin historique pour construire un garage.", alibi: "Il taillait les rosiers grimpants dans la Cour d'honneur.", genre: "Homme", secret: "Cultive des plantes hallucinogènes interdites dans un recoin caché de la serre." },
-    { name: "Clara la Journaliste", role: "Reporter d'investigation", marker: "Un carnet de presse jaune vif", bio: "Toujours à l'affût d'un scoop, elle s'est infiltrée parmi les invités.", relation: "Elle s'apprêtait à publier un article accablant sur les fraudes de la victime.", alibi: "Elle prenait des notes discrètes près du vestiaire.", genre: "Non-Binaire", secret: "A piraté la boîte mail privée de la victime pour obtenir des scoops exclusifs." }
+    { name: "Mlle Rose", role: "Invitée Mystère", marker: "Une plume de boa pourpre parfumée", bio: "Fille d'un riche industriel, elle voyage incognito et cache un lourd secret de famille.", relation: "Elle est la fille biologique illégitime de la victime, qui l'a déshéritée la veille.", alibi: "Elle prétend s'être reposée dans le Grand Salon au moment du crime.", genre: "Femme", secret: "A dérobé des bijoux de famille dans le bureau de la victime quelques heures avant le drame.", chronology: "18:30 - Entrée dans la Bibliothèque ; 19:15 - Discussion avec la victime dans le Grand Salon ; 20:45 - Cache des bijoux de famille dérobés dans le Bureau ; 21:30 - Repos simulé dans le Grand Salon" },
+    { name: "Colonel Moutarde", role: "Officier à la retraite", marker: "Une médaille militaire rayée", bio: "Héros de guerre décoré, homme fier au tempérament impulsif et autoritaire.", relation: "La victime détenait des preuves compromettantes de sa trahison passée.", alibi: "Il lisait un ouvrage d'histoire militaire dans la Bibliothèque.", genre: "Homme", secret: "A falsifié ses états de service militaire pour dissimuler une ancienne désertion.", chronology: "18:45 - Arrivée au vestibule ; 19:30 - Entrevue orageuse dans le Bureau avec la victime ; 20:15 - Lecture dans la Bibliothèque ; 21:45 - Perte de sa montre à gousset" },
+    { name: "Madame Pervenche", role: "Amie d'enfance", marker: "Un étui à cigarettes en nacre", bio: "Veuve mondaine élégante, impliquée dans toutes les œuvres de charité de la haute société.", relation: "La victime faisait chanter son fils unique au sujet d'une dette colossale.", alibi: "Elle préparait une infusion de camomille dans la Cuisine.", genre: "Femme", secret: "A souscrit un emprunt illégal auprès d'un usurier mafieux pour couvrir les dettes de son fils.", chronology: "19:00 - Entrée au Manoir ; 19:45 - Discussion confidentielle avec son fils ; 20:30 - Préparation d'une camomille dans la Cuisine ; 21:15 - Signature d'un contrat financier" },
+    { name: "Professeur Violet", role: "Chercheur en chimie", marker: "Un carnet de notes à reliure violette", bio: "Universitaire brillant mais excentrique, travaillant sur des composants synthétiques.", relation: "La victime a volé ses brevets scientifiques pour faire fortune.", alibi: "Il faisait des prélèvements dans son bureau temporaire.", genre: "Homme", secret: "A volé des substances chimiques classées secrètes dans le laboratoire de l'université.", chronology: "18:30 - Installation dans le Bureau temporaire ; 19:15 - Disparition de brevets de la victime ; 20:30 - Prélèvements chimiques dans la Cuisine ; 21:00 - Vol de substances dans le laboratoire" },
+    { name: "Madame Leblanc", role: "Gouvernante en chef", marker: "Un trousseau de clés en laiton usé", bio: "Au service du domaine depuis 30 ans, elle connaît chaque recoin et chaque secret.", relation: "Elle protège sa fille, qui a été renvoyée injustement par la victime.", alibi: "Elle rangeait le linge de maison dans la lingerie.", genre: "Femme", secret: "A aidé sa fille à fuir la police en la cachant temporairement dans les combles du manoir.", chronology: "18:00 - Prise de service ; 19:00 - Dissimulation de sa fille dans les combles ; 20:30 - Rangement du linge dans la lingerie ; 21:30 - Ronde suspecte près du Bureau" },
+    { name: "Monsieur Lenoir", role: "Médecin de famille", marker: "Un stéthoscope ancien argenté", bio: "Praticien réputé, discret, confident de toutes les maladies honteuses des environs.", relation: "Il a fourni des substances illégales à la victime sous la contrainte.", alibi: "Il rédigeait des ordonnances dans le Jardin d'Hiver.", genre: "Homme", secret: "A prescrit des substances interdites à des membres influents de la haute société.", chronology: "18:45 - Arrivée au chevet de la victime ; 19:30 - Livraison forcée de substances toxiques ; 20:15 - Rédaction d'ordonnances dans le Jardin d'Hiver ; 21:30 - Constat du décès" },
+    { name: "Dr Orchid", role: "Biologiste et botaniste", marker: "Une orchidée séchée dans sa poche", bio: "Chercheuse passionnée, elle étudie les plantes toxiques exotiques.", relation: "La victime menaçait de fermer ses laboratoires de recherche.", alibi: "Elle examinait les plantes dans la Serre principale.", genre: "Non-Binaire", secret: "A importé clandestinement des graines d'orchidées vénéneuses interdites par la convention sanitaire.", chronology: "18:30 - Visite des serres ; 19:30 - Examen secret des orchidées toxiques ; 20:15 - Importation suspecte de graines interdites ; 21:00 - Passage rapide en cuisine" },
+    { name: "Inspecteur Adams", role: "Détective invité", marker: "Une loupe à manche d'ébène", bio: "Ami de la victime, invité pour assurer la sécurité mais arrivé trop tard.", relation: "Il menait une enquête secrète sur les affaires frauduleuses de la victime.", alibi: "Il fumait sa pipe sur la terrasse arrière.", genre: "Homme", secret: "A effacé des preuves liant un de ses informateurs à un cambriolage récent.", chronology: "19:00 - Arrivée discrète pour surveiller ; 20:00 - Surveillance de l'arrière-boutique ; 21:00 - Pause pipe sur la terrasse arrière ; 21:45 - Entrée sur la scène de crime" },
+    { name: "Baptiste le Valet", role: "Majordome particulier", marker: "Un gant blanc taché de cire", bio: "Froid et méticuleux, il orchestre le service de la maison d'une main de fer.", relation: "Il a été surpris en train de voler des bijoux par la victime juste avant le meurtre.", alibi: "Il servait des boissons dans le grand vestibule.", genre: "Homme", secret: "A volé de l'argenterie fine du domaine pour la revendre à un receleur local.", chronology: "18:00 - Service des boissons dans le Vestibule ; 19:15 - Vol d'une ménagère en argent ; 20:30 - Recel dans les buissons ; 21:45 - Nettoyage suspect d'une bougie" },
+    { name: "Rosa la Cantatrice", role: "Artiste lyrique", marker: "Un éventail en dentelle noire", bio: "Cantatrice célèbre à la voix d'or, habituée des salons feutrés.", relation: "La victime menaçait de briser sa carrière en révélant sa perte de voix.", alibi: "Elle s'échauffait la voix dans la Salle de Musique.", genre: "Femme", secret: "Chante en playback lors de ses concerts officiels pour cacher son extinction de voix.", chronology: "19:00 - Arrivée mondaine ; 19:45 - Chantage subi de la part de la victime ; 20:30 - Échauffement de la voix dans la Salle de Musique ; 21:15 - Perte de son éventail" },
+    { name: "Gaston le Cuisinier", role: "Chef de cuisine", marker: "Un couteau d'office très affûté", bio: "Artiste culinaire colérique, passionné par les épices rares et toxiques.", relation: "La victime s'apprêtait à le licencier sans indemnités après un scandale.", alibi: "Il préparait le dessert de minuit dans la Cuisine.", genre: "Homme", secret: "A utilisé des ingrédients avariés maquillés avec des épices fortes lors du grand banquet.", chronology: "17:30 - Début de préparation du banquet ; 19:00 - Utilisation de produits avariés masqués ; 20:30 - Menace de licenciement par la victime ; 21:45 - Affûtage de son couteau de cuisine" },
+    { name: "Jeanne la Secrétaire", role: "Assistante personnelle", marker: "Un poudrier en or ciselé", bio: "Jeune femme ambitieuse gérant les comptes et la correspondance privée.", relation: "Elle avait détourné des fonds et la victime s'en était rendu compte.", alibi: "Elle tapait des lettres confidentielles dans le Boudoir.", genre: "Femme", secret: "A falsifié les comptes de la fondation pour financer sa dépendance aux jeux d'argent.", chronology: "18:00 - Classement de courriers ; 19:30 - Détournement de fonds sur les registres ; 20:30 - Rédaction de lettres dans le Boudoir ; 21:15 - Dissimulation d'un chèque" },
+    { name: "Dupuis l'Avocat", role: "Conseiller juridique", marker: "Un stylo plume à plume d'or", bio: "Homme de loi cynique qui rédige les testaments et gère les litiges.", relation: "Il a falsifié le dernier testament de la victime à son avantage.", alibi: "Il révisait des documents légaux dans le petit salon.", genre: "Homme", secret: "A rédigé un faux testament pour un autre client décédé le mois dernier.", chronology: "18:30 - Relecture de testaments ; 19:30 - Falsification d'une clause successorale ; 20:45 - Consultation de dossiers dans le Petit Salon ; 21:30 - Témoin d'une dispute" },
+    { name: "Agatha la Romancière", role: "Auteure de romans policiers", marker: "Un mini calepin en cuir usé", bio: "Elle cherche l'inspiration pour son prochain livre de meurtre.", relation: "La victime lui servait de modèle pour le rôle du coupable détestable.", alibi: "Elle observait discrètement les invités depuis la mezzanine.", genre: "Femme", secret: "A plagié l'intrigue de son best-seller à partir du journal intime volé d'un confrère.", chronology: "18:45 - Observation des invités depuis la mezzanine ; 19:30 - Vol du journal intime de Dupuis ; 20:45 - Prise de notes dans la Bibliothèque ; 21:30 - Découverte de la scène du crime" },
+    { name: "Pierre le Jardinier", role: "Jardinier du domaine", marker: "Un sécateur rouillé dans l'étui", bio: "Homme taciturne proche de la nature, qui déteste la haute société.", relation: "La victime voulait raser son jardin historique pour construire un garage.", alibi: "Il taillait les rosiers grimpants dans la Cour d'honneur.", genre: "Homme", secret: "Cultive des plantes hallucinogènes interdites dans un recoin caché de la serre.", chronology: "18:00 - Entretien des extérieurs ; 19:00 - Récolte de plantes hallucinogènes ; 20:00 - Conflit avec la victime au Jardin ; 21:15 - Abandon d'un sécateur rouillé" },
+    { name: "Clara la Journaliste", role: "Reporter d'investigation", marker: "Un carnet de presse jaune vif", bio: "Toujours à l'affût d'un scoop, elle s'est infiltrée parmi les invités.", relation: "Elle s'apprêtait à publier un article accablant sur les fraudes de la victime.", alibi: "Elle prend des notes discrètes près du vestiaire.", genre: "Non-Binaire", secret: "A piraté la boîte mail privée de la victime pour obtenir des scoops exclusifs.", chronology: "18:30 - Infiltration sous fausse identité ; 19:15 - Piratage de la boîte mail de la victime ; 20:30 - Prise de notes près du Vestiaire ; 21:30 - Fuite suspecte par le jardin" }
 ];
 
 // List of rooms with potential clues
@@ -510,6 +510,54 @@ function renderPlayerDashboard(player) {
     if (secretEl) {
         secretEl.textContent = player.secret || "Aucun secret particulier.";
     }
+    
+    // Render Personal Chronology
+    const chronologyBox = document.getElementById('dashPlayerChronology');
+    if (chronologyBox) {
+        chronologyBox.innerHTML = '';
+        let items = [];
+        
+        if (player.chronology) {
+            if (Array.isArray(player.chronology)) {
+                items = player.chronology;
+            } else if (typeof player.chronology === 'string') {
+                if (player.chronology.includes('\n')) {
+                    items = player.chronology.split('\n');
+                } else if (player.chronology.includes(';')) {
+                    items = player.chronology.split(';');
+                } else {
+                    items = [player.chronology];
+                }
+            }
+        }
+        
+        items = items.map(item => {
+            let clean = item.trim();
+            clean = clean.replace(/^[-\*\•\s]+/, '');
+            return clean;
+        }).filter(item => item.length > 0);
+        
+        if (items.length === 0) {
+            chronologyBox.innerHTML = `<li class="text-slate-500 italic text-2xs p-1">Aucun détail d'emploi du temps disponible.</li>`;
+        } else {
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.className = "flex items-start gap-2 text-2xs leading-relaxed text-slate-300 border-b border-white/5 pb-1.5 last:border-0 last:pb-0";
+                
+                const timeRegex = /^(\d{2}[h\:]\d{2})\s*[-:]?\s*(.*)$/i;
+                const match = item.match(timeRegex);
+                if (match) {
+                    const time = match[1];
+                    const desc = match[2];
+                    li.innerHTML = `<span class="text-gold font-extrabold shrink-0 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">${time}</span><span class="pt-0.5 text-slate-300">${desc}</span>`;
+                } else {
+                    li.innerHTML = `<span class="text-blood shrink-0 pt-0.5"><i class="fa-solid fa-clock text-3xs"></i></span><span class="text-slate-300">${item}</span>`;
+                }
+                chronologyBox.appendChild(li);
+            });
+        }
+    }
+    
     document.getElementById('dashPlayerLienVictime').textContent = player.lienVictime;
 
     // Render Knowledge List
@@ -852,6 +900,7 @@ async function handleUnifiedSessionSubmit(e) {
                     marker: s.marker || charTemplate.marker,
                     genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
                     secret: s.secret || charTemplate.secret || "",
+                    chronology: s.chronology || (dataScenario.personal_timelines ? (dataScenario.personal_timelines[s.name] || dataScenario.personal_timelines[s.roleName]) : "") || charTemplate.chronology || "",
                     characterTraits: "",
                     avatarUrl: "",
                     actionPoints: 1,
@@ -892,6 +941,7 @@ async function handleUnifiedSessionSubmit(e) {
                     marker: char.marker,
                     genre: char.genre || "Non-Binaire",
                     secret: char.secret || "",
+                    chronology: char.chronology || "",
                     characterTraits: "",
                     avatarUrl: "",
                     actionPoints: 1,
@@ -1426,6 +1476,7 @@ async function handleLogin(e) {
                     appState.players[playerIndex].avatarUrl = data.playerDetails.avatarUrl || appState.players[playerIndex].avatarUrl;
                     appState.players[playerIndex].actionPoints = data.playerDetails.actionPoints !== undefined && data.playerDetails.actionPoints !== null ? Number(data.playerDetails.actionPoints) : appState.players[playerIndex].actionPoints;
                     appState.players[playerIndex].secret = data.playerDetails.secret || appState.players[playerIndex].secret;
+                    appState.players[playerIndex].chronology = data.playerDetails.chronology || appState.players[playerIndex].chronology;
                 }
             }
         } else {

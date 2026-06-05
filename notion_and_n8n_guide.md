@@ -37,6 +37,7 @@ Pour que la plateforme fonctionne, configurez 4 bases de données interconnecté
 * **Genre** (Select) : `Homme` | `Femme` | `Non-Binaire`.
 * **Lien avec la Victime** (Rich Text) : Nature de la relation (dettes, secrets, liens de sang).
 * **Secret** (Rich Text) : Un secret inavouable commis par le personnage (moins grave que le meurtre).
+* **Chronologie** (Rich Text) : Puces chronologiques d'actions (allées et venues d'avant-meurtre).
 * **Rôle / Histoire** (Rich Text) : Biographie complète et contexte.
 * **Traits de Caractère** (Text) : 3 traits saisis lors de l'onboarding (ex: "Froid, Calculateur, Menteur").
 * **Avatar / Photo** (Files & Media) : Image de l'avatar générée par l'IA (format 1920x1080).
@@ -253,7 +254,8 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
     "roleName": "Mlle Rose",
     "avatarUrl": "https://storage.googleapis.com/...",
     "actionPoints": 2,
-    "secret": "A dérobé des bijoux de famille dans le bureau de la victime..."
+    "secret": "A dérobé des bijoux de famille dans le bureau de la victime...",
+    "chronology": "18:30 - Entrée dans la Bibliothèque ; 19:15 - Discussion avec la victime..."
   }
 }
 ```

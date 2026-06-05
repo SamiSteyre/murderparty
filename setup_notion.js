@@ -146,6 +146,7 @@ async function run() {
                 },
                 "Lien avec la Victime": { rich_text: {} },
                 "Secret": { rich_text: {} },
+                "Chronologie": { rich_text: {} },
                 "Rôle / Histoire": { rich_text: {} },
                 "Traits de Caractère": { rich_text: {} },
                 "Avatar / Photo": { files: {} },

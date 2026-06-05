@@ -140,7 +140,18 @@ $charactersBody = @{
                 )
             }
         }
+        "Genre" = @{
+            select = @{
+                options = @(
+                    @{ name = "Homme"; color = "blue" }
+                    @{ name = "Femme"; color = "pink" }
+                    @{ name = "Non-Binaire"; color = "purple" }
+                )
+            }
+        }
         "Lien avec la Victime" = @{ rich_text = @{} }
+        "Secret" = @{ rich_text = @{} }
+        "Chronologie" = @{ rich_text = @{} }
         "Role et Histoire" = @{ rich_text = @{} }
         "Traits de Caractere" = @{ rich_text = @{} }
         "Avatar ou Photo" = @{ files = @{} }
