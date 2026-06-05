@@ -65,6 +65,7 @@ async function run() {
                 "Nom": { title: {} },
                 "Pitch Global": { rich_text: {} },
                 "Scène du Crime": { rich_text: {} },
+                "Victime": { rich_text: {} },
                 "Statut": {
                     select: {
                         options: [

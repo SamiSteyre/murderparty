@@ -569,7 +569,11 @@ function renderPlayerDashboard(player) {
     const roomSelect = document.getElementById('searchRoomSelect');
     roomSelect.innerHTML = '';
     
-    Object.keys(ROOMS_DB).forEach(roomName => {
+    // Dynamically retrieve unique rooms from clues list, fallback to ROOMS_DB keys
+    const uniqueClueRooms = [...new Set(appState.clues.map(c => c.location))];
+    const dropDownRooms = uniqueClueRooms.length > 0 ? uniqueClueRooms : Object.keys(ROOMS_DB);
+
+    dropDownRooms.forEach(roomName => {
         const option = document.createElement('option');
         option.value = roomName;
         option.textContent = roomName;
@@ -698,15 +702,101 @@ async function handleUnifiedSessionSubmit(e) {
                     };
                 });
 
+                // Simulate 10 rooms with 3 clues each
+                const simulatedRooms = [
+                    {
+                        name: "Le Bureau de l'arrière-boutique",
+                        clues: [
+                            { name: "Verre de champagne brisé", description: "Une flûte en cristal gît en morceaux sous une table. Une légère odeur d'amande amère s'en dégage." },
+                            { name: "Foulard en soie égaré", description: "Un luxueux foulard en soie monogrammé, coincé dans la charnière d'un fauteuil." },
+                            { name: "Cendrier tiède", description: "Contient des cendres de cigares haut de gamme importés." }
+                        ]
+                    },
+                    {
+                        name: "Le Grand Salon",
+                        clues: [
+                            { name: "Livre d'alchimie déplacé", description: "Un ouvrage poussiéreux sur les poisons végétaux est posé à l'envers sur une étagère." },
+                            { name: "Lettre de chantage déchirée", description: "Des morceaux de papier révélant une demande de rançon de 100 000 francs." },
+                            { name: "Montre à gousset cassée", description: "Une montre dont le verre est brisé, arrêtée précisément sur 21h45." }
+                        ]
+                    },
+                    {
+                        name: "La Bibliothèque",
+                        clues: [
+                            { name: "Fiole d'Arsenic vide", description: "Un flacon d'apothicaire caché au fond du placard à épices. L'étiquette mentionne 'Arsenic'." },
+                            { name: "Couteau de cuisine manquant", description: "Un emplacement est vide dans le bloc de couteaux du chef Gaston." },
+                            { name: "Tisanière encore chaude", description: "Une tasse de camomille entamée, contenant des résidus de poudre blanche." }
+                        ]
+                    },
+                    {
+                        name: "La Cuisine",
+                        clues: [
+                            { name: "Terre meuble suspecte", description: "La terre d'une grande plante verte semble avoir été retournée récemment. Quelque chose y est enfoui." },
+                            { name: "Clé dorée", description: "Une petite clé en laiton retrouvée sous un pot de fleur. Elle semble ouvrir un tiroir secret." },
+                            { name: "Traces de pas boueuses", description: "Des empreintes menant de la porte vitrée vers le fauteuil du fond." }
+                        ]
+                    },
+                    {
+                        name: "Le Jardin d'Hiver",
+                        clues: [
+                            { name: "Coffre-fort ouvert", description: "Le coffre dissimulé derrière le tableau est grand ouvert. Il est vide de tout document légal." },
+                            { name: "Dernier Testament", description: "Un brouillon de testament déshéritant les proches de la victime au profit d'une œuvre caritative." },
+                            { name: "Chemise ensanglantée", description: "Une chemise d'homme froissée portant des taches de sang, dissimulée dans le panier à linge." }
+                        ]
+                    },
+                    {
+                        name: "La Chambre de la Victime",
+                        clues: [
+                            { name: "Bouteille de grand cru entamée", description: "Un château Margaux 1918 ouvert, contenant des traces de sédatif liquide." },
+                            { name: "Mégot de cigarette pourpre", description: "Un mégot de cigarette portant une trace de rouge à lèvres rouge vif." },
+                            { name: "Bouton de manchette en or", description: "Un bouton gravé d'un blason militaire, perdu près des casiers de Bourgogne." }
+                        ]
+                    },
+                    {
+                        name: "La Serre principale",
+                        clues: [
+                            { name: "Sécateur taché", description: "Un sécateur avec des traces suspectes de rouille sombre." },
+                            { name: "Fleur rare écrasée", description: "Une fleur rare exotique piétinée au sol de la serre." },
+                            { name: "Gant en cuir", description: "Un gant noir abandonné sous les feuilles d'une fougère." }
+                        ]
+                    },
+                    {
+                        name: "Le Grand Hall",
+                        clues: [
+                            { name: "Horloge brisée", description: "Une horloge murale arrêtée à 22h05 après un choc violent." },
+                            { name: "Parapluie mouillé", description: "Un parapluie encore humide dans le porte-manteau de l'entrée." },
+                            { name: "Lettre anonyme", description: "Un mot d'avertissement froissé trouvé par terre près de la porte." }
+                        ]
+                    },
+                    {
+                        name: "La Cave à Vins",
+                        clues: [
+                            { name: "Verre en cristal fêlé", description: "Un verre portant des traces de vin rouge séché." },
+                            { name: "Bouchon de liège", description: "Un bouchon de liège marqué d'une date ancienne." },
+                            { name: "Clé de la cave", description: "La clé en fer forgé permettant d'ouvrir la grille de la cave." }
+                        ]
+                    },
+                    {
+                        name: "Le Boudoir",
+                        clues: [
+                            { name: "Flacon de parfum vide", description: "Un parfum rare dont l'odeur embaume encore le petit divan." },
+                            { name: "Lettre d'amour brûlée", description: "Un mot doux à moitié consumé dans la cheminée." },
+                            { name: "Épingle à cheveux dorée", description: "Une épingle dorée trouvée sous le tapis." }
+                        ]
+                    }
+                ];
+
                 dataScenario = {
                     success: true,
                     scenario_id: "sc_" + Math.random().toString(36).substr(2, 9),
                     title: "Le Dernier Souffle du Speakeasy",
+                    general_location: "Un Speakeasy clandestin",
                     murder_room: "Le Bureau de l'arrière-boutique",
-                    clues_count: 24,
+                    clues_count: simulatedRooms.length * 3,
                     pitch: userPitch || "Dans la pénombre d'un club de jazz clandestin, un parrain de la mafia a été assassiné de sang-froid.",
                     illustration_url: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
-                    suspects: simulatedSuspects
+                    suspects: simulatedSuspects,
+                    rooms: simulatedRooms
                 };
             }
 
@@ -804,19 +894,38 @@ async function handleUnifiedSessionSubmit(e) {
 
         // Initialize clues DB state
         appState.clues = [];
-        Object.entries(ROOMS_DB).forEach(([roomName, cluesList]) => {
-            cluesList.forEach((c, idx) => {
-                appState.clues.push({
-                    id: `clue_${roomName.replace(/\s+/g, '_')}_${idx}`,
-                    name: c.name,
-                    description: c.description,
-                    type: c.type,
-                    location: roomName,
-                    status: "Caché",
-                    foundBy: ""
+        if (dataScenario && dataScenario.rooms && Array.isArray(dataScenario.rooms)) {
+            dataScenario.rooms.forEach(room => {
+                const roomName = room.name;
+                if (room.clues && Array.isArray(room.clues)) {
+                    room.clues.forEach((c, idx) => {
+                        appState.clues.push({
+                            id: `clue_${roomName.replace(/\s+/g, '_')}_${idx}`,
+                            name: c.name,
+                            description: c.description,
+                            type: "Fouille de Pièce",
+                            location: roomName,
+                            status: "Caché",
+                            foundBy: ""
+                        });
+                    });
+                }
+            });
+        } else {
+            Object.entries(ROOMS_DB).forEach(([roomName, cluesList]) => {
+                cluesList.forEach((c, idx) => {
+                    appState.clues.push({
+                        id: `clue_${roomName.replace(/\s+/g, '_')}_${idx}`,
+                        name: c.name,
+                        description: c.description,
+                        type: c.type || "Fouille de Pièce",
+                        location: roomName,
+                        status: "Caché",
+                        foundBy: ""
+                    });
                 });
             });
-        });
+        }
 
         // Switch to the overview panel (2nd stage)
         appState.orgaView = 'generated';
@@ -887,6 +996,10 @@ async function handleLaunchSession(e) {
         const shuffledEmails = [...emails];
         shuffleArray(shuffledEmails);
 
+        // Extract unique rooms from dynamic clues to assign in mission targetRoom
+        const uniqueRooms = [...new Set(appState.clues.map(c => c.location))];
+        const roomsList = uniqueRooms.length > 0 ? uniqueRooms : Object.keys(ROOMS_DB);
+
         appState.players.forEach((p, idx) => {
             p.email = shuffledEmails[idx];
             p.actionPoints = pointsPerPlayer;
@@ -897,8 +1010,10 @@ async function handleLaunchSession(e) {
             const knowledge1 = `${otherChars[0].roleName} : Alibi suspect près de ${otherChars[0].marker}.`;
             const knowledge2 = `${otherChars[1].roleName} : A été vu(e) avec ${p.marker} en main.`;
             p.knowledge = [knowledge1, knowledge2];
+            
+            const targetRoom = roomsList[idx % roomsList.length];
             p.missions = [
-                { id: `mission_${idx}_1`, title: `Fouiller le lieu : ${Object.keys(ROOMS_DB)[idx % 6]}`, completed: false, points: 2, targetRoom: Object.keys(ROOMS_DB)[idx % 6] },
+                { id: `mission_${idx}_1`, title: `Fouiller le lieu : ${targetRoom}`, completed: false, points: 2, targetRoom: targetRoom },
                 { id: `mission_${idx}_2`, title: `Retrouver le suspect possédant la signature : "${otherChars[2].marker}"`, completed: false, points: 2 }
             ];
         });

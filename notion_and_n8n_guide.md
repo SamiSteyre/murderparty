@@ -12,6 +12,7 @@ Pour que la plateforme fonctionne, configurez 4 bases de données interconnecté
 * **Titre** (Title) : Nom de l'enquête.
 * **Pitch Global** (Rich Text) : L'intrigue générale.
 * **Scène du Crime** (Text) : Lieu du meurtre (ex: "La Serre").
+* **Victime** (Rich Text) : Nom fictif du personnage décédé.
 * **Statut** (Select) : `En cours de génération` | `Vérifié`.
 * **Nombre Total d'Indices** (Number) : Nombre total d'indices générés pour ce scénario.
 * **Relations :**
