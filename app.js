@@ -4,22 +4,182 @@
 
 /// 16 Suspect Characters profile templates
 const CHARACTER_TEMPLATES = [
-    { name: "Mlle Rose", role: "Invitée Mystère", marker: "Une plume de boa pourpre parfumée", bio: "Fille d'un riche industriel, elle voyage incognito et cache un lourd secret de famille.", relation: "Elle est la fille biologique illégitime de la victime, qui l'a déshéritée la veille.", alibi: "Elle prétend s'être reposée dans le Grand Salon au moment du crime.", genre: "Femme", secret: "A dérobé des bijoux de famille dans le bureau de la victime quelques heures avant le drame.", chronology: "18:30 - Entrée dans la Bibliothèque ; 19:15 - Discussion avec la victime dans le Grand Salon ; 20:45 - Cache des bijoux de famille dérobés dans le Bureau ; 21:30 - Repos simulé dans le Grand Salon" },
-    { name: "Colonel Moutarde", role: "Officier à la retraite", marker: "Une médaille militaire rayée", bio: "Héros de guerre décoré, homme fier au tempérament impulsif et autoritaire.", relation: "La victime détenait des preuves compromettantes de sa trahison passée.", alibi: "Il lisait un ouvrage d'histoire militaire dans la Bibliothèque.", genre: "Homme", secret: "A falsifié ses états de service militaire pour dissimuler une ancienne désertion.", chronology: "18:45 - Arrivée au vestibule ; 19:30 - Entrevue orageuse dans le Bureau avec la victime ; 20:15 - Lecture dans la Bibliothèque ; 21:45 - Perte de sa montre à gousset" },
-    { name: "Madame Pervenche", role: "Amie d'enfance", marker: "Un étui à cigarettes en nacre", bio: "Veuve mondaine élégante, impliquée dans toutes les œuvres de charité de la haute société.", relation: "La victime faisait chanter son fils unique au sujet d'une dette colossale.", alibi: "Elle préparait une infusion de camomille dans la Cuisine.", genre: "Femme", secret: "A souscrit un emprunt illégal auprès d'un usurier mafieux pour couvrir les dettes de son fils.", chronology: "19:00 - Entrée au Manoir ; 19:45 - Discussion confidentielle avec son fils ; 20:30 - Préparation d'une camomille dans la Cuisine ; 21:15 - Signature d'un contrat financier" },
-    { name: "Professeur Violet", role: "Chercheur en chimie", marker: "Un carnet de notes à reliure violette", bio: "Universitaire brillant mais excentrique, travaillant sur des composants synthétiques.", relation: "La victime a volé ses brevets scientifiques pour faire fortune.", alibi: "Il faisait des prélèvements dans son bureau temporaire.", genre: "Homme", secret: "A volé des substances chimiques classées secrètes dans le laboratoire de l'université.", chronology: "18:30 - Installation dans le Bureau temporaire ; 19:15 - Disparition de brevets de la victime ; 20:30 - Prélèvements chimiques dans la Cuisine ; 21:00 - Vol de substances dans le laboratoire" },
-    { name: "Madame Leblanc", role: "Gouvernante en chef", marker: "Un trousseau de clés en laiton usé", bio: "Au service du domaine depuis 30 ans, elle connaît chaque recoin et chaque secret.", relation: "Elle protège sa fille, qui a été renvoyée injustement par la victime.", alibi: "Elle rangeait le linge de maison dans la lingerie.", genre: "Femme", secret: "A aidé sa fille à fuir la police en la cachant temporairement dans les combles du manoir.", chronology: "18:00 - Prise de service ; 19:00 - Dissimulation de sa fille dans les combles ; 20:30 - Rangement du linge dans la lingerie ; 21:30 - Ronde suspecte près du Bureau" },
-    { name: "Monsieur Lenoir", role: "Médecin de famille", marker: "Un stéthoscope ancien argenté", bio: "Praticien réputé, discret, confident de toutes les maladies honteuses des environs.", relation: "Il a fourni des substances illégales à la victime sous la contrainte.", alibi: "Il rédigeait des ordonnances dans le Jardin d'Hiver.", genre: "Homme", secret: "A prescrit des substances interdites à des membres influents de la haute société.", chronology: "18:45 - Arrivée au chevet de la victime ; 19:30 - Livraison forcée de substances toxiques ; 20:15 - Rédaction d'ordonnances dans le Jardin d'Hiver ; 21:30 - Constat du décès" },
-    { name: "Dr Orchid", role: "Biologiste et botaniste", marker: "Une orchidée séchée dans sa poche", bio: "Chercheuse passionnée, elle étudie les plantes toxiques exotiques.", relation: "La victime menaçait de fermer ses laboratoires de recherche.", alibi: "Elle examinait les plantes dans la Serre principale.", genre: "Non-Binaire", secret: "A importé clandestinement des graines d'orchidées vénéneuses interdites par la convention sanitaire.", chronology: "18:30 - Visite des serres ; 19:30 - Examen secret des orchidées toxiques ; 20:15 - Importation suspecte de graines interdites ; 21:00 - Passage rapide en cuisine" },
-    { name: "Inspecteur Adams", role: "Détective invité", marker: "Une loupe à manche d'ébène", bio: "Ami de la victime, invité pour assurer la sécurité mais arrivé trop tard.", relation: "Il menait une enquête secrète sur les affaires frauduleuses de la victime.", alibi: "Il fumait sa pipe sur la terrasse arrière.", genre: "Homme", secret: "A effacé des preuves liant un de ses informateurs à un cambriolage récent.", chronology: "19:00 - Arrivée discrète pour surveiller ; 20:00 - Surveillance de l'arrière-boutique ; 21:00 - Pause pipe sur la terrasse arrière ; 21:45 - Entrée sur la scène de crime" },
-    { name: "Baptiste le Valet", role: "Majordome particulier", marker: "Un gant blanc taché de cire", bio: "Froid et méticuleux, il orchestre le service de la maison d'une main de fer.", relation: "Il a été surpris en train de voler des bijoux par la victime juste avant le meurtre.", alibi: "Il servait des boissons dans le grand vestibule.", genre: "Homme", secret: "A volé de l'argenterie fine du domaine pour la revendre à un receleur local.", chronology: "18:00 - Service des boissons dans le Vestibule ; 19:15 - Vol d'une ménagère en argent ; 20:30 - Recel dans les buissons ; 21:45 - Nettoyage suspect d'une bougie" },
-    { name: "Rosa la Cantatrice", role: "Artiste lyrique", marker: "Un éventail en dentelle noire", bio: "Cantatrice célèbre à la voix d'or, habituée des salons feutrés.", relation: "La victime menaçait de briser sa carrière en révélant sa perte de voix.", alibi: "Elle s'échauffait la voix dans la Salle de Musique.", genre: "Femme", secret: "Chante en playback lors de ses concerts officiels pour cacher son extinction de voix.", chronology: "19:00 - Arrivée mondaine ; 19:45 - Chantage subi de la part de la victime ; 20:30 - Échauffement de la voix dans la Salle de Musique ; 21:15 - Perte de son éventail" },
-    { name: "Gaston le Cuisinier", role: "Chef de cuisine", marker: "Un couteau d'office très affûté", bio: "Artiste culinaire colérique, passionné par les épices rares et toxiques.", relation: "La victime s'apprêtait à le licencier sans indemnités après un scandale.", alibi: "Il préparait le dessert de minuit dans la Cuisine.", genre: "Homme", secret: "A utilisé des ingrédients avariés maquillés avec des épices fortes lors du grand banquet.", chronology: "17:30 - Début de préparation du banquet ; 19:00 - Utilisation de produits avariés masqués ; 20:30 - Menace de licenciement par la victime ; 21:45 - Affûtage de son couteau de cuisine" },
-    { name: "Jeanne la Secrétaire", role: "Assistante personnelle", marker: "Un poudrier en or ciselé", bio: "Jeune femme ambitieuse gérant les comptes et la correspondance privée.", relation: "Elle avait détourné des fonds et la victime s'en était rendu compte.", alibi: "Elle tapait des lettres confidentielles dans le Boudoir.", genre: "Femme", secret: "A falsifié les comptes de la fondation pour financer sa dépendance aux jeux d'argent.", chronology: "18:00 - Classement de courriers ; 19:30 - Détournement de fonds sur les registres ; 20:30 - Rédaction de lettres dans le Boudoir ; 21:15 - Dissimulation d'un chèque" },
-    { name: "Dupuis l'Avocat", role: "Conseiller juridique", marker: "Un stylo plume à plume d'or", bio: "Homme de loi cynique qui rédige les testaments et gère les litiges.", relation: "Il a falsifié le dernier testament de la victime à son avantage.", alibi: "Il révisait des documents légaux dans le petit salon.", genre: "Homme", secret: "A rédigé un faux testament pour un autre client décédé le mois dernier.", chronology: "18:30 - Relecture de testaments ; 19:30 - Falsification d'une clause successorale ; 20:45 - Consultation de dossiers dans le Petit Salon ; 21:30 - Témoin d'une dispute" },
-    { name: "Agatha la Romancière", role: "Auteure de romans policiers", marker: "Un mini calepin en cuir usé", bio: "Elle cherche l'inspiration pour son prochain livre de meurtre.", relation: "La victime lui servait de modèle pour le rôle du coupable détestable.", alibi: "Elle observait discrètement les invités depuis la mezzanine.", genre: "Femme", secret: "A plagié l'intrigue de son best-seller à partir du journal intime volé d'un confrère.", chronology: "18:45 - Observation des invités depuis la mezzanine ; 19:30 - Vol du journal intime de Dupuis ; 20:45 - Prise de notes dans la Bibliothèque ; 21:30 - Découverte de la scène du crime" },
-    { name: "Pierre le Jardinier", role: "Jardinier du domaine", marker: "Un sécateur rouillé dans l'étui", bio: "Homme taciturne proche de la nature, qui déteste la haute société.", relation: "La victime voulait raser son jardin historique pour construire un garage.", alibi: "Il taillait les rosiers grimpants dans la Cour d'honneur.", genre: "Homme", secret: "Cultive des plantes hallucinogènes interdites dans un recoin caché de la serre.", chronology: "18:00 - Entretien des extérieurs ; 19:00 - Récolte de plantes hallucinogènes ; 20:00 - Conflit avec la victime au Jardin ; 21:15 - Abandon d'un sécateur rouillé" },
-    { name: "Clara la Journaliste", role: "Reporter d'investigation", marker: "Un carnet de presse jaune vif", bio: "Toujours à l'affût d'un scoop, elle s'est infiltrée parmi les invités.", relation: "Elle s'apprêtait à publier un article accablant sur les fraudes de la victime.", alibi: "Elle prend des notes discrètes près du vestiaire.", genre: "Non-Binaire", secret: "A piraté la boîte mail privée de la victime pour obtenir des scoops exclusifs.", chronology: "18:30 - Infiltration sous fausse identité ; 19:15 - Piratage de la boîte mail de la victime ; 20:30 - Prise de notes près du Vestiaire ; 21:30 - Fuite suspecte par le jardin" }
+    {
+        name: "Mlle Rose",
+        role: "Invitée Mystère",
+        marker: "Une plume de boa pourpre parfumée",
+        bio: "Fille unique d'un richissime industriel de la sidérurgie, Mlle Rose est une jeune femme d'une beauté magnétique et d'une intelligence redoutable. Élevée dans les salons les plus huppés, elle a pourtant choisi de voyager sous un pseudonyme incognito afin d'échapper au contrôle étouffant de sa famille et à un mariage arrangé. Mais derrière son assurance mondaine et ses rires charmants se cache une vérité bien plus sombre. La veille du drame, Rose a découvert par hasard des lettres secrètes révélant qu'elle est en réalité la fille biologique illégitime de la victime, et que ce dernier, par pur cynisme, l'a déshéritée de toute sa fortune au profit d'une obscure fondation caritative. Blessée dans son amour propre et terrifiée par la ruine qui la guette si son identité est révélée, elle est venue au domaine pour exiger des comptes et subtiliser des titres de propriété compromettants.",
+        relation: "Elle est la fille biologique illégitime de la victime, qui l'a déshéritée la veille.",
+        alibi: "Elle prétend s'être reposée dans le Grand Salon au moment du crime.",
+        genre: "Femme",
+        secret: "A dérobé des bijoux de famille dans le bureau de la victime quelques heures avant le drame.",
+        chronology: "18:30 - Entrée dans la Bibliothèque ; 19:15 - Discussion avec la victime dans le Grand Salon ; 20:45 - Cache des bijoux de famille dérobés dans le Bureau ; 21:30 - Repos simulé dans le Grand Salon"
+    },
+    {
+        name: "Colonel Moutarde",
+        role: "Officier à la retraite",
+        marker: "Une médaille militaire rayée",
+        bio: "Héros de guerre décoré sur de nombreux champs de bataille coloniaux, le Colonel Moutarde est un officier à la retraite fier, guindé et au tempérament notoirement impulsif. Homme d'action habitué à ce qu'on lui obéisse au doigt et à l'œil, il supporte très mal la contradiction. Cependant, son prestige et ses nombreuses médailles reposent sur un secret honteux : lors d'une campagne militaire décisive il y a vingt ans, pris de panique, il a déserté son poste et causé la perte de son unité, avant de travestir la vérité pour passer pour un héros. La victime, qui menait des enquêtes historiques pour un livre de mémoires, a fini par découvrir les registres originaux de l'armée et faisait chanter le Colonel depuis des mois. Poussé à bout par ce chantage incessant qui menaçait de détruire sa réputation et de le mener en conseil de guerre, Moutarde a eu une altercation violente avec la victime dans son bureau.",
+        relation: "La victime détenait des preuves compromettantes de sa trahison passée.",
+        alibi: "Il lisait un ouvrage d'histoire militaire dans la Bibliothèque.",
+        genre: "Homme",
+        secret: "A falsifié ses états de service militaire pour dissimuler une ancienne désertion.",
+        chronology: "18:45 - Arrivée au vestibule ; 19:30 - Entrevue orageuse dans le Bureau avec la victime ; 20:15 - Lecture dans la Bibliothèque ; 21:45 - Perte de sa montre à gousset"
+    },
+    {
+        name: "Madame Pervenche",
+        role: "Amie d'enfance",
+        marker: "Un étui à cigarettes en nacre",
+        bio: "Veuve d'un diplomate influent, Madame Pervenche est une femme d'une élégance rare, respectée de tous et très active au sein de la haute société. Elle gère plusieurs œuvres de charité prestigieuses. Cependant, derrière sa façade impeccable se cache une mère désespérée : son fils unique s'est lourdement endetté auprès de usuriers impitoyables après des investissements désastreux. Pour le soustraire aux menaces de mort, elle a détourné d'importantes sommes d'argent des caisses de sa fondation caritative. La victime, amie d'enfance de Pervenche et donatrice majeure, a découvert cette fraude financière massive. Au lieu de la dénoncer immédiatement, elle a exercé sur elle un chantage psychologique pervers pour l'obliger à lui céder ses parts dans une affaire immobilière. Au bord du gouffre émotionnel, Pervenche errait dans le manoir, cherchant une issue à ce piège mortel.",
+        relation: "La victime faisait chanter son fils unique au sujet d'une dette colossale.",
+        alibi: "Elle préparait une infusion de camomille dans la Cuisine.",
+        genre: "Femme",
+        secret: "A souscrit un emprunt illégal auprès d'un usurier mafieux pour couvrir les dettes de son fils.",
+        chronology: "19:00 - Entrée au Manoir ; 19:45 - Discussion confidentielle avec son fils ; 20:30 - Préparation d'une camomille dans la Cuisine ; 21:15 - Signature d'un contrat financier"
+    },
+    {
+        name: "Professeur Violet",
+        role: "Chercheur en chimie",
+        marker: "Un carnet de notes à reliure violette",
+        bio: "Esprit scientifique brillant mais incompris, le Professeur Violet enseigne la chimie organique à l'université tout en menant des recherches novatrices sur les composés toxiques de synthèse. Homme distant, froid et obsessionnel, il accorde plus d'importance à ses équations qu'aux relations humaines. Récemment, Violet a mis au point un brevet révolutionnaire pour un médicament de synthèse, mais la victime, qui finançait en sous-main son laboratoire universitaire, s'est appropriée illégalement l'exclusivité des droits d'exploitation commerciale, le dépouillant de la gloire et de la fortune qui lui revenaient de droit. Fou de rage de s'être fait voler le travail de toute une vie, Violet est venu au domaine avec la ferme intention de récupérer ses notes originales de laboratoire et de se venger de cette spoliation intolérable.",
+        relation: "La victime a volé ses brevets scientifiques pour faire fortune.",
+        alibi: "Il faisait des prélèvements dans son bureau temporaire.",
+        genre: "Homme",
+        secret: "A volé des substances chimiques classées secrètes dans le laboratoire de l'université.",
+        chronology: "18:30 - Installation dans le Bureau temporaire ; 19:15 - Disparition de brevets de la victime ; 20:30 - Prélèvements chimiques dans la Cuisine ; 21:00 - Vol de substances dans le laboratoire"
+    },
+    {
+        name: "Madame Leblanc",
+        role: "Gouvernante en chef",
+        marker: "Un trousseau de clés en laiton usé",
+        bio: "Au service de la famille de la victime depuis plus de trente ans, Madame Leblanc est la gardienne silencieuse de tous les secrets du manoir. Gouvernante zélée au port altier, elle connaît chaque passage dérobé, chaque clé et chaque trahison qui s'est déroulée entre ces murs. Dévouée et protectrice envers sa famille, elle cache cependant un ressentiment féroce contre son employeur : ce dernier a injustement renvoyé sa fille unique sous un faux prétexte d'indiscrétion, la jetant dans la misère et la détresse psychologique. Pour protéger sa fille activement recherchée par la police locale pour un vol qu'elle clame n'avoir pas commis, Madame Leblanc l'a secrètement cachée dans les combles poussiéreux du manoir, risquant la prison pour complicité afin de réparer l'injustice commise par son tyrannique patron.",
+        relation: "Elle protège sa fille, qui a été renvoyée injustement par la victime.",
+        alibi: "Elle rangeait le linge de maison dans la lingerie.",
+        genre: "Femme",
+        secret: "A aidé sa fille à fuir la police en la cachant temporairement dans les combles du manoir.",
+        chronology: "18:00 - Prise de service ; 19:00 - Dissimulation de sa fille dans les combles ; 20:30 - Rangement du linge dans la lingerie ; 21:30 - Ronde suspecte près du Bureau"
+    },
+    {
+        name: "Monsieur Lenoir",
+        role: "Médecin de famille",
+        marker: "Un stéthoscope ancien argenté",
+        bio: "Praticien réputé de la haute bourgeoisie et ami proche de la victime, le docteur Lenoir est un homme d'une grande discrétion professionnelle. Confident intime des pathologies les plus honteuses de la noblesse locale, il cache pourtant une addiction destructrice au jeu d'argent, qui l'a mené à accumuler des dettes monumentales. Pour éviter le déshonneur public et la faillite, Lenoir a falsifié des prescriptions médicales et livré des substances opiacées hautement toxiques à la victime, qui s'en servait pour son usage personnel ou pour empoisonner discrètement ses rivaux. La victime, qui le tenait fermement à sa merci grâce à cette complicité criminelle, continuait d'exiger des doses de plus en plus dangereuses, le poussant dans ses derniers retranchements déontologiques.",
+        relation: "Il a fourni des substances illégales à la victime sous la contrainte.",
+        alibi: "Il rédigeait des ordonnances dans le Jardin d'Hiver.",
+        genre: "Homme",
+        secret: "A prescrit des substances interdites à des membres influents de la haute société.",
+        chronology: "18:45 - Arrivée au chevet de la victime ; 19:30 - Livraison forcée de substances toxiques ; 20:15 - Rédaction d'ordonnances dans le Jardin d'Hiver ; 21:30 - Constat du décès"
+    },
+    {
+        name: "Dr Orchid",
+        role: "Biologiste et botaniste",
+        marker: "Une orchidée séchée dans sa poche",
+        bio: "Brillante chercheuse d'origine asiatique spécialisée dans les plantes vénéneuses tropicales, le Dr Orchid est une personne d'une grande réserve, qui ne vit que pour ses expériences scientifiques. Elle a été adoptée par la famille de la victime après la disparition de ses parents biologiques dans des circonstances tragiques. Récemment, Orchid a découvert que la victime, son tuteur et mécène, comptait fermer ses serres expérimentales de recherche pour y construire des entrepôts industriels lucratifs. Pire encore, elle a appris que la victime était impliquée dans la ruine de ses propres parents. Pour financer ses recherches et sauver ses précieuses variétés d'orchidées vénéneuses, elle a contourné les conventions sanitaires en important clandestinement des spécimens hautement toxiques.",
+        relation: "La victime menaçait de fermer ses laboratoires de recherche.",
+        alibi: "Elle examinait les plantes dans la Serre principale.",
+        genre: "Non-Binaire",
+        secret: "A importé clandestinement des graines d'orchidées vénéneuses interdites par la convention sanitaire.",
+        chronology: "18:30 - Visite des serres ; 19:30 - Examen secret des orchidées toxiques ; 20:15 - Importation suspecte de graines interdites ; 21:00 - Passage rapide en cuisine"
+    },
+    {
+        name: "Inspecteur Adams",
+        role: "Détective invité",
+        marker: "Une loupe à manche d'ébène",
+        bio: "Détective chevronné de Scotland Yard approchant de la retraite, l'Inspecteur Adams est un homme fatigué, désabusé par les travers de la nature humaine, mais doté d'un sens aigu de l'observation. Invité par la victime en tant qu'ami de longue date sous prétexte de fêter un anniversaire, Adams était en réalité là pour mener une surveillance discrète sur les invités du manoir. Ce que son hôte ignorait, c'est qu'Adams menait secrètement une enquête interne sur des malversations financières massives impliquant la victime elle-même. Mais le détective a aussi ses faiblesses : il a récemment effacé des pièces à conviction pour couvrir un de ses informateurs de longue date qui l'avait aidé à résoudre des affaires criminelles majeures, le plaçant à la limite de la légalité.",
+        relation: "Il menait une enquête secrète sur les affaires frauduleuses de la victime.",
+        alibi: "Il fumait sa pipe sur la terrasse arrière.",
+        genre: "Homme",
+        secret: "A effacé des preuves liant un de ses informateurs à un cambriolage récent.",
+        chronology: "19:00 - Arrivée discrète pour surveiller ; 20:00 - Surveillance de l'arrière-boutique ; 21:00 - Pause pipe sur la terrasse arrière ; 21:45 - Entrée sur la scène de crime"
+    },
+    {
+        name: "Baptiste le Valet",
+        role: "Majordome particulier",
+        marker: "Un gant blanc taché de cire",
+        bio: "Froid, méticuleux et doté d'un professionnalisme à toute épreuve, Baptiste est le majordome personnel de la victime depuis dix ans. Chargé d'orchestrer la domesticité d'une main de fer, il est le témoin quotidien des extravagances et du mépris de son employeur. Sous son apparence dévouée, Baptiste nourrit une haine sourde et tenace envers son patron. Peu avant le meurtre, Baptiste a été surpris par la victime alors qu'il volait des parures de bijoux dans le coffre-fort du boudoir pour rembourser des dettes de jeu. Menacé d'être dénoncé à la police et envoyé au bagne s'il ne continuait pas à accomplir des basses besognes pour son maître sans broncher, Baptiste s'est retrouvé acculé, cherchant un moyen radical de faire taire son maître définitivement.",
+        relation: "Il a été surpris en train de voler des bijoux par la victime juste avant le meurtre.",
+        alibi: "Il servait des boissons dans le grand vestibule.",
+        genre: "Homme",
+        secret: "A volé de l'argenterie fine du domaine pour la revendre à un receleur local.",
+        chronology: "18:00 - Service des boissons dans le Vestibule ; 19:15 - Vol d'une ménagère en argent ; 20:30 - Recel dans les buissons ; 21:45 - Nettoyage suspect d'une bougie"
+    },
+    {
+        name: "Rosa la Cantatrice",
+        role: "Artiste lyrique",
+        marker: "Un éventail en dentelle noire",
+        bio: "Artiste lyrique acclamée sur toutes les scènes d'Europe, Rosa est une diva excentrique, habituée à être le centre d'attention générale. Mais derrière le faste de ses costumes de scène se cache un secret tragique : à la suite d'une grave infection des cordes vocales, Rosa a perdu sa voix d'or et chante désormais en playback lors de ses concerts, grâce à une doublure dissimulée. La victime, qui était son principal producteur de spectacles, a fini par découvrir la supercherie lors d'une répétition privée. Il menaçait de ruiner définitivement sa carrière et sa réputation en révélant publiquement ce scandale si elle ne lui cédait pas la totalité des droits sur ses œuvres passées. Prise de panique face à cette ruine professionnelle imminente, Rosa est venue au domaine pour tenter d'obtenir un compromis par le chantage.",
+        relation: "La victime menaçait de briser sa carrière en révélant sa perte de voix.",
+        alibi: "Elle s'échauffait la voix dans la Salle de Musique.",
+        genre: "Femme",
+        secret: "Chante en playback lors de ses concerts officiels pour cacher son extinction de voix.",
+        chronology: "19:00 - Arrivée mondaine ; 19:45 - Chantage subi de la part de la victime ; 20:30 - Échauffement de la voix dans la Salle de Musique ; 21:15 - Perte de son éventail"
+    },
+    {
+        name: "Gaston le Cuisinier",
+        role: "Chef de cuisine",
+        marker: "Un couteau d'office très affûté",
+        bio: "Chef cuisinier de renommée internationale, Gaston est un homme colérique, pointilleux et passionné jusqu'à l'obsession par les arts culinaires et les épices rares. Travaillant pour la victime depuis plusieurs années, il supporte de moins en moins les critiques blessantes de son employeur. Le matin même du crime, à la suite d'un banquet gâché par l'utilisation accidentelle d'ingrédients avariés masqués par des épices fortes, Gaston a eu une violente altercation avec la victime. Cette dernière l'a menacé de le licencier sur-le-champ sans indemnités de départ et de détruire son nom dans les guides gastronomiques. Gaston, dont la réputation est la seule raison de vivre, s'est senti humilié au plus haut point et s'est réfugié dans ses cuisines avec ses couteaux aiguisés.",
+        relation: "La victime s'apprêtait à le licencier sans indemnités après un scandale.",
+        alibi: "Il préparait le dessert de minuit dans la Cuisine.",
+        genre: "Homme",
+        secret: "A utilisé des ingrédients avariés maquillés avec des épices fortes lors du grand banquet.",
+        chronology: "17:30 - Début de préparation du banquet ; 19:00 - Utilisation de produits avariés masqués ; 20:30 - Menace de licenciement par la victime ; 21:45 - Affûtage de son couteau de cuisine"
+    },
+    {
+        name: "Jeanne la Secrétaire",
+        role: "Assistante personnelle",
+        marker: "Un poudrier en or ciselé",
+        bio: "Secrétaire personnelle de la victime depuis deux ans, Jeanne gère son emploi du temps professionnel ainsi que sa correspondance privée. Jeune femme ambitieuse et d'apparence réservée, elle dissimule une dépendance maladive aux jeux d'argent clandestins. Pour éponger ses dettes colossales contractées dans des tripots parisiens, Jeanne a falsifié les comptes de la fondation caritative gérée par son patron et détourné des sommes considérables. La victime a récemment découvert ces malversations comptables et a convoqué Jeanne au domaine pour la confronter. Menacée d'être livrée aux autorités et d'être traînée en justice, Jeanne a cherché désespérément à négocier son silence ou à subtiliser les preuves de son détournement de fonds.",
+        relation: "Elle avait détourné des fonds et la victime s'en était rendu compte.",
+        alibi: "Elle tapait des lettres confidentielles dans le Boudoir.",
+        genre: "Femme",
+        secret: "A falsifié les comptes de la fondation pour financer sa dépendance aux jeux d'argent.",
+        chronology: "18:00 - Classement de courriers ; 19:30 - Détournement de fonds sur les registres ; 20:30 - Rédaction de lettres dans le Boudoir ; 21:15 - Dissimulation d'un chèque"
+    },
+    {
+        name: "Dupuis l'Avocat",
+        role: "Conseiller juridique",
+        marker: "Un stylo plume à plume d'or",
+        bio: "Conseiller juridique et homme de confiance de la victime, Dupuis est un avocat cynique, froid et opportuniste, habitué à manier les lois à son seul avantage. Récemment, il a falsifié le dernier testament de son client afin d'y insérer une clause lui léguant une partie importante du patrimoine immobilier de la victime, censée être destinée à des œuvres de bienfaisance. Malheureusement pour lui, la victime a découvert cette manœuvre frauduleuse quelques heures avant la soirée et comptait révoquer son testament en public pour le dénoncer au barreau. Terrifié à l'idée de perdre son cabinet d'avocats et d'être condamné pour faux en écriture publique, Dupuis s'est rendu au manoir avec la ferme intention d'étouffer l'affaire à tout prix.",
+        relation: "Il a falsifié le dernier testament de la victime à son avantage.",
+        alibi: "Il révisait des documents légaux dans le petit salon.",
+        genre: "Homme",
+        secret: "A rédigé un faux testament pour un autre client décédé le mois dernier.",
+        chronology: "18:30 - Relecture de testaments ; 19:30 - Falsification d'une clause successorale ; 20:45 - Consultation de dossiers dans le Petit Salon ; 21:30 - Témoin d'une dispute"
+    },
+    {
+        name: "Agatha la Romancière",
+        role: "Auteure de romans policiers",
+        marker: "Un mini calepin en cuir usé",
+        bio: "Célèbre auteure de romans de gare à suspense, Agatha est toujours à la recherche d'une intrigue palpitante pour son prochain best-seller. Invitée au manoir par commodité mondaine, elle observe d'un œil de lynx les moindres secrets et faiblesses des invités. Son hôte principal lui servait secrètement de modèle pour le personnage d'un parrain de la mafia cynique et corrompu. Mais Agatha cache elle-même un lourd secret littéraire : en panne totale d'inspiration depuis deux ans, elle a plagié l'intrigue et les personnages de son dernier roman à succès à partir du manuscrit d'un confrère décédé, dérobé lors de sa veillée funèbre. La victime avait découvert cette imposture littéraire et la faisait chanter, menaçant de révéler publiquement les preuves de son plagiat.",
+        relation: "La victime lui servait de modèle pour le rôle du coupable détestable.",
+        alibi: "Elle observait discrètement les invités depuis la mezzanine.",
+        genre: "Femme",
+        secret: "A plagié l'intrigue de son best-seller à partir du journal intime volé d'un confrère.",
+        chronology: "18:45 - Observation des invités depuis la mezzanine ; 19:30 - Vol du journal intime de Dupuis ; 20:45 - Prise de notes dans la Bibliothèque ; 21:30 - Découverte de la scène du crime"
+    },
+    {
+        name: "Pierre le Jardinier",
+        role: "Jardinier du domaine",
+        marker: "Un sécateur rouillé dans l'étui",
+        bio: "Homme taciturne, bourru et très proche de la nature, Pierre travaille sur le domaine de la victime depuis plus de quinze ans. Pour lui, la terre et le jardin historique du manoir représentent toute sa vie. Récemment, la victime a annoncé son intention de faire raser la totalité du jardin botanique et de la vieille serre tropicale pour y construire un garage moderne et une allée en béton. Prêt à tout pour empêcher ce massacre écologique, Pierre a eu un violent différend avec son employeur. De plus, pour soigner sa femme gravement malade, Pierre cultive en secret des plantes hallucinogènes et médicinales interdites dans une parcelle isolée des serres du domaine, un trafic illégal que son patron menaçait de dénoncer à la gendarmerie locale.",
+        relation: "La victime voulait raser son jardin historique pour construire un garage.",
+        alibi: "Il taillait les rosiers grimpants dans la Cour d'honneur.",
+        genre: "Homme",
+        secret: "Cultive des plantes hallucinogènes interdites dans un recoin caché de la serre.",
+        chronology: "18:00 - Entretien des extérieurs ; 19:00 - Récolte de plantes hallucinogènes ; 20:00 - Conflit avec la victime au Jardin ; 21:15 - Abandon d'un sécateur rouillé"
+    },
+    {
+        name: "Clara la Journaliste",
+        role: "Reporter d'investigation",
+        marker: "Un carnet de presse jaune vif",
+        bio: "Reporter d'investigation téméraire et passionnée, Clara travaille pour un grand quotidien indépendant. Toujours à la recherche d'un scandale politique ou financier, elle s'est introduite au manoir sous une fausse identité d'invitée mondaine. Clara s'apprêtait à publier un dossier d'enquête accablant révélant des cas de fraude fiscale massive et d'évasion de capitaux orchestrés par la victime en complicité avec des politiciens influents. Pour obtenir les preuves décisives et les relevés bancaires secrets stockés dans le bureau du manoir, elle a piraté les messageries privées de son hôte. Découverte par la victime peu avant le drame, elle a été menacée d'un procès retentissant et d'une incarcération pour espionnage industriel.",
+        relation: "Elle s'apprêtait à publier un article accablant sur les fraudes de la victime.",
+        alibi: "Elle prend des notes discrètes près du vestiaire.",
+        genre: "Non-Binaire",
+        secret: "A piraté la boîte mail privée de la victime pour obtenir des scoops exclusifs.",
+        chronology: "18:30 - Infiltration sous fausse identité ; 19:15 - Piratage de la boîte mail de la victime ; 20:30 - Prise de notes près du Vestiaire ; 21:30 - Fuite suspecte par le jardin"
+    }
 ];
 
 // List of rooms with potential clues
