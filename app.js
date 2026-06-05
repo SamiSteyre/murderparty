@@ -322,6 +322,8 @@ function renderOrganizerDashboard() {
             document.getElementById('genScenarioPitch').textContent = appState.scenario.pitch;
             const victimEl = document.getElementById('genScenarioVictim');
             if (victimEl) victimEl.textContent = appState.scenario.victim || "Non définie";
+            const chronoEl = document.getElementById('genScenarioChronology');
+            if (chronoEl) chronoEl.textContent = appState.scenario.chronology || "Aucune chronologie disponible.";
         }
 
         // Render 16 suspects cards in grid
@@ -387,6 +389,8 @@ function renderOrganizerDashboard() {
             document.getElementById('activeScenarioCluesCount').textContent = appState.scenario.cluesCount;
             const victimEl = document.getElementById('activeScenarioVictim');
             if (victimEl) victimEl.textContent = appState.scenario.victim || "Non définie";
+            const chronoEl = document.getElementById('activeScenarioChronology');
+            if (chronoEl) chronoEl.textContent = appState.scenario.chronology || "Aucune chronologie disponible.";
         }
 
         // Render Session Economy Stats
@@ -842,6 +846,14 @@ async function handleUnifiedSessionSubmit(e) {
                     }
                 ];
 
+                const simulatedTimeline = [
+                    { time: "18:00", room: "Le Vestibule", suspects: ["Baptiste le Valet", "Lord James Lenoir (Le Propriétaire du Speakeasy)"], description: "Baptiste le Valet accueille Lord James Lenoir et prend son manteau de fourrure." },
+                    { time: "Veille - 21:30", room: "La Chambre de la Victime", suspects: ["Mlle Rose", "Lord James Lenoir (Le Propriétaire du Speakeasy)"], description: "Mlle Rose a une discussion houleuse avec Lord James Lenoir au sujet de son héritage." },
+                    { time: "19:15", room: "Le Grand Salon", suspects: ["Madame Pervenche", "Lord James Lenoir (Le Propriétaire du Speakeasy)"], description: "Madame Pervenche discute discrètement d'une importante dette d'argent avec Lord James Lenoir." },
+                    { time: "20:30", room: "Le Bureau de l'arrière-boutique", suspects: ["Colonel Moutarde", "Lord James Lenoir (Le Propriétaire du Speakeasy)"], description: "Une violente altercation verbale éclate entre le Colonel Moutarde et la victime." },
+                    { time: "21:45", room: "Le Bureau de l'arrière-boutique", suspects: ["Lord Thomas Blackwood"], description: "Le coupable s'introduit discrètement dans la pièce et commet le crime de sang-froid." }
+                ];
+
                 dataScenario = {
                     success: true,
                     scenario_id: "sc_" + Math.random().toString(36).substr(2, 9),
@@ -853,7 +865,8 @@ async function handleUnifiedSessionSubmit(e) {
                     pitch: userPitch || "Dans la pénombre d'un club de jazz clandestin, un parrain de la mafia a été assassiné de sang-froid.",
                     illustration_url: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
                     suspects: simulatedSuspects,
-                    rooms: simulatedRooms
+                    rooms: simulatedRooms,
+                    timeline: simulatedTimeline
                 };
             }
 
@@ -865,7 +878,8 @@ async function handleUnifiedSessionSubmit(e) {
                 crimeRoom: dataScenario.murder_room,
                 victim: dataScenario.victim_name || (dataScenario.victim ? (typeof dataScenario.victim === 'string' ? dataScenario.victim : dataScenario.victim.name) : "Non définie"),
                 cluesCount: dataScenario.clues_count || 24,
-                imageUrl: dataScenario.illustration_url || "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop"
+                imageUrl: dataScenario.illustration_url || "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
+                chronology: dataScenario.chronology || (dataScenario.timeline ? dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n') : "Aucune chronologie disponible.")
             };
 
             scenarioId = dataScenario.scenario_id;
@@ -927,7 +941,8 @@ async function handleUnifiedSessionSubmit(e) {
                 crimeRoom: "Le Bureau",
                 victim: "M. Lenoir (cadavre)",
                 cluesCount: 24,
-                imageUrl: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop"
+                imageUrl: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
+                chronology: "18:00 - Le Vestibule (Baptiste le Valet, M. Lenoir) : Accueil des invités.\n19:00 - Le Grand Salon (Mlle Rose, M. Lenoir) : Discussion cordiale.\n20:00 - Le Petit Salon (Colonel Moutarde, M. Lenoir) : Altercation bruyante.\n22:00 - Le Bureau : Heure estimée du crime."
             };
 
             // Prepopulate 16 suspects from static template for fallback

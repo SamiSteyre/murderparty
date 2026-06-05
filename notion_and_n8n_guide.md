@@ -13,8 +13,15 @@ Pour que la plateforme fonctionne, configurez 4 bases de données interconnecté
 * **Pitch Global** (Rich Text) : L'intrigue générale.
 * **Scène du Crime** (Text) : Lieu du meurtre (ex: "La Serre").
 * **Victime** (Rich Text) : Nom fictif du personnage décédé.
+* **Chronologie** (Rich Text) : La chronologie complète des faits de la soirée (heure, pièce, suspects impliqués, action).
 * **Statut** (Select) : `En cours de génération` | `Vérifié`.
 * **Nombre Total d'Indices** (Number) : Nombre total d'indices générés pour ce scénario.
+* **Photo Homme** (Files & Media) : Portrait témoin masculin généré pour ce scénario.
+* **Json Photo Homme** (Rich Text) : Description visuelle du témoin masculin.
+* **Photo Femme** (Files & Media) : Portrait témoin féminin généré pour ce scénario.
+* **Json Photo Femme** (Rich Text) : Description visuelle du témoin féminin.
+* **Photo NBinaire** (Files & Media) : Portrait témoin non-binaire généré pour ce scénario.
+* **Json Photo NBinaire** (Rich Text) : Description visuelle du témoin non-binaire.
 * **Relations :**
   * Relation -> `[MP] Sessions de Jeu` (1 pour N)
 

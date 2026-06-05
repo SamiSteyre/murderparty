@@ -66,6 +66,7 @@ async function run() {
                 "Pitch Global": { rich_text: {} },
                 "Scène du Crime": { rich_text: {} },
                 "Victime": { rich_text: {} },
+                "Chronologie": { rich_text: {} },
                 "Statut": {
                     select: {
                         options: [
@@ -74,7 +75,13 @@ async function run() {
                         ]
                     }
                 },
-                "Nombre Total d'Indices": { number: { format: "number" } }
+                "Nombre Total d'Indices": { number: { format: "number" } },
+                "Photo Homme": { files: {} },
+                "Json Photo Homme": { rich_text: {} },
+                "Photo Femme": { files: {} },
+                "Json Photo Femme": { rich_text: {} },
+                "Photo NBinaire": { files: {} },
+                "Json Photo NBinaire": { rich_text: {} }
             }
         };
         const scenariosDb = await createDatabase(scenariosPayload);

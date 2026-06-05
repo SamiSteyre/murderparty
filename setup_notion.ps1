@@ -71,6 +71,8 @@ $scenariosBody = @{
         "Nom" = @{ title = @{} }
         "Pitch Global" = @{ rich_text = @{} }
         "Scene du Crime" = @{ rich_text = @{} }
+        "Victime" = @{ rich_text = @{} }
+        "Chronologie" = @{ rich_text = @{} }
         "Statut" = @{
             select = @{
                 options = @(
