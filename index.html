@@ -339,6 +339,10 @@
                             <span class="text-2xs text-slate-400 uppercase tracking-wider font-extrabold"><i class="fa-solid fa-skull text-blood mr-1"></i> Victime : <span id="genScenarioVictim" class="text-white font-black">--</span></span>
                         </div>
                         <p id="genScenarioPitch" class="text-xs text-slate-300 leading-relaxed font-light">Résumé de l'intrigue...</p>
+                        <div id="genScenarioVictimOutfitContainer" class="hidden text-xs text-slate-400 bg-white/5 border border-white/5 p-3 rounded-lg leading-relaxed mt-2">
+                            <strong class="text-white uppercase tracking-wider text-[10px] block mb-1"><i class="fa-solid fa-shirt text-blood mr-1"></i> Tenue de la victime :</strong>
+                            <span id="genScenarioVictimOutfit" class="text-slate-300 font-light">Description...</span>
+                        </div>
                     </div>
 
                     <!-- Chronologie Globale -->
@@ -437,6 +441,10 @@
                                 </div>
                                 <h4 id="activeScenarioTitle" class="font-cinzel text-lg font-bold text-white">Le Dernier Souffle</h4>
                                 <p id="activeScenarioPitch" class="text-xs text-slate-400 leading-relaxed font-light">Description...</p>
+                                <div id="activeScenarioVictimOutfitContainer" class="hidden text-[10px] text-slate-400 bg-white/5 border border-white/5 p-3 rounded-lg leading-relaxed mt-2 mb-3">
+                                    <strong class="text-white uppercase tracking-wider text-[9px] block mb-1"><i class="fa-solid fa-shirt text-blood mr-1"></i> Tenue de la victime :</strong>
+                                    <span id="activeScenarioVictimOutfit" class="text-slate-350 font-light">Description...</span>
+                                </div>
                                 <div class="grid grid-cols-3 gap-4 text-2xs pt-3 border-t border-white/5 text-slate-400">
                                     <div><i class="fa-solid fa-skull-crossbones mr-1.5 text-blood"></i> Crime : <span id="activeScenarioCrimeRoom" class="text-white font-medium">--</span></div>
                                     <div><i class="fa-solid fa-skull mr-1.5 text-blood"></i> Victime : <span id="activeScenarioVictim" class="text-white font-medium">--</span></div>
@@ -627,6 +635,14 @@
                                 <div>
                                     <h4 class="text-3xs uppercase tracking-wider text-gold font-bold mb-1">Mon Secret</h4>
                                     <p id="dashPlayerSecret" class="text-xs text-slate-300 bg-gold/5 border border-gold/20 p-3 rounded-lg font-light"></p>
+                                </div>
+
+                                <!-- Ma Tenue Vestimentaire -->
+                                <div>
+                                    <h4 class="text-3xs uppercase tracking-wider text-slate-400 font-bold mb-1 flex items-center gap-1">
+                                        <i class="fa-solid fa-shirt text-blood text-2xs"></i> Ma Tenue Vestimentaire
+                                    </h4>
+                                    <p id="dashPlayerOutfit" class="text-xs text-slate-300 bg-noir-input/30 border border-white/5 p-3 rounded-lg font-light"></p>
                                 </div>
 
                                 <!-- Ma Chronologie (Soirée) -->

@@ -66,6 +66,7 @@ async function run() {
                 "Pitch Global": { rich_text: {} },
                 "Scène du Crime": { rich_text: {} },
                 "Victime": { rich_text: {} },
+                "Tenue Victime": { rich_text: {} },
                 "Chronologie": { rich_text: {} },
                 "Statut": {
                     select: {
@@ -153,6 +154,7 @@ async function run() {
                 },
                 "Lien avec la Victime": { rich_text: {} },
                 "Secret": { rich_text: {} },
+                "Tenue": { rich_text: {} },
                 "Chronologie": { rich_text: {} },
                 "Rôle / Histoire": { rich_text: {} },
                 "Traits de Caractère": { rich_text: {} },

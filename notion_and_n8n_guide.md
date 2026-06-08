@@ -13,6 +13,7 @@ Pour que la plateforme fonctionne, configurez 4 bases de données interconnecté
 * **Pitch Global** (Rich Text) : L'intrigue générale.
 * **Scène du Crime** (Text) : Lieu du meurtre (ex: "La Serre").
 * **Victime** (Rich Text) : Nom fictif du personnage décédé.
+* **Tenue Victime** (Rich Text) : Description de la tenue vestimentaire de la victime, cohérente avec son rôle et l'époque.
 * **Chronologie** (Rich Text) : La chronologie complète des faits de la soirée (heure, pièce, suspects impliqués, action).
 * **Statut** (Select) : `En cours de génération` | `Vérifié`.
 * **Nombre Total d'Indices** (Number) : Nombre total d'indices générés pour ce scénario.
@@ -44,6 +45,7 @@ Pour que la plateforme fonctionne, configurez 4 bases de données interconnecté
 * **Genre** (Select) : `Homme` | `Femme` | `Non-Binaire`.
 * **Lien avec la Victime** (Rich Text) : Nature de la relation (dettes, secrets, liens de sang).
 * **Secret** (Rich Text) : Un secret inavouable commis par le personnage (moins grave que le meurtre).
+* **Tenue** (Rich Text) : Description de la tenue vestimentaire du personnage, cohérente avec son rôle et l'époque.
 * **Chronologie** (Rich Text) : Puces chronologiques d'actions (allées et venues d'avant-meurtre).
 * **Rôle / Histoire** (Rich Text) : Biographie complète et contexte.
 * **Traits de Caractère** (Text) : 3 traits saisis lors de l'onboarding (ex: "Froid, Calculateur, Menteur").
@@ -90,13 +92,21 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
   "clues_count": 24,
   "pitch": "Un parrain de la mafia est retrouvé mort dans son club de jazz clandestin...",
   "illustration_url": "https://oaidalleapiprodscus.blob.core.windows.net/...png",
+  "victim": {
+    "name": "M. Lenoir",
+    "genre": "Homme",
+    "short_hook": "Qui était-elle et circonstances de sa mort...",
+    "marker": "Une chevalière à tête de lion",
+    "outfit": "Un smoking de soirée en velours noir sur mesure..."
+  },
   "suspects": [
     {
       "name": "Inspecteur Adams",
       "bio": "Un détective usé par le vice...",
       "relation": "Il surveillait la victime...",
       "marker": "Un calepin usé",
-      "status": "Innocent"
+      "status": "Innocent",
+      "outfit": "Un pardessus en gabardine marron froissé..."
     },
     "... (16 suspects)"
   ]
@@ -262,6 +272,7 @@ Voici la documentation des payloads JSON transitant entre le Front-End et n8n.
     "avatarUrl": "https://storage.googleapis.com/...",
     "actionPoints": 2,
     "secret": "A dérobé des bijoux de famille dans le bureau de la victime...",
+    "outfit": "Une robe fourreau fluide en satin pourpre drapée...",
     "chronology": "18:30 - Entrée dans la Bibliothèque ; 19:15 - Discussion avec la victime..."
   }
 }

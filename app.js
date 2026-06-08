@@ -13,6 +13,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Elle prétend s'être reposée dans le Grand Salon au moment du crime.",
         genre: "Femme",
         secret: "A dérobé des bijoux de famille dans le bureau de la victime quelques heures avant le drame.",
+        outfit: "Une robe fourreau fluide en satin pourpre drapée, ornée de sequins scintillants, complétée par son boa en plumes assorti et de longs gants en satin noir.",
         chronology: "18:30 - Entrée dans la Bibliothèque ; 19:15 - Discussion avec la victime dans le Grand Salon ; 20:45 - Cache des bijoux de famille dérobés dans le Bureau ; 21:30 - Repos simulé dans le Grand Salon"
     },
     {
@@ -24,6 +25,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Il lisait un ouvrage d'histoire militaire dans la Bibliothèque.",
         genre: "Homme",
         secret: "A falsifié ses états de service militaire pour dissimuler une ancienne désertion.",
+        outfit: "Un costume militaire d'apparat en laine moutarde officieux, boutonné jusqu'au col avec des épaulettes dorées usées et sa médaille froissée sur la poitrine.",
         chronology: "18:45 - Arrivée au vestibule ; 19:30 - Entrevue orageuse dans le Bureau avec la victime ; 20:15 - Lecture dans la Bibliothèque ; 21:45 - Perte de sa montre à gousset"
     },
     {
@@ -35,6 +37,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Elle préparait une infusion de camomille dans la Cuisine.",
         genre: "Femme",
         secret: "A souscrit un emprunt illégal auprès d'un usurier mafieux pour couvrir les dettes de son fils.",
+        outfit: "Une élégante robe de velours bleu pervenche à taille basse avec des bordures en dentelle blanche, accompagnée d'un chapeau cloche et d'un collier de perles.",
         chronology: "19:00 - Entrée au Manoir ; 19:45 - Discussion confidentielle avec son fils ; 20:30 - Préparation d'une camomille dans la Cuisine ; 21:15 - Signature d'un contrat financier"
     },
     {
@@ -46,6 +49,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Il faisait des prélèvements dans son bureau temporaire.",
         genre: "Homme",
         secret: "A volé des substances chimiques classées secrètes dans le laboratoire de l'université.",
+        outfit: "Un complet trois-pièces sombre en tweed violet de coupe austère, légèrement taché d'encre et de produits chimiques aux poignets, avec un nœud papillon de travers.",
         chronology: "18:30 - Installation dans le Bureau temporaire ; 19:15 - Disparition de brevets de la victime ; 20:30 - Prélèvements chimiques dans la Cuisine ; 21:00 - Vol de substances dans le laboratoire"
     },
     {
@@ -57,6 +61,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Elle rangeait le linge de maison dans la lingerie.",
         genre: "Femme",
         secret: "A aidé sa fille à fuir la police en la cachant temporairement dans les combles du manoir.",
+        outfit: "Une tenue de gouvernante traditionnelle rigide noire en coton épais, couverte par un tablier blanc empesé impeccablement propre, et son trousseau de clés à la ceinture.",
         chronology: "18:00 - Prise de service ; 19:00 - Dissimulation de sa fille dans les combles ; 20:30 - Rangement du linge dans la lingerie ; 21:30 - Ronde suspecte près du Bureau"
     },
     {
@@ -68,6 +73,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Il rédigeait des ordonnances dans le Jardin d'Hiver.",
         genre: "Homme",
         secret: "A prescrit des substances interdites à des membres influents de la haute société.",
+        outfit: "Une redingote noire classique et bien coupée sur un gilet de soie sombre, un col cassé rigide avec une cravate sombre, exhalant une odeur discrète d'éther.",
         chronology: "18:45 - Arrivée au chevet de la victime ; 19:30 - Livraison forcée de substances toxiques ; 20:15 - Rédaction d'ordonnances dans le Jardin d'Hiver ; 21:30 - Constat du décès"
     },
     {
@@ -79,6 +85,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Elle examinait les plantes dans la Serre principale.",
         genre: "Non-Binaire",
         secret: "A importé clandestinement des graines d'orchidées vénéneuses interdites par la convention sanitaire.",
+        outfit: "Un costume de voyage fonctionnel en lin beige clair avec des poches renforcées pour les herbiers, et un foulard de soie sauvage vert sauge autour du cou.",
         chronology: "18:30 - Visite des serres ; 19:30 - Examen secret des orchidées toxiques ; 20:15 - Importation suspecte de graines interdites ; 21:00 - Passage rapide en cuisine"
     },
     {
@@ -90,6 +97,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Il fumait sa pipe sur la terrasse arrière.",
         genre: "Homme",
         secret: "A effacé des preuves liant un de ses informateurs à un cambriolage récent.",
+        outfit: "Un pardessus en gabardine marron froissé porté sur un costume gris fatigué, un chapeau de feutre mou enfoncé et des chaussures de cuir cirées mais usées.",
         chronology: "19:00 - Arrivée discrète pour surveiller ; 20:00 - Surveillance de l'arrière-boutique ; 21:00 - Pause pipe sur la terrasse arrière ; 21:45 - Entrée sur la scène de crime"
     },
     {
@@ -101,6 +109,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Il servait des boissons dans le grand vestibule.",
         genre: "Homme",
         secret: "A volé de l'argenterie fine du domaine pour la revendre à un receleur local.",
+        outfit: "Une livrée de valet noire classique comprenant un frac ajusté, un gilet blanc rayé de gris et ses emblématiques gants blancs en coton fin.",
         chronology: "18:00 - Service des boissons dans le Vestibule ; 19:15 - Vol d'une ménagère en argent ; 20:30 - Recel dans les buissons ; 21:45 - Nettoyage suspect d'une bougie"
     },
     {
@@ -112,6 +121,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Elle s'échauffait la voix dans la Salle de Musique.",
         genre: "Femme",
         secret: "Chante en playback lors de ses concerts officiels pour cacher son extinction de voix.",
+        outfit: "Une somptueuse robe de cocktail noire ornée de perles de jais scintillantes, une étole en fourrure sur les épaules et son éventail en dentelle noire.",
         chronology: "19:00 - Arrivée mondaine ; 19:45 - Chantage subi de la part de la victime ; 20:30 - Échauffement de la voix dans la Salle de Musique ; 21:15 - Perte de son éventail"
     },
     {
@@ -123,6 +133,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Il préparait le dessert de minuit dans la Cuisine.",
         genre: "Homme",
         secret: "A utilisé des ingrédients avariés maquillés avec des épices fortes lors du grand banquet.",
+        outfit: "Une veste de double boutonnage blanche traditionnelle en sergé de coton lourd avec son nom brodé, un tablier de chef noir et un pantalon à carreaux.",
         chronology: "17:30 - Début de préparation du banquet ; 19:00 - Utilisation de produits avariés masqués ; 20:30 - Menace de licenciement par la victime ; 21:45 - Affûtage de son couteau de cuisine"
     },
     {
@@ -134,6 +145,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Elle tapait des lettres confidentielles dans le Boudoir.",
         genre: "Femme",
         secret: "A falsifié les comptes de la fondation pour financer sa dépendance aux jeux d'argent.",
+        outfit: "Un ensemble jupe et veste ajusté en laine grise de coupe moderne et professionnelle, un chemisier en mousseline blanche fermée par une broche dorée.",
         chronology: "18:00 - Classement de courriers ; 19:30 - Détournement de fonds sur les registres ; 20:30 - Rédaction de lettres dans le Boudoir ; 21:15 - Dissimulation d'un chèque"
     },
     {
@@ -145,6 +157,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Il révisait des documents légaux dans le petit salon.",
         genre: "Homme",
         secret: "A rédigé un faux testament pour un autre client décédé le mois dernier.",
+        outfit: "Un costume trois-pièces anthracite impeccable sur une chemise d'un blanc éclatant, une cravate de soie noire et des boutons de manchette en or.",
         chronology: "18:30 - Relecture de testaments ; 19:30 - Falsification d'une clause successorale ; 20:45 - Consultation de dossiers dans le Petit Salon ; 21:30 - Témoin d'une dispute"
     },
     {
@@ -156,6 +169,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Elle observait discrètement les invités depuis la mezzanine.",
         genre: "Femme",
         secret: "A plagié l'intrigue de son best-seller à partir du journal intime volé d'un confrère.",
+        outfit: "Une robe en crêpe vert émeraude à motifs géométriques Art Déco, un bandeau assorti dans les cheveux et un sautoir en perles.",
         chronology: "18:45 - Observation des invités depuis la mezzanine ; 19:30 - Vol du journal intime de Dupuis ; 20:45 - Prise de notes dans la Bibliothèque ; 21:30 - Découverte de la scène du crime"
     },
     {
@@ -167,6 +181,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Il taillait les rosiers grimpants dans la Cour d'honneur.",
         genre: "Homme",
         secret: "Cultive des plantes hallucinogènes interdites dans un recoin caché de la serre.",
+        outfit: "Une veste de travail en velours côtelé marron épais usée aux coudes, un pantalon en toile de jute et des bottes de cuir boueuses.",
         chronology: "18:00 - Entretien des extérieurs ; 19:00 - Récolte de plantes hallucinogènes ; 20:00 - Conflit avec la victime au Jardin ; 21:15 - Abandon d'un sécateur rouillé"
     },
     {
@@ -178,6 +193,7 @@ const CHARACTER_TEMPLATES = [
         alibi: "Elle prend des notes discrètes près du vestiaire.",
         genre: "Non-Binaire",
         secret: "A piraté la boîte mail privée de la victime pour obtenir des scoops exclusifs.",
+        outfit: "Un pantalon de costume large en tweed brun et une chemise d'homme à col ouvert sous une veste en cuir patiné, pratique pour se faufiler partout.",
         chronology: "18:30 - Infiltration sous fausse identité ; 19:15 - Piratage de la boîte mail de la victime ; 20:30 - Prise de notes près du Vestiaire ; 21:30 - Fuite suspecte par le jardin"
     }
 ];
@@ -482,6 +498,16 @@ function renderOrganizerDashboard() {
             document.getElementById('genScenarioPitch').textContent = appState.scenario.pitch;
             const victimEl = document.getElementById('genScenarioVictim');
             if (victimEl) victimEl.textContent = appState.scenario.victim || "Non définie";
+            const victimOutfitEl = document.getElementById('genScenarioVictimOutfit');
+            const victimOutfitContainer = document.getElementById('genScenarioVictimOutfitContainer');
+            if (victimOutfitEl && victimOutfitContainer) {
+                if (appState.scenario.victimOutfit) {
+                    victimOutfitEl.textContent = appState.scenario.victimOutfit;
+                    victimOutfitContainer.classList.remove('hidden');
+                } else {
+                    victimOutfitContainer.classList.add('hidden');
+                }
+            }
             const chronoEl = document.getElementById('genScenarioChronology');
             if (chronoEl) chronoEl.textContent = appState.scenario.chronology || "Aucune chronologie disponible.";
         }
@@ -513,7 +539,12 @@ function renderOrganizerDashboard() {
                             <h4 class="font-cinzel text-xs font-bold text-white tracking-wider group-hover:text-blood transition-colors">${p.roleName}</h4>
                             <p class="text-[10px] text-slate-400 leading-normal font-light line-clamp-3" title="${p.history}">${p.history}</p>
                         </div>
-                        <div class="mt-4 pt-3 border-t border-white/5 text-[9px] text-slate-500 uppercase font-semibold">
+                        ${p.outfit ? `
+                        <div class="mt-2 text-[9px] text-slate-450 border-t border-white/5 pt-2 leading-relaxed">
+                            <i class="fa-solid fa-shirt text-blood/70 mr-1"></i> <span class="text-slate-350">${p.outfit}</span>
+                        </div>
+                        ` : ''}
+                        <div class="mt-3 pt-2 border-t border-white/5 text-[9px] text-slate-500 uppercase font-semibold">
                             <i class="fa-solid fa-fingerprint text-blood mr-1"></i> Signature : <span class="text-white">${p.marker}</span>
                         </div>
                     `;
@@ -549,6 +580,16 @@ function renderOrganizerDashboard() {
             document.getElementById('activeScenarioCluesCount').textContent = appState.scenario.cluesCount;
             const victimEl = document.getElementById('activeScenarioVictim');
             if (victimEl) victimEl.textContent = appState.scenario.victim || "Non définie";
+            const activeVictimOutfitEl = document.getElementById('activeScenarioVictimOutfit');
+            const activeVictimOutfitContainer = document.getElementById('activeScenarioVictimOutfitContainer');
+            if (activeVictimOutfitEl && activeVictimOutfitContainer) {
+                if (appState.scenario.victimOutfit) {
+                    activeVictimOutfitEl.textContent = appState.scenario.victimOutfit;
+                    activeVictimOutfitContainer.classList.remove('hidden');
+                } else {
+                    activeVictimOutfitContainer.classList.add('hidden');
+                }
+            }
             const chronoEl = document.getElementById('activeScenarioChronology');
             if (chronoEl) chronoEl.textContent = appState.scenario.chronology || "Aucune chronologie disponible.";
         }
@@ -673,6 +714,10 @@ function renderPlayerDashboard(player) {
     const secretEl = document.getElementById('dashPlayerSecret');
     if (secretEl) {
         secretEl.textContent = player.secret || "Aucun secret particulier.";
+    }
+    const outfitEl = document.getElementById('dashPlayerOutfit');
+    if (outfitEl) {
+        outfitEl.textContent = player.outfit || "Non définie.";
     }
     
     // Render Personal Chronology
@@ -918,6 +963,7 @@ async function handleUnifiedSessionSubmit(e) {
                         relation: char.relation,
                         marker: char.marker,
                         genre: char.genre,
+                        outfit: char.outfit,
                         status: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")
                     };
                 });
@@ -1020,7 +1066,13 @@ async function handleUnifiedSessionSubmit(e) {
                     title: "Le Dernier Souffle du Speakeasy",
                     general_location: "Un Speakeasy clandestin",
                     murder_room: "Le Bureau de l'arrière-boutique",
-                    victim_name: "Lord James Lenoir (Le Propriétaire du Speakeasy)",
+                    victim: {
+                        name: "Lord James Lenoir (Le Propriétaire du Speakeasy)",
+                        genre: "Homme",
+                        short_hook: "Un parrain de la mafia respecté de la pègre locale retrouvé gisant dans son propre bureau secret.",
+                        marker: "Une bague de chevalière gravée d'une tête de lion",
+                        outfit: "Un smoking de soirée en velours noir sur mesure avec un nœud papillon blanc déboutonné, une montre à gousset dorée cassée et une rose rouge flétrie à la boutonnière."
+                    },
                     clues_count: simulatedRooms.length * 3,
                     pitch: userPitch || "Dans la pénombre d'un club de jazz clandestin, un parrain de la mafia a été assassiné de sang-froid.",
                     illustration_url: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
@@ -1037,6 +1089,7 @@ async function handleUnifiedSessionSubmit(e) {
                 pitch: dataScenario.pitch,
                 crimeRoom: dataScenario.murder_room,
                 victim: dataScenario.victim_name || (dataScenario.victim ? (typeof dataScenario.victim === 'string' ? dataScenario.victim : dataScenario.victim.name) : "Non définie"),
+                victimOutfit: dataScenario.victim_outfit || (dataScenario.victim && typeof dataScenario.victim === 'object' ? dataScenario.victim.outfit : "") || "",
                 cluesCount: dataScenario.clues_count || 24,
                 imageUrl: dataScenario.illustration_url || "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
                 chronology: dataScenario.chronology || (dataScenario.timeline ? dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n') : "Aucune chronologie disponible.")
@@ -1075,6 +1128,7 @@ async function handleUnifiedSessionSubmit(e) {
                     genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
                     secret: s.secret || charTemplate.secret || "",
                     chronology: s.chronology || (dataScenario.personal_timelines ? (dataScenario.personal_timelines[s.name] || dataScenario.personal_timelines[s.roleName]) : "") || charTemplate.chronology || "",
+                    outfit: s.outfit || charTemplate.outfit || "",
                     characterTraits: "",
                     avatarUrl: "",
                     actionPoints: 1,
@@ -1100,6 +1154,7 @@ async function handleUnifiedSessionSubmit(e) {
                 pitch: "Scénario pré-existant chargé depuis Notion.",
                 crimeRoom: "Le Bureau",
                 victim: "M. Lenoir (cadavre)",
+                victimOutfit: "Un costume de soirée sombre classique avec gilet de velours pourpre.",
                 cluesCount: 24,
                 imageUrl: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
                 chronology: "18:00 - Le Vestibule (Baptiste le Valet, M. Lenoir) : Accueil des invités.\n19:00 - Le Grand Salon (Mlle Rose, M. Lenoir) : Discussion cordiale.\n20:00 - Le Petit Salon (Colonel Moutarde, M. Lenoir) : Altercation bruyante.\n22:00 - Le Bureau : Heure estimée du crime."
@@ -1117,6 +1172,7 @@ async function handleUnifiedSessionSubmit(e) {
                     genre: char.genre || "Non-Binaire",
                     secret: char.secret || "",
                     chronology: char.chronology || "",
+                    outfit: char.outfit || "",
                     characterTraits: "",
                     avatarUrl: "",
                     actionPoints: 1,
@@ -1652,6 +1708,7 @@ async function handleLogin(e) {
                     appState.players[playerIndex].actionPoints = data.playerDetails.actionPoints !== undefined && data.playerDetails.actionPoints !== null ? Number(data.playerDetails.actionPoints) : appState.players[playerIndex].actionPoints;
                     appState.players[playerIndex].secret = data.playerDetails.secret || appState.players[playerIndex].secret;
                     appState.players[playerIndex].chronology = data.playerDetails.chronology || appState.players[playerIndex].chronology;
+                    appState.players[playerIndex].outfit = data.playerDetails.outfit || appState.players[playerIndex].outfit;
                 }
             }
         } else {
