@@ -1240,6 +1240,19 @@ async function handleApproveVictim() {
 
     } catch (err) {
         console.error("Error approving victim:", err);
+        
+        // If it's a network/CORS/Mixed-Content error, the request might have actually reached n8n successfully.
+        // We let the polling finish the job instead of blocking the user.
+        if (err.message === "Failed to fetch" || err.name === "TypeError") {
+            addLiveLog(`[Validation] CORS/Erreur Réseau détectée. Tentative de poursuite via le polling Notion...`);
+            showToast("Validation envoyée", "Génération en cours (Vérification Notion)...", "info");
+            
+            if (statusText) {
+                statusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blood"></i> Requête envoyée. Génération finale en cours...`;
+            }
+            return;
+        }
+
         showToast("Erreur de validation", err.message || "Impossible de valider la victime.", "error");
         
         if (approveBtn) {
