@@ -1245,7 +1245,8 @@ async function handleApproveVictim() {
                 pitch_global: userPitch,
                 epoch: epoch,
                 organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com',
-                victim: appState.pendingScenarioData ? appState.pendingScenarioData.victim : null
+                victim: appState.pendingScenarioData ? appState.pendingScenarioData.victim : null,
+                suspects: appState.pendingScenarioData ? appState.pendingScenarioData.suspects : null
             };
 
             const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario-2`, {
@@ -1652,7 +1653,7 @@ async function handleUnifiedSessionSubmit(e) {
                 dataScenario = await response.json();
 
                 const isWaitNode = dataScenario && (dataScenario.resume_form_url || dataScenario.resume_url);
-                const isTwoStepDraft = dataScenario && dataScenario.victim && (!dataScenario.suspects || dataScenario.suspects.length === 0);
+                const isTwoStepDraft = dataScenario && dataScenario.victim && (!dataScenario.clues || dataScenario.clues.length === 0);
 
                 if (isWaitNode || isTwoStepDraft) {
                     appState.resumeFormUrl = isWaitNode ? (dataScenario.resume_form_url || dataScenario.resume_url) : null;
