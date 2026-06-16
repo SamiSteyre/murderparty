@@ -82,6 +82,8 @@ $scenariosBody = @{
             }
         }
         "Nombre Total d'Indices" = @{ number = @{ format = "number" } }
+        "Email Organisateur" = @{ email = @{} }
+        "Illustration" = @{ rich_text = @{} }
         "Photo Homme" = @{ files = @{} }
         "Json Photo Homme" = @{ rich_text = @{} }
         "Photo Femme" = @{ files = @{} }

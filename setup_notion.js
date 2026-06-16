@@ -77,6 +77,9 @@ async function run() {
                     }
                 },
                 "Nombre Total d'Indices": { number: { format: "number" } },
+                "taille_ref": { number: { format: "number" } },
+                "Email Organisateur": { email: {} },
+                "Illustration": { rich_text: {} },
                 "Photo Homme": { files: {} },
                 "Json Photo Homme": { rich_text: {} },
                 "Photo Femme": { files: {} },
@@ -155,7 +158,7 @@ async function run() {
                 "Lien avec la Victime": { rich_text: {} },
                 "Secret": { rich_text: {} },
                 "Tenue": { rich_text: {} },
-                "Chronologie": { rich_text: {} },
+                "Timeline": { rich_text: {} },
                 "Rôle / Histoire": { rich_text: {} },
                 "Traits de Caractère": { rich_text: {} },
                 "Avatar / Photo": { files: {} },
@@ -207,7 +210,10 @@ async function run() {
                         database_id: charactersDb.id,
                         type: "single_property"
                     }
-                }
+                },
+                "document_content": { rich_text: {} },
+                "document_type": { rich_text: {} },
+                "document_style": { rich_text: {} }
             }
         };
         const cluesDb = await createDatabase(cluesPayload);

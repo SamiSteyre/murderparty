@@ -878,15 +878,8 @@
                     </div>
                 </div>
 
-                <div id="sectionN8nForm" class="bg-noir-input border border-noir-border/50 p-4 rounded-xl space-y-2 text-center">
-                    <p class="text-2xs text-slate-400">Cliquez ci-dessous pour répondre au formulaire n8n. Une fois validé, la génération des suspects et indices se poursuivra automatiquement.</p>
-                    <a id="btnOpenN8nForm" href="#" target="_blank" class="inline-flex bg-blood hover:bg-blood-hover text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-[0_4px_15px_rgba(179,11,11,0.25)] text-3xs uppercase tracking-wider items-center gap-2 mt-1">
-                        <i class="fa-solid fa-square-poll-horizontal"></i> Ouvrir le formulaire de validation n8n
-                    </a>
-                </div>
-
                 <div id="victimValidationStatus" class="py-2 flex items-center justify-center gap-3 text-slate-400 text-2xs">
-                    <i class="fa-solid fa-spinner animate-spin text-blood"></i> En attente de soumission du formulaire et de la génération finale...
+                    <i class="fa-solid fa-spinner animate-spin text-blood"></i> En attente de validation...
                 </div>
             </div>
 
@@ -896,6 +889,9 @@
                 </button>
                 <button id="btnSimulateApprove" class="hidden px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)] flex items-center gap-1.5">
                     <i class="fa-solid fa-circle-check"></i> Valider et continuer (Simulé)
+                </button>
+                <button id="approveVictimBtn" class="hidden px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)] flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-check"></i> Valider et continuer
                 </button>
                 <button id="closeVictimModalBtn" class="px-4 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-noir-input border border-noir-border text-slate-500 hover:text-white transition-colors">
                     Fermer

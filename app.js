@@ -926,32 +926,170 @@ function addLiveLog(message) {
    VICTIM VALIDATION & SCENARIO POLLING
    ========================================================================== */
 
+function cleanN8nExpression(value, fallback) {
+    if (!value || typeof value !== 'string') return fallback || "--";
+    if (value.includes('{{') || value.includes('$json')) {
+        return fallback || "Génération en cours...";
+    }
+    return value;
+}
+
+function loadScenarioData(data) {
+    let rawIllustration = data.illustration || data.Illustration || data.illustration_url || "";
+    let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+    
+    if (rawIllustration) {
+        if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
+            resolvedImageUrl = rawIllustration;
+        } else {
+            resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/raw/main/" + rawIllustration.replace(/^\/+/, '');
+        }
+    }
+
+    if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty') && 
+        !resolvedImageUrl.includes('/raw/') && 
+        !resolvedImageUrl.includes('raw.githubusercontent.com')) {
+        
+        if (resolvedImageUrl.includes('/blob/')) {
+            resolvedImageUrl = resolvedImageUrl.replace('/blob/', '/raw/');
+        } else {
+            resolvedImageUrl = resolvedImageUrl.replace('github.com/SamiSteyre/murderparty/', 'github.com/SamiSteyre/murderparty/raw/main/');
+        }
+    }
+
+    const id = data.scenario_id || data.id;
+    const title = data.title;
+    const theme = data.theme || appState.scenario?.theme || "Généré";
+    const pitch = data.pitch || "";
+    const crimeRoom = data.murder_room || data.crimeRoom || "Non défini";
+    
+    let victimName = "Non définie";
+    if (data.victim_name) {
+        victimName = data.victim_name;
+    } else if (data.victim) {
+        victimName = typeof data.victim === 'string' ? data.victim : (data.victim.name || "Non définie");
+    }
+    
+    let victimOutfit = "";
+    if (data.victim_outfit) {
+        victimOutfit = data.victim_outfit;
+    } else if (data.victim && typeof data.victim === 'object') {
+        victimOutfit = data.victim.outfit || data.victim.victimOutfit || "";
+    } else if (data.victimOutfit) {
+        victimOutfit = data.victimOutfit;
+    }
+
+    const cluesCount = data.clues_count || data.cluesCount || 24;
+    
+    let chronology = "Aucune chronologie disponible.";
+    if (data.chronology) {
+        chronology = data.chronology;
+    } else if (data.timeline && Array.isArray(data.timeline)) {
+        chronology = data.timeline.map(e => {
+            const time = e.time || "";
+            const room = e.room || "";
+            const suspects = Array.isArray(e.suspects) ? e.suspects.join(', ') : (e.suspects || "");
+            const desc = e.description || "";
+            return `${time} - ${room} (${suspects}) : ${desc}`;
+        }).join('\n');
+    }
+
+    appState.scenario = {
+        id,
+        title,
+        theme,
+        pitch,
+        crimeRoom,
+        victim: victimName,
+        victimOutfit,
+        cluesCount,
+        imageUrl: resolvedImageUrl,
+        chronology
+    };
+
+    const suspectsData = data.suspects || CHARACTER_TEMPLATES;
+    appState.players = suspectsData.map((s, index) => {
+        const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+        return {
+            email: s.email || "",
+            roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
+            roleName: s.name || s.roleName || charTemplate.name,
+            history: s.bio || s.history || charTemplate.bio,
+            lienVictime: s.relation || s.lienVictime || charTemplate.relation,
+            marker: s.marker || charTemplate.marker,
+            genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
+            secret: s.secret || charTemplate.secret || "",
+            chronology: s.chronology || charTemplate.chronology || "",
+            outfit: s.outfit || charTemplate.outfit || "",
+            characterTraits: "",
+            avatarUrl: "",
+            actionPoints: 1,
+            status: "Créé",
+            knowledge: [],
+            missions: []
+        };
+    });
+
+    appState.clues = [];
+    if (data.clues && Array.isArray(data.clues)) {
+        data.clues.forEach((c, idx) => {
+            appState.clues.push({
+                id: c.id || `clue_${c.location.replace(/\s+/g, '_')}_${idx}`,
+                name: c.name,
+                description: c.description,
+                type: c.type || "Fouille de Pièce",
+                location: c.location,
+                status: c.status || "Caché",
+                foundBy: c.foundBy || ""
+            });
+        });
+    }
+
+    appState.orgaView = 'generated';
+    savePersistedState();
+    renderOrganizerDashboard();
+}
+
 let victimPollInterval = null;
 
 function showVictimValidationModal(victim, isSimulation) {
-    document.getElementById('validateVictimName').textContent = victim.name || "Non définie";
-    document.getElementById('validateVictimGenre').textContent = victim.genre || "Non-Binaire";
-    document.getElementById('validateVictimHook').textContent = victim.short_hook || "Aucune description.";
-    document.getElementById('validateVictimOutfit').textContent = victim.outfit || "Aucune tenue définie.";
-    document.getElementById('validateVictimMarker').textContent = victim.marker || "Aucun marqueur visuel.";
+    document.getElementById('validateVictimName').textContent = cleanN8nExpression(victim.name, "Victime en cours de génération");
+    document.getElementById('validateVictimGenre').textContent = cleanN8nExpression(victim.genre, "À déterminer");
+    document.getElementById('validateVictimHook').textContent = cleanN8nExpression(victim.short_hook, "Rôle et accroche en cours de rédaction...");
+    document.getElementById('validateVictimOutfit').textContent = cleanN8nExpression(victim.outfit, "Tenue vestimentaire en cours de conception...");
+    document.getElementById('validateVictimMarker').textContent = cleanN8nExpression(victim.marker, "Marqueur visuel en cours d'analyse...");
 
     const modal = document.getElementById('modalValidateVictim');
-    const sectionN8n = document.getElementById('sectionN8nForm');
     const statusText = document.getElementById('victimValidationStatus');
     const btnSimulate = document.getElementById('btnSimulateApprove');
-    const btnN8nLink = document.getElementById('btnOpenN8nForm');
+    const btnApprove = document.getElementById('approveVictimBtn');
+    const rejectBtn = document.getElementById('rejectVictimBtn');
 
     if (modal) modal.classList.remove('hidden');
 
+    if (btnApprove) {
+        btnApprove.removeAttribute('disabled');
+        btnApprove.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer`;
+    }
+    if (btnSimulate) {
+        btnSimulate.removeAttribute('disabled');
+        btnSimulate.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer (Simulé)`;
+    }
+    if (rejectBtn) {
+        rejectBtn.removeAttribute('disabled');
+    }
+
     if (isSimulation) {
-        if (sectionN8n) sectionN8n.classList.add('hidden');
         if (statusText) statusText.classList.add('hidden');
         if (btnSimulate) btnSimulate.classList.remove('hidden');
+        if (btnApprove) btnApprove.classList.add('hidden');
     } else {
-        if (sectionN8n) sectionN8n.classList.remove('hidden');
-        if (statusText) statusText.classList.remove('hidden');
+        if (statusText) {
+            statusText.classList.remove('hidden');
+            statusText.innerHTML = `<i class="fa-solid fa-hourglass-half text-blood mr-1"></i> Cliquez sur 'Valider et continuer' pour lancer la génération finale.`;
+        }
         if (btnSimulate) btnSimulate.classList.add('hidden');
-        if (btnN8nLink) btnN8nLink.href = appState.resumeFormUrl || "#";
+        if (btnApprove) btnApprove.classList.remove('hidden');
         
         startVictimPolling(appState.pendingScenarioId);
     }
@@ -960,16 +1098,10 @@ function showVictimValidationModal(victim, isSimulation) {
 function startVictimPolling(scenarioId) {
     if (victimPollInterval) clearInterval(victimPollInterval);
 
-    const statusText = document.getElementById('victimValidationStatus');
-    if (statusText) {
-        statusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blood"></i> En attente de soumission du formulaire et de la génération finale...`;
-    }
-
     victimPollInterval = setInterval(async () => {
         try {
             let scenarioDetails = null;
 
-            // Try checking via mp-list-scenarios webhook first
             if (appState.n8nBaseUrl) {
                 try {
                     const res = await fetch(`${appState.n8nBaseUrl}/webhook/mp-list-scenarios`, {
@@ -988,7 +1120,6 @@ function startVictimPolling(scenarioId) {
                 }
             }
 
-            // Fallback: direct Notion page check
             if (!scenarioDetails) {
                 const config = await getNotionConfig();
                 if (config && config.NOTION_TOKEN) {
@@ -1006,7 +1137,6 @@ function startVictimPolling(scenarioId) {
                             const statusName = statusProp && statusProp.select ? statusProp.select.name : "";
                             
                             if (statusName === "Vérifié" || statusName === "Vérifie" || statusName === "Verify") {
-                                // Fetch complete details using list-scenarios again now that it is ready
                                 if (appState.n8nBaseUrl) {
                                     const listRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-list-scenarios`, {
                                         method: 'POST',
@@ -1030,79 +1160,12 @@ function startVictimPolling(scenarioId) {
                 clearInterval(victimPollInterval);
                 victimPollInterval = null;
 
-                // Scenario is fully generated!
-                let rawIllustration = scenarioDetails.illustration || "";
-                let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
-                
-                if (rawIllustration) {
-                    if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
-                        resolvedImageUrl = rawIllustration;
-                    } else {
-                        resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/raw/main/" + rawIllustration.replace(/^\/+/, '');
-                    }
-                }
+                loadScenarioData(scenarioDetails);
 
-                appState.scenario = {
-                    id: scenarioDetails.id,
-                    title: scenarioDetails.title,
-                    theme: scenarioDetails.theme || "Généré",
-                    pitch: scenarioDetails.pitch || "",
-                    crimeRoom: scenarioDetails.crimeRoom || "Non défini",
-                    victim: scenarioDetails.victim || "Non définie",
-                    victimOutfit: scenarioDetails.victimOutfit || "",
-                    cluesCount: scenarioDetails.cluesCount || 24,
-                    imageUrl: resolvedImageUrl,
-                    chronology: scenarioDetails.chronology || "Aucune chronologie disponible."
-                };
-
-                // Suspects list mapping into appState.players
-                const suspectsData = scenarioDetails.suspects || CHARACTER_TEMPLATES;
-                appState.players = suspectsData.map((s, index) => {
-                    const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
-                    return {
-                        email: s.email || "",
-                        roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
-                        roleName: s.name || s.roleName || charTemplate.name,
-                        history: s.bio || s.history || charTemplate.bio,
-                        lienVictime: s.relation || s.lienVictime || charTemplate.relation,
-                        marker: s.marker || charTemplate.marker,
-                        genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
-                        secret: s.secret || charTemplate.secret || "",
-                        chronology: s.chronology || charTemplate.chronology || "",
-                        outfit: s.outfit || charTemplate.outfit || "",
-                        characterTraits: "",
-                        avatarUrl: "",
-                        actionPoints: 1,
-                        status: "Créé",
-                        knowledge: [],
-                        missions: []
-                    };
-                });
-
-                // Clues mapping
-                appState.clues = [];
-                if (scenarioDetails.clues && Array.isArray(scenarioDetails.clues)) {
-                    scenarioDetails.clues.forEach((c, idx) => {
-                        appState.clues.push({
-                            id: c.id || `clue_${c.location.replace(/\s+/g, '_')}_${idx}`,
-                            name: c.name,
-                            description: c.description,
-                            type: c.type || "Fouille de Pièce",
-                            location: c.location,
-                            status: c.status || "Caché",
-                            foundBy: c.foundBy || ""
-                        });
-                    });
-                }
-
-                // Close validation modal
                 const modal = document.getElementById('modalValidateVictim');
                 if (modal) modal.classList.add('hidden');
 
-                appState.orgaView = 'generated';
-                savePersistedState();
                 showToast("Génération Réussie !", "Le scénario et les suspects sont prêts !", "success");
-                renderOrganizerDashboard();
             }
         } catch (e) {
             console.error("Error in victim polling tick", e);
@@ -1119,11 +1182,92 @@ function closeVictimModal() {
     if (modal) modal.classList.add('hidden');
 }
 
+async function handleApproveVictim() {
+    const approveBtn = document.getElementById('approveVictimBtn');
+    const rejectBtn = document.getElementById('rejectVictimBtn');
+    const statusText = document.getElementById('victimValidationStatus');
+
+    if (approveBtn) {
+        approveBtn.setAttribute('disabled', 'true');
+        approveBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Envoi...`;
+    }
+    if (rejectBtn) {
+        rejectBtn.setAttribute('disabled', 'true');
+    }
+
+    if (statusText) {
+        statusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blood"></i> Validation en cours. Génération finale lancée...`;
+        statusText.classList.remove('hidden');
+    }
+
+    try {
+        if (!appState.resumeFormUrl) {
+            throw new Error("URL de reprise n8n introuvable. Veuillez recommencer.");
+        }
+
+        addLiveLog(`[Validation] Victime validée par l'organisateur. Reprise du workflow n8n...`);
+
+        const response = await fetch(appState.resumeFormUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approved: true, satisfait: "Oui" })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erreur lors de la validation n8n (${response.status})`);
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            const dataScenario = await response.json();
+            if (dataScenario && (dataScenario.scenario_id || dataScenario.id)) {
+                addLiveLog(`[Validation] Données complètes reçues directement dans la réponse de validation.`);
+                
+                if (victimPollInterval) {
+                    clearInterval(victimPollInterval);
+                    victimPollInterval = null;
+                }
+                
+                loadScenarioData(dataScenario);
+                closeVictimModal();
+                showToast("Succès", "Scénario généré avec succès !", "success");
+                return;
+            }
+        }
+
+        addLiveLog(`[Validation] Requête envoyée. Attente de la mise à jour Notion...`);
+        showToast("Validation envoyée", "Génération des suspects en cours...", "info");
+
+    } catch (err) {
+        console.error("Error approving victim:", err);
+        showToast("Erreur de validation", err.message || "Impossible de valider la victime.", "error");
+        
+        if (approveBtn) {
+            approveBtn.removeAttribute('disabled');
+            approveBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer`;
+        }
+        if (rejectBtn) {
+            rejectBtn.removeAttribute('disabled');
+        }
+    }
+}
+
 async function handleRejectVictim() {
     closeVictimModal();
     
-    // Auto re-trigger generation to get a new victim
     showToast("Recommencement", "Génération d'une nouvelle victime...", "info");
+    
+    if (appState.resumeFormUrl) {
+        try {
+            fetch(appState.resumeFormUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ approved: false, satisfait: "Non" })
+            }).catch(e => console.warn("Failed to notify n8n of rejection:", e));
+        } catch (e) {
+            console.warn("Failed to notify n8n of rejection:", e);
+        }
+    }
     
     const fakeEvent = { preventDefault: () => {} };
     handleUnifiedSessionSubmit(fakeEvent);
@@ -2864,6 +3008,9 @@ function init() {
 
     const btnSimulateApprove = document.getElementById('btnSimulateApprove');
     if (btnSimulateApprove) btnSimulateApprove.addEventListener('click', handleSimulateApprove);
+
+    const approveVictimBtn = document.getElementById('approveVictimBtn');
+    if (approveVictimBtn) approveVictimBtn.addEventListener('click', handleApproveVictim);
 
     const closeVictimModalBtn = document.getElementById('closeVictimModalBtn');
     if (closeVictimModalBtn) closeVictimModalBtn.addEventListener('click', closeVictimModal);

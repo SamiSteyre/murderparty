@@ -157,3 +157,116 @@ body {
 .glow-white {
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
 }
+
+/* ==========================================================================
+   IMMERSIVE DOCUMENTS RENDERING & OVERLAYS
+   ========================================================================== */
+
+/* Main aspect-ratio container for document background images */
+.clue-document-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Writable overlay container for dynamic text */
+.clue-document-text-zone {
+    position: absolute;
+    overflow-y: auto;
+    font-weight: 500;
+    line-height: 1.5;
+    mix-blend-mode: multiply; /* Blends the text ink with the paper textures underneath */
+    color: #1b120c; /* Default iron gall ink color */
+}
+
+/* Styles Typographiques (Google Fonts) */
+.style-calligraphy {
+    font-family: 'Italianno', cursive;
+    font-size: 1.45rem;
+    line-height: 1.25;
+    font-weight: 400;
+    color: #120904;
+}
+
+.style-handwritten-ink {
+    font-family: 'Dancing Script', cursive;
+    font-size: 1.15rem;
+    line-height: 1.4;
+    font-weight: 700;
+    color: #1f140e;
+}
+
+.style-typewriter {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: #1c1c1c;
+}
+
+.style-modern-handwriting {
+    font-family: 'Architects Daughter', cursive;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #0f172a; /* Darker ink */
+}
+
+.style-digital-print {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: #10b981; /* Glowing green-ish for terminal/digital screen overlay */
+    mix-blend-mode: normal !important; /* Screens emit light, don't multiply */
+    text-shadow: 0 0 5px rgba(16, 185, 129, 0.6);
+}
+
+/* Document Format Paddings (Parchment, Letters, Journals, Ledgers) */
+
+/* Parchment Scroll: text sits inside the center (to avoid handles and scroll rollers) */
+.doc-parchment-scroll .clue-document-text-zone {
+    top: 15%;
+    bottom: 15%;
+    left: 20%;
+    right: 20%;
+}
+
+/* Folded Letter: fits slightly tilted on writing paper sheets */
+.doc-folded-letter .clue-document-text-zone {
+    top: 12%;
+    bottom: 12%;
+    left: 15%;
+    right: 15%;
+    transform: rotate(-0.5deg);
+}
+
+/* Ledger Page: matches old ledger accounting logs */
+.doc-ledger-page .clue-document-text-zone {
+    top: 10%;
+    bottom: 10%;
+    left: 12%;
+    right: 12%;
+}
+
+/* Old Diary: text pushed slightly to the right to leave space for left spine binding */
+.doc-old-diary .clue-document-text-zone {
+    top: 12%;
+    bottom: 12%;
+    left: 18%;
+    right: 12%;
+}
+
+/* Crumpled Note: messy positioning */
+.doc-crumpled-note .clue-document-text-zone {
+    top: 15%;
+    bottom: 15%;
+    left: 15%;
+    right: 15%;
+    transform: rotate(0.8deg);
+}
+
