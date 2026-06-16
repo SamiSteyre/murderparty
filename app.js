@@ -1065,6 +1065,10 @@ function showVictimValidationModal(victim, isSimulation) {
     const btnApprove = document.getElementById('approveVictimBtn');
     const rejectBtn = document.getElementById('rejectVictimBtn');
 
+    // Hide general scenario generation overlay if it was open
+    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+    if (genOverlay) genOverlay.classList.add('hidden');
+
     if (modal) modal.classList.remove('hidden');
 
     if (btnApprove) {
@@ -1186,6 +1190,8 @@ async function handleApproveVictim() {
     const approveBtn = document.getElementById('approveVictimBtn');
     const rejectBtn = document.getElementById('rejectVictimBtn');
     const statusText = document.getElementById('victimValidationStatus');
+    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+    const overlayText = genOverlay ? genOverlay.querySelector('p') : null;
 
     if (approveBtn) {
         approveBtn.setAttribute('disabled', 'true');
@@ -1200,39 +1206,74 @@ async function handleApproveVictim() {
         statusText.classList.remove('hidden');
     }
 
+    if (genOverlay) {
+        if (overlayText) overlayText.textContent = "Génération des suspects, pièces et indices en cours...";
+        genOverlay.classList.remove('hidden');
+    }
+
     try {
-        if (!appState.resumeFormUrl) {
-            throw new Error("URL de reprise n8n introuvable. Veuillez recommencer.");
-        }
+        let dataScenario = null;
 
-        addLiveLog(`[Validation] Victime validée par l'organisateur. Reprise du workflow n8n...`);
+        if (appState.resumeFormUrl) {
+            // Mode Wait-node
+            addLiveLog(`[Validation] Mode Wait-node : Reprise du workflow n8n...`);
+            const response = await fetch(appState.resumeFormUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ approved: true, satisfait: "Oui" })
+            });
 
-        const response = await fetch(appState.resumeFormUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ approved: true, satisfait: "Oui" })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Erreur lors de la validation n8n (${response.status})`);
-        }
-
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-            const dataScenario = await response.json();
-            if (dataScenario && (dataScenario.scenario_id || dataScenario.id)) {
-                addLiveLog(`[Validation] Données complètes reçues directement dans la réponse de validation.`);
-                
-                if (victimPollInterval) {
-                    clearInterval(victimPollInterval);
-                    victimPollInterval = null;
-                }
-                
-                loadScenarioData(dataScenario);
-                closeVictimModal();
-                showToast("Succès", "Scénario généré avec succès !", "success");
-                return;
+            if (!response.ok) {
+                throw new Error(`Erreur lors de la validation n8n (${response.status})`);
             }
+
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                dataScenario = await response.json();
+            }
+        } else {
+            // Mode split deux étapes
+            addLiveLog(`[Validation] Mode deux étapes : Lancement du deuxième workflow (mp-generate-scenario-2)...`);
+            
+            const theme = document.getElementById('scenarioTheme').value.trim() || (appState.pendingScenarioData ? appState.pendingScenarioData.theme : "") || "";
+            const userPitch = document.getElementById('scenarioPitch').value.trim() || (appState.pendingScenarioData ? appState.pendingScenarioData.pitch : "") || "";
+            const epoch = document.getElementById('scenarioEpoch').value || "";
+            
+            const payload = {
+                scenario_id: appState.pendingScenarioId,
+                theme: theme,
+                pitch_global: userPitch,
+                epoch: epoch,
+                organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com',
+                victim: appState.pendingScenarioData ? appState.pendingScenarioData.victim : null
+            };
+
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario-2`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur lors de la génération finale (${response.status})`);
+            }
+
+            dataScenario = await response.json();
+        }
+
+        if (dataScenario && (dataScenario.scenario_id || dataScenario.id)) {
+            addLiveLog(`[Validation] Données complètes du scénario reçues et chargées.`);
+            
+            if (victimPollInterval) {
+                clearInterval(victimPollInterval);
+                victimPollInterval = null;
+            }
+            
+            loadScenarioData(dataScenario);
+            closeVictimModal();
+            if (genOverlay) genOverlay.classList.add('hidden');
+            showToast("Succès", "Scénario généré avec succès !", "success");
+            return;
         }
 
         addLiveLog(`[Validation] Requête envoyée. Attente de la mise à jour Notion...`);
@@ -1240,6 +1281,8 @@ async function handleApproveVictim() {
 
     } catch (err) {
         console.error("Error approving victim:", err);
+        
+        if (genOverlay) genOverlay.classList.add('hidden');
         
         // If it's a network/CORS/Mixed-Content error, the request might have actually reached n8n successfully.
         // We let the polling finish the job instead of blocking the user.
@@ -1608,10 +1651,13 @@ async function handleUnifiedSessionSubmit(e) {
                 if (!response.ok) throw new Error("Erreur de communication avec l'Agent Scénariste.");
                 dataScenario = await response.json();
 
-                if (dataScenario && (dataScenario.resume_form_url || dataScenario.resume_url)) {
-                    // It hit the Wait node and returned the victim info and resume URL
-                    appState.resumeFormUrl = dataScenario.resume_form_url || dataScenario.resume_url;
-                    appState.pendingScenarioId = dataScenario.scenario_id;
+                const isWaitNode = dataScenario && (dataScenario.resume_form_url || dataScenario.resume_url);
+                const isTwoStepDraft = dataScenario && dataScenario.victim && (!dataScenario.suspects || dataScenario.suspects.length === 0);
+
+                if (isWaitNode || isTwoStepDraft) {
+                    appState.resumeFormUrl = isWaitNode ? (dataScenario.resume_form_url || dataScenario.resume_url) : null;
+                    appState.pendingScenarioId = dataScenario.scenario_id || dataScenario.id;
+                    appState.pendingScenarioData = dataScenario;
                     savePersistedState();
 
                     showVictimValidationModal(dataScenario.victim, false);
