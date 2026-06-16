@@ -313,7 +313,9 @@ let appState = {
     pendingEmail: '',  // email input in progress
     mockOtp: '',       // generated OTP code for mock testing
     n8nBaseUrl: 'http://localhost:5678', // default n8n Base URL
-    orgaView: 'landing' // Track active organizer view
+    orgaView: 'landing', // Track active organizer view
+    resumeFormUrl: '',   // URL to resume scenario generation form in n8n
+    pendingScenarioId: '' // Scenario ID currently being generated
 };
 
 // Load State from LocalStorage
@@ -755,7 +757,10 @@ function renderPlayerDashboard(player) {
                 
                 const timeRegex = /^(\d{2}[h\:]\d{2})\s*[-:]?\s*(.*)$/i;
                 const match = item.match(timeRegex);
-                if (match) {
+                if (item.toUpperCase().startsWith("MOMENT DU CRIME")) {
+                    const desc = item.substring(15).replace(/^\s*[-:]?\s*/, '');
+                    li.innerHTML = `<span class="text-blood font-black shrink-0 bg-blood/10 px-1.5 py-0.5 rounded border border-blood/30 text-[9px] uppercase tracking-wider">MOMENT DU CRIME</span><span class="pt-0.5 text-slate-250 font-medium">${desc}</span>`;
+                } else if (match) {
                     const time = match[1];
                     const desc = match[2];
                     li.innerHTML = `<span class="text-gold font-extrabold shrink-0 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">${time}</span><span class="pt-0.5 text-slate-300">${desc}</span>`;
@@ -866,7 +871,24 @@ function renderPlayerDashboard(player) {
             card.className = "bg-noir-card border border-noir-border rounded-xl p-3.5 space-y-2 hover:border-gold/30 transition-all";
             
             let imgHtml = '';
-            if (c.image) {
+            let documentHtml = '';
+            
+            if (c.document_content) {
+                // Determine format and font classes
+                const docTypeClass = c.document_type ? `doc-${c.document_type.replace(/_/g, '-')}` : 'doc-folded-letter';
+                const docStyleClass = c.document_style ? `style-${c.document_style.replace(/_/g, '-')}` : 'style-handwritten-ink';
+                
+                // Set background image from Fal.ai if present, otherwise fall back to styled paper background
+                const bgImageStyle = c.image ? `background-image: url('${c.image}');` : `background: linear-gradient(135deg, #f5ecd5 0%, #e8d8b8 100%);`;
+                
+                documentHtml = `
+                    <div class="clue-document-container ${docTypeClass} ${docStyleClass} my-3" style="${bgImageStyle}">
+                        <div class="clue-document-text-zone inset-0 p-4 whitespace-pre-line select-text">
+                            ${c.document_content}
+                        </div>
+                    </div>
+                `;
+            } else if (c.image) {
                 imgHtml = `<img src="${c.image}" alt="${c.name}" class="w-full max-h-24 object-cover rounded-lg border border-noir-border">`;
             }
             
@@ -876,6 +898,7 @@ function renderPlayerDashboard(player) {
                     <span class="text-3xs bg-noir-input border border-noir-border text-slate-400 px-2 py-0.5 rounded">${c.location}</span>
                 </div>
                 <p class="text-2xs text-slate-300 leading-normal">${c.description}</p>
+                ${documentHtml}
                 ${imgHtml}
             `;
             cluesContainer.appendChild(card);
@@ -896,6 +919,479 @@ function addLiveLog(message) {
     // If GM is looking, update immediately
     if (appState.currentUser && appState.currentUser.role === 'organizer') {
         renderOrganizerDashboard();
+    }
+}
+
+/* ==========================================================================
+   VICTIM VALIDATION & SCENARIO POLLING
+   ========================================================================== */
+
+let victimPollInterval = null;
+
+function showVictimValidationModal(victim, isSimulation) {
+    document.getElementById('validateVictimName').textContent = victim.name || "Non définie";
+    document.getElementById('validateVictimGenre').textContent = victim.genre || "Non-Binaire";
+    document.getElementById('validateVictimHook').textContent = victim.short_hook || "Aucune description.";
+    document.getElementById('validateVictimOutfit').textContent = victim.outfit || "Aucune tenue définie.";
+    document.getElementById('validateVictimMarker').textContent = victim.marker || "Aucun marqueur visuel.";
+
+    const modal = document.getElementById('modalValidateVictim');
+    const sectionN8n = document.getElementById('sectionN8nForm');
+    const statusText = document.getElementById('victimValidationStatus');
+    const btnSimulate = document.getElementById('btnSimulateApprove');
+    const btnN8nLink = document.getElementById('btnOpenN8nForm');
+
+    if (modal) modal.classList.remove('hidden');
+
+    if (isSimulation) {
+        if (sectionN8n) sectionN8n.classList.add('hidden');
+        if (statusText) statusText.classList.add('hidden');
+        if (btnSimulate) btnSimulate.classList.remove('hidden');
+    } else {
+        if (sectionN8n) sectionN8n.classList.remove('hidden');
+        if (statusText) statusText.classList.remove('hidden');
+        if (btnSimulate) btnSimulate.classList.add('hidden');
+        if (btnN8nLink) btnN8nLink.href = appState.resumeFormUrl || "#";
+        
+        startVictimPolling(appState.pendingScenarioId);
+    }
+}
+
+function startVictimPolling(scenarioId) {
+    if (victimPollInterval) clearInterval(victimPollInterval);
+
+    const statusText = document.getElementById('victimValidationStatus');
+    if (statusText) {
+        statusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blood"></i> En attente de soumission du formulaire et de la génération finale...`;
+    }
+
+    victimPollInterval = setInterval(async () => {
+        try {
+            let scenarioDetails = null;
+
+            // Try checking via mp-list-scenarios webhook first
+            if (appState.n8nBaseUrl) {
+                try {
+                    const res = await fetch(`${appState.n8nBaseUrl}/webhook/mp-list-scenarios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: appState.currentUser ? appState.currentUser.email : '' })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success && Array.isArray(data.scenarios)) {
+                            scenarioDetails = data.scenarios.find(s => s.id === scenarioId);
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Polling list-scenarios failed", err);
+                }
+            }
+
+            // Fallback: direct Notion page check
+            if (!scenarioDetails) {
+                const config = await getNotionConfig();
+                if (config && config.NOTION_TOKEN) {
+                    try {
+                        const res = await fetch(`https://api.notion.com/v1/pages/${scenarioId}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${config.NOTION_TOKEN}`,
+                                'Notion-Version': '2022-06-28'
+                            }
+                        });
+                        if (res.ok) {
+                            const page = await res.json();
+                            const statusProp = page.properties["Statut"];
+                            const statusName = statusProp && statusProp.select ? statusProp.select.name : "";
+                            
+                            if (statusName === "Vérifié" || statusName === "Vérifie" || statusName === "Verify") {
+                                // Fetch complete details using list-scenarios again now that it is ready
+                                if (appState.n8nBaseUrl) {
+                                    const listRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-list-scenarios`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email: appState.currentUser ? appState.currentUser.email : '' })
+                                    });
+                                    if (listRes.ok) {
+                                        const listData = await listRes.json();
+                                        scenarioDetails = listData.scenarios.find(s => s.id === scenarioId);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (notionErr) {
+                        console.error("Polling direct Notion failed", notionErr);
+                    }
+                }
+            }
+
+            if (scenarioDetails && (scenarioDetails.status === "Vérifié" || scenarioDetails.status === "Vérifie" || scenarioDetails.status === "Verify")) {
+                clearInterval(victimPollInterval);
+                victimPollInterval = null;
+
+                // Scenario is fully generated!
+                let rawIllustration = scenarioDetails.illustration || "";
+                let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+                
+                if (rawIllustration) {
+                    if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
+                        resolvedImageUrl = rawIllustration;
+                    } else {
+                        resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/raw/main/" + rawIllustration.replace(/^\/+/, '');
+                    }
+                }
+
+                appState.scenario = {
+                    id: scenarioDetails.id,
+                    title: scenarioDetails.title,
+                    theme: scenarioDetails.theme || "Généré",
+                    pitch: scenarioDetails.pitch || "",
+                    crimeRoom: scenarioDetails.crimeRoom || "Non défini",
+                    victim: scenarioDetails.victim || "Non définie",
+                    victimOutfit: scenarioDetails.victimOutfit || "",
+                    cluesCount: scenarioDetails.cluesCount || 24,
+                    imageUrl: resolvedImageUrl,
+                    chronology: scenarioDetails.chronology || "Aucune chronologie disponible."
+                };
+
+                // Suspects list mapping into appState.players
+                const suspectsData = scenarioDetails.suspects || CHARACTER_TEMPLATES;
+                appState.players = suspectsData.map((s, index) => {
+                    const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+                    return {
+                        email: s.email || "",
+                        roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
+                        roleName: s.name || s.roleName || charTemplate.name,
+                        history: s.bio || s.history || charTemplate.bio,
+                        lienVictime: s.relation || s.lienVictime || charTemplate.relation,
+                        marker: s.marker || charTemplate.marker,
+                        genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
+                        secret: s.secret || charTemplate.secret || "",
+                        chronology: s.chronology || charTemplate.chronology || "",
+                        outfit: s.outfit || charTemplate.outfit || "",
+                        characterTraits: "",
+                        avatarUrl: "",
+                        actionPoints: 1,
+                        status: "Créé",
+                        knowledge: [],
+                        missions: []
+                    };
+                });
+
+                // Clues mapping
+                appState.clues = [];
+                if (scenarioDetails.clues && Array.isArray(scenarioDetails.clues)) {
+                    scenarioDetails.clues.forEach((c, idx) => {
+                        appState.clues.push({
+                            id: c.id || `clue_${c.location.replace(/\s+/g, '_')}_${idx}`,
+                            name: c.name,
+                            description: c.description,
+                            type: c.type || "Fouille de Pièce",
+                            location: c.location,
+                            status: c.status || "Caché",
+                            foundBy: c.foundBy || ""
+                        });
+                    });
+                }
+
+                // Close validation modal
+                const modal = document.getElementById('modalValidateVictim');
+                if (modal) modal.classList.add('hidden');
+
+                appState.orgaView = 'generated';
+                savePersistedState();
+                showToast("Génération Réussie !", "Le scénario et les suspects sont prêts !", "success");
+                renderOrganizerDashboard();
+            }
+        } catch (e) {
+            console.error("Error in victim polling tick", e);
+        }
+    }, 3000);
+}
+
+function closeVictimModal() {
+    if (victimPollInterval) {
+        clearInterval(victimPollInterval);
+        victimPollInterval = null;
+    }
+    const modal = document.getElementById('modalValidateVictim');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function handleRejectVictim() {
+    closeVictimModal();
+    
+    // Auto re-trigger generation to get a new victim
+    showToast("Recommencement", "Génération d'une nouvelle victime...", "info");
+    
+    const fakeEvent = { preventDefault: () => {} };
+    handleUnifiedSessionSubmit(fakeEvent);
+}
+
+function generateMockScenario(theme, userPitch, epoch, victim) {
+    const simulatedSuspects = CHARACTER_TEMPLATES.map((char, index) => {
+        return {
+            name: char.name,
+            bio: char.bio,
+            relation: char.relation,
+            marker: char.marker,
+            genre: char.genre,
+            outfit: char.outfit,
+            status: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")
+        };
+    });
+
+    const simulatedRooms = [
+        {
+            name: "Le Bureau de l'arrière-boutique",
+            clues: [
+                { name: "Verre de champagne brisé", description: "Une flûte en cristal gît en morceaux sous une table. Une légère odeur d'amande amère s'en dégage." },
+                { name: "Foulard en soie égaré", description: "Un luxueux foulard en soie monogrammé, coincé dans la charnière d'un fauteuil." },
+                { name: "Cendrier tiède", description: "Contient des cendres de cigares haut de gamme importés." }
+            ]
+        },
+        {
+            name: "Le Grand Salon",
+            clues: [
+                { name: "Livre d'alchimie déplacé", description: "Un ouvrage poussiéreux sur les poisons végétaux est posé à l'envers sur une étagère." },
+                { name: "Lettre de chantage déchirée", description: "Des morceaux de papier révélant une demande de rançon de 100 000 francs." },
+                { name: "Montre à gousset cassée", description: "Une montre dont le verre est brisé, arrêtée précisément sur 21h45." }
+            ]
+        },
+        {
+            name: "La Bibliothèque",
+            clues: [
+                { name: "Fiole d'Arsenic vide", description: "Un flacon d'apothicaire caché au fond du placard à épices. L'étiquette mentionne 'Arsenic'." },
+                { name: "Couteau de cuisine manquant", description: "Un emplacement est vide dans le bloc de couteaux du chef Gaston." },
+                { name: "Tisanière encore chaude", description: "Une tasse de camomille entamée, contenant des résidus de poudre blanche." }
+            ]
+        },
+        {
+            name: "La Cuisine",
+            clues: [
+                { name: "Terre meuble suspecte", description: "La terre d'une grande plante verte semble avoir été retournée récemment. Quelque chose y est enfoui." },
+                { name: "Clé dorée", description: "Une petite clé en laiton retrouvée sous un pot de fleur. Elle semble ouvrir un tiroir secret." },
+                { name: "Traces de pas boueuses", description: "Des empreintes menant de la porte vitrée vers le fauteuil du fond." }
+            ]
+        },
+        {
+            name: "Le Jardin d'Hiver",
+            clues: [
+                { name: "Coffre-fort ouvert", description: "Le coffre dissimulé derrière le tableau est grand ouvert. Il est vide de tout document légal." },
+                { name: "Dernier Testament", description: "Un brouillon de testament déshéritant les proches de la victime au profit d'une œuvre caritative." },
+                { name: "Chemise ensanglantée", description: "Une chemise d'homme froissée portant des taches de sang, dissimulée dans le panier à linge." }
+            ]
+        },
+        {
+            name: "La Chambre de la Victime",
+            clues: [
+                { name: "Bouteille de grand cru entamée", description: "Un château Margaux 1918 ouvert, contenant des traces de sédatif liquide." },
+                { name: "Mégot de cigarette pourpre", description: "Un mégot de cigarette portant une trace de rouge à lèvres rouge vif." },
+                { name: "Bouton de manchette en or", description: "Un bouton gravé d'un blason militaire, perdu près des casiers de Bourgogne." }
+            ]
+        },
+        {
+            name: "La Serre principale",
+            clues: [
+                { name: "Sécateur taché", description: "Un sécateur avec des traces suspectes de rouille sombre." },
+                { name: "Fleur rare écrasée", description: "Une fleur rare exotique piétinée au sol de la serre." },
+                { name: "Gant en cuir", description: "Un gant noir abandonné sous les feuilles d'une fougère." }
+            ]
+        },
+        {
+            name: "Le Grand Hall",
+            clues: [
+                { name: "Horloge brisée", description: "Une horloge murale arrêtée à 22h05 après un choc violent." },
+                { name: "Parapluie mouillé", description: "Un parapluie encore humide dans le porte-manteau de l'entrée." },
+                { name: "Lettre anonyme", description: "Un mot d'avertissement froissé trouvé par terre près de la porte." }
+            ]
+        },
+        {
+            name: "La Cave à Vins",
+            clues: [
+                { name: "Verre en cristal fêlé", description: "Un verre portant des traces de vin rouge séché." },
+                { name: "Bouchon de liège", description: "Un bouchon de liège marqué d'une date ancienne." },
+                { name: "Clé de la cave", description: "La clé en fer forgé permettant d'ouvrir la grille de la cave." }
+            ]
+        },
+        {
+            name: "Le Boudoir",
+            clues: [
+                { name: "Flacon de parfum vide", description: "Un parfum rare dont l'odeur embaume encore le petit divan." },
+                { name: "Lettre d'amour brûlée", description: "Un mot doux à moitié consumé dans la cheminée." },
+                { name: "Épingle à cheveux dorée", description: "Une épingle dorée trouvée sous le tapis." }
+            ]
+        }
+    ];
+
+    const simulatedTimeline = [
+        { time: "18:00", room: "Le Vestibule", suspects: ["Baptiste le Valet", victim.name], description: `Baptiste le Valet accueille ${victim.name} et prend son manteau.` },
+        { time: "Veille - 21:30", room: "La Chambre de la Victime", suspects: ["Mlle Rose", victim.name], description: `Mlle Rose a une discussion houleuse avec ${victim.name} au sujet de son héritage.` },
+        { time: "19:15", room: "Le Grand Salon", suspects: ["Madame Pervenche", victim.name], description: `Madame Pervenche discute discrètement d'une importante dette d'argent avec ${victim.name}.` },
+        { time: "20:30", room: "Le Bureau de l'arrière-boutique", suspects: ["Colonel Moutarde", victim.name], description: `Une violente altercation verbale éclate entre le Colonel Moutarde et la victime.` },
+        { time: "MOMENT DU CRIME", room: "Le Bureau de l'arrière-boutique", suspects: ["Lord Thomas Blackwood"], description: "Le coupable s'introduit discrètement dans la pièce et commet le crime de sang-froid." }
+    ];
+
+    const simulatedClues = [];
+    simulatedRooms.forEach(room => {
+        const roomName = room.name;
+        simulatedClues.push({
+            name: `Indice A - ${roomName}`,
+            description: `Un résidu d'activité ou un objet anodin pouvant servir d'indice dans la pièce "${roomName}".`,
+            type: "Fouille de Pièce",
+            location: roomName
+        });
+        simulatedClues.push({
+            name: `Lettre suspecte - ${roomName}`,
+            description: `Une trace d'écrit froissée abandonnée dans la pièce "${roomName}".`,
+            type: "Fouille de Pièce",
+            location: roomName
+        });
+        simulatedClues.push({
+            name: `Livre de comptes - ${roomName}`,
+            description: `Un grand registre comptable trouvé sous une étagère dans la pièce "${roomName}".`,
+            type: "Fouille de Pièce",
+            location: roomName
+        });
+    });
+
+    simulatedSuspects.forEach(sus => {
+        simulatedClues.push({
+            name: `Document compromettant de ${sus.name}`,
+            description: `Un document secret inspiré par la biographie de ${sus.name}, révélant un mobile financier ou passionnel important lié à la victime.`,
+            type: "Affaire Personnelle",
+            location: `Affaires de ${sus.name}`
+        });
+        simulatedClues.push({
+            name: `Note d'agenda de ${sus.name}`,
+            description: `Une preuve matérielle indiquant la présence ou un acte de ${sus.name} à un moment précis de sa timeline d'avant-meurtre.`,
+            type: "Affaire Personnelle",
+            location: `Affaires de ${sus.name}`
+        });
+        if (sus.status === "Coupable") {
+            simulatedClues.push({
+                name: `L'Arme du Crime (de ${sus.name})`,
+                description: `La véritable arme du crime utilisée pour assassiner la victime (${victim.name}). Elle a été trouvée dans les affaires de ${sus.name}.`,
+                type: "Affaire Personnelle",
+                location: `Affaires de ${sus.name}`
+            });
+        } else {
+            simulatedClues.push({
+                name: `Objet insolite de ${sus.name}`,
+                description: `Un objet personnel tranchant ou suspect pouvant servir d'arme de substitution, inspiré de la biographie de ${sus.name}.`,
+                type: "Affaire Personnelle",
+                location: `Affaires de ${sus.name}`
+            });
+        }
+    });
+
+    return {
+        success: true,
+        scenario_id: "sc_" + Math.random().toString(36).substr(2, 9),
+        title: "Le Dernier Souffle du Speakeasy",
+        general_location: "Un Speakeasy clandestin",
+        murder_room: "Le Bureau de l'arrière-boutique",
+        victim: victim,
+        clues_count: simulatedClues.length,
+        pitch: userPitch || "Dans la pénombre d'un club de jazz clandestin, un parrain de la mafia a été assassiné de sang-froid.",
+        Illustration: "illustrations/speakeasy.png",
+        suspects: simulatedSuspects,
+        rooms: simulatedRooms,
+        timeline: simulatedTimeline,
+        clues: simulatedClues
+    };
+}
+
+async function handleSimulateApprove() {
+    const approveBtn = document.getElementById('btnSimulateApprove');
+    if (approveBtn) {
+        approveBtn.setAttribute('disabled', 'true');
+        approveBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Génération finale...`;
+    }
+
+    await sleep(2000);
+
+    try {
+        const params = appState.simulatedParams || {
+            theme: "Prohibition",
+            userPitch: "",
+            epoch: "Années 20",
+            victim: {
+                name: "Lord James Lenoir (Le Propriétaire du Speakeasy)",
+                genre: "Homme",
+                short_hook: "Un parrain de la mafia respecté de la pègre locale gisant dans son propre bureau secret.",
+                marker: "Une bague de chevalière gravée d'une tête de lion",
+                outfit: "Smoking en velours noir sur mesure avec nœud papillon blanc déboutonné."
+            }
+        };
+
+        const dataScenario = generateMockScenario(params.theme, params.userPitch, params.epoch, params.victim);
+
+        let resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/raw/main/illustrations/speakeasy.png";
+
+        appState.scenario = {
+            id: dataScenario.scenario_id,
+            title: dataScenario.title,
+            theme: params.theme,
+            pitch: dataScenario.pitch,
+            crimeRoom: dataScenario.murder_room,
+            victim: dataScenario.victim.name,
+            victimOutfit: dataScenario.victim.outfit,
+            cluesCount: dataScenario.clues_count,
+            imageUrl: resolvedImageUrl,
+            chronology: dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n')
+        };
+
+        const suspectsData = dataScenario.suspects;
+        appState.players = suspectsData.map((s, index) => {
+            const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+            return {
+                email: "",
+                roleType: s.status || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
+                roleName: s.name,
+                history: s.bio,
+                lienVictime: s.relation,
+                marker: s.marker,
+                genre: s.genre,
+                secret: charTemplate.secret || "",
+                chronology: charTemplate.chronology || "",
+                outfit: s.outfit || "",
+                characterTraits: "",
+                avatarUrl: "",
+                actionPoints: 1,
+                status: "Créé",
+                knowledge: [],
+                missions: []
+            };
+        });
+
+        appState.clues = [];
+        dataScenario.clues.forEach((c, idx) => {
+            appState.clues.push({
+                id: c.id || `clue_${c.location.replace(/\s+/g, '_')}_${idx}`,
+                name: c.name,
+                description: c.description,
+                type: c.type || "Fouille de Pièce",
+                location: c.location,
+                status: "Caché",
+                foundBy: ""
+            });
+        });
+
+        closeVictimModal();
+        appState.orgaView = 'generated';
+        savePersistedState();
+        showToast("Scénario Prêt !", "Simulation de la génération complète réussie !", "success");
+        renderOrganizerDashboard();
+    } catch (err) {
+        console.error(err);
+        showToast("Erreur Simulation", err.message || "Erreur de génération simulée.", "error");
+    } finally {
+        if (approveBtn) {
+            approveBtn.removeAttribute('disabled');
+            approveBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer (Simulé)`;
+        }
     }
 }
 
@@ -935,7 +1431,7 @@ async function handleUnifiedSessionSubmit(e) {
 
             addLiveLog(`[Agent 1: Scénariste] Génération de l'intrigue (Thème: "${theme}", Époque: "${epoch}")...`);
             renderOrganizerDashboard();
-            
+
             let dataScenario = null;
             if (appState.n8nBaseUrl) {
                 // Call real n8n agent orchestration
@@ -951,135 +1447,86 @@ async function handleUnifiedSessionSubmit(e) {
                 });
                 if (!response.ok) throw new Error("Erreur de communication avec l'Agent Scénariste.");
                 dataScenario = await response.json();
+
+                if (dataScenario && (dataScenario.resume_form_url || dataScenario.resume_url)) {
+                    // It hit the Wait node and returned the victim info and resume URL
+                    appState.resumeFormUrl = dataScenario.resume_form_url || dataScenario.resume_url;
+                    appState.pendingScenarioId = dataScenario.scenario_id;
+                    savePersistedState();
+
+                    showVictimValidationModal(dataScenario.victim, false);
+
+                    // Reset submit button, and return early
+                    submitBtn.removeAttribute('disabled');
+                    submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Générer un scénario`;
+                    renderOrganizerDashboard();
+                    return;
+                }
             } else {
                 // Local simulation fallback
-                await sleep(2000);
-                
-                // Simulate 16 suspects from CHARACTER_TEMPLATES
-                const simulatedSuspects = CHARACTER_TEMPLATES.map((char, index) => {
-                    return {
-                        name: char.name,
-                        bio: char.bio,
-                        relation: char.relation,
-                        marker: char.marker,
-                        genre: char.genre,
-                        outfit: char.outfit,
-                        status: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")
-                    };
-                });
+                await sleep(1500);
 
-                // Simulate 10 rooms with 3 clues each
-                const simulatedRooms = [
-                    {
-                        name: "Le Bureau de l'arrière-boutique",
-                        clues: [
-                            { name: "Verre de champagne brisé", description: "Une flûte en cristal gît en morceaux sous une table. Une légère odeur d'amande amère s'en dégage." },
-                            { name: "Foulard en soie égaré", description: "Un luxueux foulard en soie monogrammé, coincé dans la charnière d'un fauteuil." },
-                            { name: "Cendrier tiède", description: "Contient des cendres de cigares haut de gamme importés." }
-                        ]
-                    },
-                    {
-                        name: "Le Grand Salon",
-                        clues: [
-                            { name: "Livre d'alchimie déplacé", description: "Un ouvrage poussiéreux sur les poisons végétaux est posé à l'envers sur une étagère." },
-                            { name: "Lettre de chantage déchirée", description: "Des morceaux de papier révélant une demande de rançon de 100 000 francs." },
-                            { name: "Montre à gousset cassée", description: "Une montre dont le verre est brisé, arrêtée précisément sur 21h45." }
-                        ]
-                    },
-                    {
-                        name: "La Bibliothèque",
-                        clues: [
-                            { name: "Fiole d'Arsenic vide", description: "Un flacon d'apothicaire caché au fond du placard à épices. L'étiquette mentionne 'Arsenic'." },
-                            { name: "Couteau de cuisine manquant", description: "Un emplacement est vide dans le bloc de couteaux du chef Gaston." },
-                            { name: "Tisanière encore chaude", description: "Une tasse de camomille entamée, contenant des résidus de poudre blanche." }
-                        ]
-                    },
-                    {
-                        name: "La Cuisine",
-                        clues: [
-                            { name: "Terre meuble suspecte", description: "La terre d'une grande plante verte semble avoir été retournée récemment. Quelque chose y est enfoui." },
-                            { name: "Clé dorée", description: "Une petite clé en laiton retrouvée sous un pot de fleur. Elle semble ouvrir un tiroir secret." },
-                            { name: "Traces de pas boueuses", description: "Des empreintes menant de la porte vitrée vers le fauteuil du fond." }
-                        ]
-                    },
-                    {
-                        name: "Le Jardin d'Hiver",
-                        clues: [
-                            { name: "Coffre-fort ouvert", description: "Le coffre dissimulé derrière le tableau est grand ouvert. Il est vide de tout document légal." },
-                            { name: "Dernier Testament", description: "Un brouillon de testament déshéritant les proches de la victime au profit d'une œuvre caritative." },
-                            { name: "Chemise ensanglantée", description: "Une chemise d'homme froissée portant des taches de sang, dissimulée dans le panier à linge." }
-                        ]
-                    },
-                    {
-                        name: "La Chambre de la Victime",
-                        clues: [
-                            { name: "Bouteille de grand cru entamée", description: "Un château Margaux 1918 ouvert, contenant des traces de sédatif liquide." },
-                            { name: "Mégot de cigarette pourpre", description: "Un mégot de cigarette portant une trace de rouge à lèvres rouge vif." },
-                            { name: "Bouton de manchette en or", description: "Un bouton gravé d'un blason militaire, perdu près des casiers de Bourgogne." }
-                        ]
-                    },
-                    {
-                        name: "La Serre principale",
-                        clues: [
-                            { name: "Sécateur taché", description: "Un sécateur avec des traces suspectes de rouille sombre." },
-                            { name: "Fleur rare écrasée", description: "Une fleur rare exotique piétinée au sol de la serre." },
-                            { name: "Gant en cuir", description: "Un gant noir abandonné sous les feuilles d'une fougère." }
-                        ]
-                    },
-                    {
-                        name: "Le Grand Hall",
-                        clues: [
-                            { name: "Horloge brisée", description: "Une horloge murale arrêtée à 22h05 après un choc violent." },
-                            { name: "Parapluie mouillé", description: "Un parapluie encore humide dans le porte-manteau de l'entrée." },
-                            { name: "Lettre anonyme", description: "Un mot d'avertissement froissé trouvé par terre près de la porte." }
-                        ]
-                    },
-                    {
-                        name: "La Cave à Vins",
-                        clues: [
-                            { name: "Verre en cristal fêlé", description: "Un verre portant des traces de vin rouge séché." },
-                            { name: "Bouchon de liège", description: "Un bouchon de liège marqué d'une date ancienne." },
-                            { name: "Clé de la cave", description: "La clé en fer forgé permettant d'ouvrir la grille de la cave." }
-                        ]
-                    },
-                    {
-                        name: "Le Boudoir",
-                        clues: [
-                            { name: "Flacon de parfum vide", description: "Un parfum rare dont l'odeur embaume encore le petit divan." },
-                            { name: "Lettre d'amour brûlée", description: "Un mot doux à moitié consumé dans la cheminée." },
-                            { name: "Épingle à cheveux dorée", description: "Une épingle dorée trouvée sous le tapis." }
-                        ]
-                    }
-                ];
-
-                const simulatedTimeline = [
-                    { time: "18:00", room: "Le Vestibule", suspects: ["Baptiste le Valet", "Lord James Lenoir (Le Propriétaire du Speakeasy)"], description: "Baptiste le Valet accueille Lord James Lenoir et prend son manteau de fourrure." },
-                    { time: "Veille - 21:30", room: "La Chambre de la Victime", suspects: ["Mlle Rose", "Lord James Lenoir (Le Propriétaire du Speakeasy)"], description: "Mlle Rose a une discussion houleuse avec Lord James Lenoir au sujet de son héritage." },
-                    { time: "19:15", room: "Le Grand Salon", suspects: ["Madame Pervenche", "Lord James Lenoir (Le Propriétaire du Speakeasy)"], description: "Madame Pervenche discute discrètement d'une importante dette d'argent avec Lord James Lenoir." },
-                    { time: "20:30", room: "Le Bureau de l'arrière-boutique", suspects: ["Colonel Moutarde", "Lord James Lenoir (Le Propriétaire du Speakeasy)"], description: "Une violente altercation verbale éclate entre le Colonel Moutarde et la victime." },
-                    { time: "21:45", room: "Le Bureau de l'arrière-boutique", suspects: ["Lord Thomas Blackwood"], description: "Le coupable s'introduit discrètement dans la pièce et commet le crime de sang-froid." }
-                ];
-
-                dataScenario = {
-                    success: true,
-                    scenario_id: "sc_" + Math.random().toString(36).substr(2, 9),
-                    title: "Le Dernier Souffle du Speakeasy",
-                    general_location: "Un Speakeasy clandestin",
-                    murder_room: "Le Bureau de l'arrière-boutique",
-                    victim: {
-                        name: "Lord James Lenoir (Le Propriétaire du Speakeasy)",
-                        genre: "Homme",
-                        short_hook: "Un parrain de la mafia respecté de la pègre locale retrouvé gisant dans son propre bureau secret.",
-                        marker: "Une bague de chevalière gravée d'une tête de lion",
-                        outfit: "Un smoking de soirée en velours noir sur mesure avec un nœud papillon blanc déboutonné, une montre à gousset dorée cassée et une rose rouge flétrie à la boutonnière."
-                    },
-                    clues_count: simulatedRooms.length * 3,
-                    pitch: userPitch || "Dans la pénombre d'un club de jazz clandestin, un parrain de la mafia a été assassiné de sang-froid.",
-                    illustration_url: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
-                    suspects: simulatedSuspects,
-                    rooms: simulatedRooms,
-                    timeline: simulatedTimeline
+                const simulatedVictim = {
+                    name: "Lord James Lenoir (Le Propriétaire du Speakeasy)",
+                    genre: "Homme",
+                    short_hook: "Un parrain de la mafia respecté de la pègre locale gisant dans son propre bureau secret.",
+                    marker: "Une bague de chevalière gravée d'une tête de lion",
+                    outfit: "Un smoking de soirée en velours noir sur mesure avec un nœud papillon blanc déboutonné, une montre à gousset dorée cassée et une rose rouge flétrie à la boutonnière."
                 };
+
+                appState.simulatedParams = {
+                    theme: theme,
+                    userPitch: userPitch,
+                    epoch: epoch,
+                    victim: simulatedVictim
+                };
+                savePersistedState();
+
+                showVictimValidationModal(simulatedVictim, true);
+
+                // Reset submit button, and return early
+                submitBtn.removeAttribute('disabled');
+                submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Générer un scénario`;
+                renderOrganizerDashboard();
+                return;
+            }
+
+            // Compute scenario illustration image URL using SamiSteyre repo + Notion column content
+            let rawIllustration = dataScenario.illustration || dataScenario.Illustration || dataScenario.illustration_url || "";
+            let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+
+            if (rawIllustration) {
+                if (typeof rawIllustration === 'string') {
+                    if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
+                        resolvedImageUrl = rawIllustration;
+                    } else {
+                        const cleanPath = rawIllustration.replace(/^\/+/, '');
+                        resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/" + cleanPath;
+                    }
+                } else if (Array.isArray(rawIllustration) && rawIllustration.length > 0) {
+                    let item = rawIllustration[0];
+                    let fileUrl = item.file?.url || item.external?.url || item.name || "";
+                    if (fileUrl) {
+                        if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+                            resolvedImageUrl = fileUrl;
+                        } else {
+                            const cleanPath = fileUrl.replace(/^\/+/, '');
+                            resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/" + cleanPath;
+                        }
+                    }
+                }
+
+                // If it is a GitHub URL, make sure it is a raw URL so that browsers can display it directly
+                if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty') && 
+                    !resolvedImageUrl.includes('/raw/') && 
+                    !resolvedImageUrl.includes('raw.githubusercontent.com')) {
+                    
+                    if (resolvedImageUrl.includes('/blob/')) {
+                        resolvedImageUrl = resolvedImageUrl.replace('/blob/', '/raw/');
+                    } else {
+                        resolvedImageUrl = resolvedImageUrl.replace('github.com/SamiSteyre/murderparty/', 'github.com/SamiSteyre/murderparty/raw/main/');
+                    }
+                }
             }
 
             appState.scenario = {
@@ -1091,7 +1538,7 @@ async function handleUnifiedSessionSubmit(e) {
                 victim: dataScenario.victim_name || (dataScenario.victim ? (typeof dataScenario.victim === 'string' ? dataScenario.victim : dataScenario.victim.name) : "Non définie"),
                 victimOutfit: dataScenario.victim_outfit || (dataScenario.victim && typeof dataScenario.victim === 'object' ? dataScenario.victim.outfit : "") || "",
                 cluesCount: dataScenario.clues_count || 24,
-                imageUrl: dataScenario.illustration_url || "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
+                imageUrl: resolvedImageUrl,
                 chronology: dataScenario.chronology || (dataScenario.timeline ? dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n') : "Aucune chronologie disponible.")
             };
 
@@ -1127,7 +1574,13 @@ async function handleUnifiedSessionSubmit(e) {
                     marker: s.marker || charTemplate.marker,
                     genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
                     secret: s.secret || charTemplate.secret || "",
-                    chronology: s.chronology || (dataScenario.personal_timelines ? (dataScenario.personal_timelines[s.name] || dataScenario.personal_timelines[s.roleName]) : "") || charTemplate.chronology || "",
+                    chronology: (() => {
+                        const rawChrono = s.chronology || (dataScenario.personal_timelines ? (dataScenario.personal_timelines[s.name] || dataScenario.personal_timelines[s.roleName]) : "") || charTemplate.chronology || "";
+                        if (Array.isArray(rawChrono)) {
+                            return rawChrono.map(e => `${e.time} - ${e.room} : ${e.description}`).join('\n');
+                        }
+                        return rawChrono;
+                    })(),
                     outfit: s.outfit || charTemplate.outfit || "",
                     characterTraits: "",
                     avatarUrl: "",
@@ -1145,42 +1598,131 @@ async function handleUnifiedSessionSubmit(e) {
             // Select scenario mode
             const existingSelect = document.getElementById('existingScenarioSelect');
             scenarioId = existingSelect.value;
+            if (!scenarioId) {
+                throw new Error("Veuillez sélectionner un scénario existant.");
+            }
             const scenarioTitle = existingSelect.options[existingSelect.selectedIndex].text;
 
-            appState.scenario = {
-                id: scenarioId,
-                title: scenarioTitle.split(' (')[0],
-                theme: "Chargé",
-                pitch: "Scénario pré-existant chargé depuis Notion.",
-                crimeRoom: "Le Bureau",
-                victim: "M. Lenoir (cadavre)",
-                victimOutfit: "Un costume de soirée sombre classique avec gilet de velours pourpre.",
-                cluesCount: 24,
-                imageUrl: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop",
-                chronology: "18:00 - Le Vestibule (Baptiste le Valet, M. Lenoir) : Accueil des invités.\n19:00 - Le Grand Salon (Mlle Rose, M. Lenoir) : Discussion cordiale.\n20:00 - Le Petit Salon (Colonel Moutarde, M. Lenoir) : Altercation bruyante.\n22:00 - Le Bureau : Heure estimée du crime."
-            };
+            const selectedScenario = appState.loadedScenarios ? appState.loadedScenarios.find(s => s.id === scenarioId) : null;
+            if (selectedScenario) {
+                // Keep selectedScenario in dataScenario so clues will be populated from it
+                dataScenario = selectedScenario;
 
-            // Prepopulate 16 suspects from static template for fallback
-            appState.players = CHARACTER_TEMPLATES.map((char, index) => {
-                return {
-                    email: "",
-                    roleType: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent"),
-                    roleName: char.name,
-                    history: char.bio,
-                    lienVictime: char.relation,
-                    marker: char.marker,
-                    genre: char.genre || "Non-Binaire",
-                    secret: char.secret || "",
-                    chronology: char.chronology || "",
-                    outfit: char.outfit || "",
-                    characterTraits: "",
-                    avatarUrl: "",
-                    actionPoints: 1,
-                    status: "Créé",
-                    knowledge: [],
-                    missions: []
+                let rawIllustration = selectedScenario.illustration || "";
+                let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+                
+                if (rawIllustration) {
+                    if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
+                        resolvedImageUrl = rawIllustration;
+                    } else {
+                        const cleanPath = rawIllustration.replace(/^\/+/, '');
+                        resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/" + cleanPath;
+                    }
+                    
+                    if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty') && 
+                        !resolvedImageUrl.includes('/raw/') && 
+                        !resolvedImageUrl.includes('raw.githubusercontent.com')) {
+                        
+                        if (resolvedImageUrl.includes('/blob/')) {
+                            resolvedImageUrl = resolvedImageUrl.replace('/blob/', '/raw/');
+                        } else {
+                            resolvedImageUrl = resolvedImageUrl.replace('github.com/SamiSteyre/murderparty/', 'github.com/SamiSteyre/murderparty/raw/main/');
+                        }
+                    }
+                }
+
+                appState.scenario = {
+                    id: selectedScenario.id,
+                    title: selectedScenario.title,
+                    theme: selectedScenario.theme || "Chargé",
+                    pitch: selectedScenario.pitch || "Scénario pré-existant chargé depuis Notion.",
+                    crimeRoom: selectedScenario.crimeRoom || "Le Bureau",
+                    victim: selectedScenario.victim || "Non définie",
+                    victimOutfit: selectedScenario.victimOutfit || "",
+                    cluesCount: selectedScenario.cluesCount || 24,
+                    imageUrl: resolvedImageUrl,
+                    chronology: selectedScenario.chronology || "Aucune chronologie disponible."
                 };
-            });
+
+                const suspectsData = selectedScenario.suspects || CHARACTER_TEMPLATES;
+                appState.players = suspectsData.map((s, index) => {
+                    const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+                    return {
+                        email: s.email || "",
+                        roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
+                        roleName: s.name || s.roleName || charTemplate.name,
+                        history: s.bio || s.history || charTemplate.bio,
+                        lienVictime: s.relation || s.lienVictime || charTemplate.relation,
+                        marker: s.marker || charTemplate.marker,
+                        genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
+                        secret: s.secret || charTemplate.secret || "",
+                        chronology: (() => {
+                            const rawChrono = s.chronology || charTemplate.chronology || "";
+                            if (Array.isArray(rawChrono)) {
+                                return rawChrono.map(e => `${e.time} - ${e.room} : ${e.description}`).join('\n');
+                            }
+                            return rawChrono;
+                        })(),
+                        outfit: s.outfit || charTemplate.outfit || "",
+                        characterTraits: "",
+                        avatarUrl: "",
+                        actionPoints: 1,
+                        status: "Créé",
+                        knowledge: [],
+                        missions: []
+                    };
+                });
+            } else {
+                // Fallback for static options or other manual values
+                let simulatedIllustration = "";
+                if (scenarioId === 'sc_speakeasy') {
+                    simulatedIllustration = "illustrations/speakeasy.png";
+                } else if (scenarioId === 'sc_croft') {
+                    simulatedIllustration = "illustrations/croft.png";
+                } else if (scenarioId === 'sc_neon') {
+                    simulatedIllustration = "illustrations/neon.png";
+                }
+
+                let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+                if (simulatedIllustration) {
+                    resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/raw/main/" + simulatedIllustration;
+                }
+
+                appState.scenario = {
+                    id: scenarioId,
+                    title: scenarioTitle.split(' (')[0],
+                    theme: "Chargé",
+                    pitch: "Scénario pré-existant chargé depuis Notion.",
+                    crimeRoom: "Le Bureau",
+                    victim: "M. Lenoir (cadavre)",
+                    victimOutfit: "Un costume de soirée sombre classique avec gilet de velours pourpre.",
+                    cluesCount: 24,
+                    imageUrl: resolvedImageUrl,
+                    chronology: "18:00 - Le Vestibule (Baptiste le Valet, M. Lenoir) : Accueil des invités.\n19:00 - Le Grand Salon (Mlle Rose, M. Lenoir) : Discussion cordiale.\n20:00 - Le Petit Salon (Colonel Moutarde, M. Lenoir) : Altercation bruyante.\n22:00 - Le Bureau : Heure estimée du crime."
+                };
+
+                // Prepopulate 16 suspects from static template for fallback
+                appState.players = CHARACTER_TEMPLATES.map((char, index) => {
+                    return {
+                        email: "",
+                        roleType: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent"),
+                        roleName: char.name,
+                        history: char.bio,
+                        lienVictime: char.relation,
+                        marker: char.marker,
+                        genre: char.genre || "Non-Binaire",
+                        secret: char.secret || "",
+                        chronology: char.chronology || "",
+                        outfit: char.outfit || "",
+                        characterTraits: "",
+                        avatarUrl: "",
+                        actionPoints: 1,
+                        status: "Créé",
+                        knowledge: [],
+                        missions: []
+                    };
+                });
+            }
 
             addLiveLog(`Scénario sélectionné : "${appState.scenario.title}".`);
             renderOrganizerDashboard();
@@ -1188,7 +1730,19 @@ async function handleUnifiedSessionSubmit(e) {
 
         // Initialize clues DB state
         appState.clues = [];
-        if (dataScenario && dataScenario.rooms && Array.isArray(dataScenario.rooms)) {
+        if (dataScenario && dataScenario.clues && Array.isArray(dataScenario.clues)) {
+            dataScenario.clues.forEach((c, idx) => {
+                appState.clues.push({
+                    id: c.id || `clue_${c.location.replace(/\s+/g, '_')}_${idx}`,
+                    name: c.name,
+                    description: c.description,
+                    type: c.type || "Fouille de Pièce",
+                    location: c.location,
+                    status: c.status || "Caché",
+                    foundBy: c.foundBy || ""
+                });
+            });
+        } else if (dataScenario && dataScenario.rooms && Array.isArray(dataScenario.rooms)) {
             dataScenario.rooms.forEach(room => {
                 const roomName = room.name;
                 if (room.clues && Array.isArray(room.clues)) {
@@ -1965,6 +2519,215 @@ function setupScenarioModals() {
 }
 
 /* ==========================================================================
+   NOTION INTEGRATION: LISTING AND SELECTING SCENARIOS
+   ========================================================================== */
+async function getNotionConfig() {
+    try {
+        const res = await fetch('.env');
+        if (!res.ok) return null;
+        const text = await res.text();
+        const config = {};
+        text.split(/\r?\n/).forEach(line => {
+            const match = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
+            if (match) {
+                const key = match[1];
+                let val = match[2] || '';
+                if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+                config[key] = val.trim();
+            }
+        });
+        return config;
+    } catch (e) {
+        console.error("Failed to load .env config from client side", e);
+        return null;
+    }
+}
+
+async function loadExistingScenarios() {
+    const select = document.getElementById('existingScenarioSelect');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">⌛ Chargement des scénarios...</option>';
+    
+    const email = appState.currentUser ? appState.currentUser.email : '';
+    
+    try {
+        let scenarios = [];
+        
+        // 1. Try fetching from n8n webhook
+        if (appState.n8nBaseUrl) {
+            try {
+                const res = await fetch(`${appState.n8nBaseUrl}/webhook/mp-list-scenarios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && Array.isArray(data.scenarios)) {
+                        scenarios = data.scenarios;
+                    }
+                }
+            } catch (err) {
+                console.warn("n8n mp-list-scenarios webhook failed, trying Notion API directly", err);
+            }
+        }
+        
+        // 2. Fallback: Query Notion API directly from frontend using fetched .env
+        if (scenarios.length === 0) {
+            const config = await getNotionConfig();
+            if (config && config.NOTION_TOKEN && config.NOTION_DB_SCENARIOS) {
+                try {
+                    const response = await fetch(`https://api.notion.com/v1/databases/${config.NOTION_DB_SCENARIOS}/query`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${config.NOTION_TOKEN}`,
+                            'Content-Type': 'application/json',
+                            'Notion-Version': '2022-06-28'
+                        },
+                        body: JSON.stringify({
+                            filter: {
+                                or: [
+                                    {
+                                        property: "Statut",
+                                        select: {
+                                            equals: "En cours de génération"
+                                        }
+                                    },
+                                    {
+                                        property: "Statut",
+                                        select: {
+                                            equals: "En cours de generation"
+                                        }
+                                    }
+                                ]
+                            }
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        scenarios = data.results.map(page => {
+                            const props = page.properties;
+                            
+                            const getText = (prop) => {
+                                if (!prop) return "";
+                                if (prop.rich_text) return prop.rich_text.map(t => t.plain_text).join("");
+                                if (prop.title) return prop.title.map(t => t.plain_text).join("");
+                                return "";
+                            };
+
+                            const getNumber = (prop) => {
+                                if (!prop) return 0;
+                                return prop.number || 0;
+                            };
+
+                            const getEmail = (prop) => {
+                                if (!prop) return "";
+                                if (prop.email) return prop.email;
+                                if (prop.rich_text) return prop.rich_text.map(t => t.plain_text).join("");
+                                return "";
+                            };
+
+                            return {
+                                id: page.id,
+                                title: getText(props["Nom"]) || "Sans titre",
+                                pitch: getText(props["Pitch Global"]),
+                                crimeRoom: getText(props["Scène du Crime"]) || getText(props["Scene du Crime"]),
+                                victim: getText(props["Victime"]),
+                                victimOutfit: getText(props["Tenue Victime"]),
+                                chronology: getText(props["Chronologie"]),
+                                cluesCount: getNumber(props["Nombre Total d'Indices"]) || 24,
+                                illustration: props["Illustration"] ? getText(props["Illustration"]) : "",
+                                status: props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "En cours de génération",
+                                email: props["Email Organisateur"] ? getEmail(props["Email Organisateur"]) : 
+                                       (props["email"] ? getEmail(props["email"]) : "")
+                            };
+                        });
+                        
+                        // Filter by creator email if email property matches
+                        if (email) {
+                            scenarios = scenarios.filter(s => {
+                                return !s.email || s.email.toLowerCase() === email.toLowerCase();
+                            });
+                        }
+                    }
+                } catch (notionErr) {
+                    console.error("Direct Notion scenarios query failed", notionErr);
+                }
+            }
+        }
+        
+        // 3. Fallback: Local simulated scenarios matching the connected email
+        if (scenarios.length === 0) {
+            scenarios = [
+                {
+                    id: "sc_mock_speakeasy",
+                    title: "Le Dernier Souffle du Speakeasy",
+                    theme: "Années 20 / Prohibition",
+                    pitch: "Dans la pénombre d'un club de jazz clandestin, un parrain de la mafia a été assassiné de sang-froid.",
+                    crimeRoom: "Le Bureau de l'arrière-boutique",
+                    victim: "Lord James Lenoir (Le Propriétaire du Speakeasy)",
+                    victimOutfit: "Un smoking de soirée en velours noir sur mesure avec un nœud papillon blanc déboutonné, une montre à gousset dorée cassée et une rose rouge flétrie à la boutonnière.",
+                    cluesCount: 24,
+                    illustration: "illustrations/speakeasy.png",
+                    chronology: "18:00 - Le Vestibule (Baptiste le Valet, M. Lenoir) : Accueil des invités.\n19:00 - Le Grand Salon (Mlle Rose, M. Lenoir) : Discussion cordiale.\n20:00 - Le Petit Salon (Colonel Moutarde, M. Lenoir) : Altercation bruyante.\n22:00 - Le Bureau : Heure estimée du crime.",
+                    status: "En cours de génération",
+                    email: email
+                },
+                {
+                    id: "sc_mock_croft",
+                    title: "Meurtre au Manoir Croft",
+                    theme: "Archéologie / Moderne",
+                    pitch: "Une célèbre aventurière est retrouvée sans vie dans la grande bibliothèque de son domaine familial.",
+                    crimeRoom: "La Bibliothèque du Manoir",
+                    victim: "Lady Lara Croft",
+                    victimOutfit: "Une tenue de baroudeuse moderne avec double holster vide aux cuisses.",
+                    cluesCount: 24,
+                    illustration: "illustrations/croft.png",
+                    chronology: "18:00 - Le Hall d'Entrée : Arrivée des invités.\n19:00 - La Salle d'Armes : Présentation des reliques.\n20:30 - La Bibliothèque : Début des recherches.\n21:45 - La Bibliothèque : Heure présumée du meurtre.",
+                    status: "En cours de génération",
+                    email: email
+                }
+            ];
+        }
+
+        appState.loadedScenarios = scenarios;
+        savePersistedState();
+        
+        select.innerHTML = '<option value="">-- Sélectionner un scénario en cours --</option>';
+        scenarios.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = `${s.title} (${s.theme || 'En cours de génération'})`;
+            select.appendChild(opt);
+        });
+        
+        updateSelectScenarioSubmitBtn();
+        
+    } catch (err) {
+        console.error("Failed to load scenarios list", err);
+        select.innerHTML = '<option value="">⚠️ Erreur de chargement</option>';
+    }
+}
+
+function updateSelectScenarioSubmitBtn() {
+    const select = document.getElementById('existingScenarioSelect');
+    const submitBtn = document.getElementById('unifiedSubmitBtn');
+    if (!select || !submitBtn) return;
+    
+    const selectedId = select.value;
+    const selectedScenario = appState.loadedScenarios ? appState.loadedScenarios.find(s => s.id === selectedId) : null;
+    
+    // If scenario is 'En cours de génération', the button text changes to Verification
+    if (selectedScenario && (selectedScenario.status === "En cours de génération" || selectedScenario.status === "En cours de generation")) {
+        submitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Vérifier le scénario`;
+    } else {
+        submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la session`;
+    }
+}
+
+/* ==========================================================================
    INITIALIZATION & EVENT LISTENERS
    ========================================================================== */
 function init() {
@@ -1973,6 +2736,12 @@ function init() {
     
     // Global routes
     routeApp();
+
+    // Load scenarios if selector mode is active
+    const modeInput = document.getElementById('scenarioMode');
+    if (modeInput && modeInput.value === 'select') {
+        loadExistingScenarios();
+    }
 
     // Event Listeners
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
@@ -2058,7 +2827,13 @@ function init() {
             if (modeInput) modeInput.value = 'select';
             savePersistedState();
             renderOrganizerDashboard();
+            loadExistingScenarios();
         });
+    }
+
+    const existingScenarioSelect = document.getElementById('existingScenarioSelect');
+    if (existingScenarioSelect) {
+        existingScenarioSelect.addEventListener('change', updateSelectScenarioSubmitBtn);
     }
 
     // Organizer Forms (Unified Panel)
@@ -2076,6 +2851,16 @@ function init() {
     
     // Player Gameplay trigger
     document.getElementById('searchRoomBtn').addEventListener('click', handleRoomSearch);
+
+    // Victim Validation Modal Event Listeners
+    const rejectVictimBtn = document.getElementById('rejectVictimBtn');
+    if (rejectVictimBtn) rejectVictimBtn.addEventListener('click', handleRejectVictim);
+
+    const btnSimulateApprove = document.getElementById('btnSimulateApprove');
+    if (btnSimulateApprove) btnSimulateApprove.addEventListener('click', handleSimulateApprove);
+
+    const closeVictimModalBtn = document.getElementById('closeVictimModalBtn');
+    if (closeVictimModalBtn) closeVictimModalBtn.addEventListener('click', closeVictimModal);
 }
 
 window.addEventListener('DOMContentLoaded', init);
