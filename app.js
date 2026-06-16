@@ -1429,6 +1429,9 @@ async function handleUnifiedSessionSubmit(e) {
                 throw new Error("Veuillez renseigner un thème pour la génération de scénario.");
             }
 
+            const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+            if (genOverlay) genOverlay.classList.remove('hidden');
+
             addLiveLog(`[Agent 1: Scénariste] Génération de l'intrigue (Thème: "${theme}", Époque: "${epoch}")...`);
             renderOrganizerDashboard();
 
@@ -1785,6 +1788,9 @@ async function handleUnifiedSessionSubmit(e) {
         addLiveLog(`Erreur : ${err.message}`);
         showToast("Erreur d'orchestration", err.message || "Une erreur est survenue.", "error");
     } finally {
+        const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+        if (genOverlay) genOverlay.classList.add('hidden');
+
         submitBtn.removeAttribute('disabled');
         const mode = document.getElementById('scenarioMode').value;
         if (mode === 'create') {
