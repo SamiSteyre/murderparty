@@ -1052,6 +1052,102 @@ function loadScenarioData(data) {
 
 let victimPollInterval = null;
 
+function renderValidationSuspects(suspects) {
+    const container = document.getElementById('validateSuspectsContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!suspects || suspects.length === 0) {
+        container.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-slate-500">Aucun suspect généré à cette étape.</div>`;
+        return;
+    }
+
+    suspects.forEach(s => {
+        const card = document.createElement('div');
+        card.className = "bg-zinc-950/80 border border-white/5 p-4 rounded-xl space-y-3 relative hover:border-blood/30 transition-all text-left";
+        
+        const traitsHtml = s.character_traits ? s.character_traits.map(t => 
+            `<span class="px-1.5 py-0.5 text-[8px] uppercase tracking-wider rounded font-medium bg-blood/10 border border-blood/20 text-blood-light inline-block">${t}</span>`
+        ).join(' ') : '';
+
+        card.innerHTML = `
+            <div class="border-b border-white/5 pb-2">
+                <div class="flex justify-between items-start gap-1">
+                    <h4 class="text-xs font-extrabold text-white font-cinzel">${cleanN8nExpression(s.name, "Suspect")}</h4>
+                    <span class="px-1.5 py-0.5 text-[8px] uppercase tracking-wider rounded bg-zinc-900 border border-zinc-800 text-slate-400 font-bold">${cleanN8nExpression(s.genre, "Genre")}</span>
+                </div>
+                <span class="text-[9px] uppercase tracking-widest text-slate-500 font-bold block mt-0.5">${cleanN8nExpression(s.role || s.status, "Rôle inconnu")}</span>
+            </div>
+            
+            <div class="space-y-2 text-[11px] font-light leading-relaxed">
+                <div>
+                    <span class="text-[9px] uppercase tracking-widest text-slate-650 font-bold block">Relation Victime</span>
+                    <p class="text-slate-300">${cleanN8nExpression(s.relation_to_victim || s.relation || s.lienVictime, "Non spécifiée")}</p>
+                </div>
+                ${s.secret ? `
+                <div>
+                    <span class="text-[9px] uppercase tracking-widest text-blood/60 font-bold block"><i class="fa-solid fa-user-secret text-blood/80 mr-1"></i> Secret</span>
+                    <p class="text-slate-400 italic">${cleanN8nExpression(s.secret, "Aucun secret")}</p>
+                </div>` : ''}
+                ${s.marker ? `
+                <div>
+                    <span class="text-[9px] uppercase tracking-widest text-slate-650 font-bold block"><i class="fa-solid fa-fingerprint text-blood/50 mr-1"></i> Signe distinctif</span>
+                    <p class="text-slate-300">${cleanN8nExpression(s.marker, "Aucun")}</p>
+                </div>` : ''}
+            </div>
+            
+            <div class="flex flex-wrap gap-1 pt-1">
+                ${traitsHtml}
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function updateValidationSlides() {
+    const slideVictim = document.getElementById('slideVictim');
+    const slideSuspects = document.getElementById('slideSuspects');
+    const btnPrev = document.getElementById('btnPrevValidationSlide');
+    const btnNext = document.getElementById('btnNextValidationSlide');
+    const btnApprove = document.getElementById('approveVictimBtn');
+    const btnSimulate = document.getElementById('btnSimulateApprove');
+    const stepLabel = document.getElementById('validationModalStep');
+    const titleLabel = document.getElementById('validationModalTitle');
+    const statusText = document.getElementById('victimValidationStatus');
+
+    if (appState.validationSlideIndex === 1) {
+        if (slideVictim) slideVictim.classList.remove('hidden');
+        if (slideSuspects) slideSuspects.classList.add('hidden');
+        if (btnPrev) btnPrev.classList.add('hidden');
+        if (btnNext) btnNext.classList.remove('hidden');
+        if (btnApprove) btnApprove.classList.add('hidden');
+        if (btnSimulate) btnSimulate.classList.add('hidden');
+        if (statusText) statusText.classList.add('hidden');
+        if (stepLabel) stepLabel.textContent = "Étape 1/2";
+        if (titleLabel) titleLabel.innerHTML = `<i class="fa-solid fa-skull-crossbones text-blood animate-pulse"></i> Validation de la Victime`;
+    } else {
+        if (slideVictim) slideVictim.classList.add('hidden');
+        if (slideSuspects) slideSuspects.classList.remove('hidden');
+        if (btnPrev) btnPrev.classList.remove('hidden');
+        if (btnNext) btnNext.classList.add('hidden');
+        
+        if (appState.isSimulationMode) {
+            if (btnSimulate) btnSimulate.classList.remove('hidden');
+            if (btnApprove) btnApprove.classList.add('hidden');
+            if (statusText) statusText.classList.add('hidden');
+        } else {
+            if (btnSimulate) btnSimulate.classList.add('hidden');
+            if (btnApprove) btnApprove.classList.remove('hidden');
+            if (statusText) {
+                statusText.classList.remove('hidden');
+                statusText.innerHTML = `<i class="fa-solid fa-hourglass-half text-blood mr-1"></i> Cliquez sur 'Valider et continuer' pour lancer la génération finale.`;
+            }
+        }
+        if (stepLabel) stepLabel.textContent = "Étape 2/2";
+        if (titleLabel) titleLabel.innerHTML = `<i class="fa-solid fa-users text-blood animate-pulse"></i> Profils des Suspects`;
+    }
+}
+
 function showVictimValidationModal(victim, isSimulation) {
     document.getElementById('validateVictimName').textContent = cleanN8nExpression(victim.name, "Victime en cours de génération");
     document.getElementById('validateVictimGenre').textContent = cleanN8nExpression(victim.genre, "À déterminer");
@@ -1059,11 +1155,38 @@ function showVictimValidationModal(victim, isSimulation) {
     document.getElementById('validateVictimOutfit').textContent = cleanN8nExpression(victim.outfit, "Tenue vestimentaire en cours de conception...");
     document.getElementById('validateVictimMarker').textContent = cleanN8nExpression(victim.marker, "Marqueur visuel en cours d'analyse...");
 
+    // Store state
+    appState.isSimulationMode = isSimulation;
+    appState.validationSlideIndex = 1;
+
+    // Render suspects
+    let suspectsToRender = null;
+    if (isSimulation) {
+        suspectsToRender = CHARACTER_TEMPLATES.map((char, index) => {
+            return {
+                name: char.name,
+                genre: char.genre || "Non-Binaire",
+                role: index === 0 ? "Le Coupable" : "Suspect",
+                relation_to_victim: char.relation || "Lien de parenté ou professionnel",
+                character_traits: ["Simulé"]
+            };
+        });
+    } else {
+        suspectsToRender = appState.pendingScenarioData ? appState.pendingScenarioData.suspects : null;
+    }
+    renderValidationSuspects(suspectsToRender);
+
     const modal = document.getElementById('modalValidateVictim');
     const statusText = document.getElementById('victimValidationStatus');
     const btnSimulate = document.getElementById('btnSimulateApprove');
     const btnApprove = document.getElementById('approveVictimBtn');
     const rejectBtn = document.getElementById('rejectVictimBtn');
+
+    // Update count label in the tab header
+    const countSpan = document.getElementById('validateSuspectsCount');
+    if (countSpan) {
+        countSpan.textContent = suspectsToRender ? suspectsToRender.length : 0;
+    }
 
     // Hide general scenario generation overlay if it was open
     const genOverlay = document.getElementById('scenarioGeneratingOverlay');
@@ -1083,18 +1206,9 @@ function showVictimValidationModal(victim, isSimulation) {
         rejectBtn.removeAttribute('disabled');
     }
 
-    if (isSimulation) {
-        if (statusText) statusText.classList.add('hidden');
-        if (btnSimulate) btnSimulate.classList.remove('hidden');
-        if (btnApprove) btnApprove.classList.add('hidden');
-    } else {
-        if (statusText) {
-            statusText.classList.remove('hidden');
-            statusText.innerHTML = `<i class="fa-solid fa-hourglass-half text-blood mr-1"></i> Cliquez sur 'Valider et continuer' pour lancer la génération finale.`;
-        }
-        if (btnSimulate) btnSimulate.classList.add('hidden');
-        if (btnApprove) btnApprove.classList.remove('hidden');
-        
+    updateValidationSlides();
+
+    if (!isSimulation) {
         startVictimPolling(appState.pendingScenarioId);
     }
 }
@@ -3071,6 +3185,22 @@ function init() {
 
     const approveVictimBtn = document.getElementById('approveVictimBtn');
     if (approveVictimBtn) approveVictimBtn.addEventListener('click', handleApproveVictim);
+
+    const btnNextValidationSlide = document.getElementById('btnNextValidationSlide');
+    if (btnNextValidationSlide) {
+        btnNextValidationSlide.addEventListener('click', () => {
+            appState.validationSlideIndex = 2;
+            updateValidationSlides();
+        });
+    }
+
+    const btnPrevValidationSlide = document.getElementById('btnPrevValidationSlide');
+    if (btnPrevValidationSlide) {
+        btnPrevValidationSlide.addEventListener('click', () => {
+            appState.validationSlideIndex = 1;
+            updateValidationSlides();
+        });
+    }
 
     const closeVictimModalBtn = document.getElementById('closeVictimModalBtn');
     if (closeVictimModalBtn) closeVictimModalBtn.addEventListener('click', closeVictimModal);
