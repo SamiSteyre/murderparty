@@ -829,11 +829,16 @@
         <div class="w-64 h-64 md:w-80 md:h-80 rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_35px_rgba(245,158,11,0.25)] bg-black">
             <video id="iasminaLoadingVideo" src="https://github.com/SamiSteyre/murderparty/raw/main/images/IAsmina1.mp4" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
         </div>
-        <div class="text-center space-y-2 max-w-md px-4">
-            <h3 id="scenarioGeneratingTitle" class="font-cinzel text-base md:text-lg font-bold text-white gothic-glow uppercase tracking-wider leading-relaxed text-center">
+        <div class="glass-panel border-gold/15 max-w-sm w-full p-6 rounded-2xl shadow-[0_15px_35px_rgba(245,158,11,0.05)] space-y-3 relative overflow-hidden text-center mx-4">
+            <!-- Blinking veuillez patienter -->
+            <div class="text-3xs text-gold font-mono tracking-widest animate-pulse font-semibold flex items-center justify-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-gold inline-block animate-ping"></span> veuillez patienter...
+            </div>
+            <!-- Main text (mixed case, clean Inter font) -->
+            <h3 id="scenarioGeneratingTitle" class="font-inter text-xs md:text-sm font-medium text-slate-200 leading-relaxed">
                 L'IA-gens Profiler IAsmina identifie la victime et dresse la liste des 16 suspects
             </h3>
-            <p id="scenarioGeneratingSubtitle" class="text-3xs text-slate-400 uppercase tracking-widest font-semibold"></p>
+            <p id="scenarioGeneratingSubtitle" class="text-3xs text-slate-550 uppercase tracking-widest font-bold"></p>
         </div>
     </div>
 
