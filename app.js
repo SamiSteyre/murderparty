@@ -1424,9 +1424,9 @@ async function handleApproveVictim() {
             // Mode split deux étapes
             addLiveLog(`[Validation] Mode deux étapes : Lancement du deuxième workflow (mp-generate-scenario-2)...`);
             
-            const theme = document.getElementById('scenarioTheme').value.trim() || (appState.pendingScenarioData ? appState.pendingScenarioData.theme : "") || "";
-            const userPitch = document.getElementById('scenarioPitch').value.trim() || (appState.pendingScenarioData ? appState.pendingScenarioData.pitch : "") || "";
-            const epoch = document.getElementById('scenarioEpoch').value || "";
+            const theme = (appState.pendingScenarioData && appState.pendingScenarioData.theme) ? appState.pendingScenarioData.theme : (document.getElementById('scenarioTheme').value.trim() || "");
+            const userPitch = (appState.pendingScenarioData && appState.pendingScenarioData.pitch) ? appState.pendingScenarioData.pitch : (document.getElementById('scenarioPitch').value.trim() || "");
+            const epoch = (appState.pendingScenarioData && appState.pendingScenarioData.epoch) ? appState.pendingScenarioData.epoch : (document.getElementById('scenarioEpoch').value || "passé");
             
             const payload = {
                 scenario_id: appState.pendingScenarioId,
@@ -2012,6 +2012,93 @@ async function handleUnifiedSessionSubmit(e) {
             if (selectedScenario) {
                 // Keep selectedScenario in dataScenario so clues will be populated from it
                 dataScenario = selectedScenario;
+
+                // Handle resuming a draft scenario (status "En cours de génération")
+                if (selectedScenario.status === "En cours de génération" || selectedScenario.status === "En cours de generation") {
+                    addLiveLog(`[Reprise] Récupération de la victime et des suspects pour "${selectedScenario.title}"...`);
+                    
+                    try {
+                        let scenarioDetails = null;
+
+                        if (appState.n8nBaseUrl) {
+                            const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ scenario_id: selectedScenario.id })
+                            });
+                            
+                            if (detailsRes.ok) {
+                                const detailsData = await detailsRes.json();
+                                if (detailsData.success && detailsData.scenario) {
+                                    scenarioDetails = detailsData.scenario;
+                                    addLiveLog(`[Reprise] Données récupérées avec succès depuis n8n.`);
+                                } else {
+                                    console.warn("Format de réponse n8n invalide:", detailsData);
+                                }
+                            } else {
+                                console.warn(`Erreur webhook n8n mp-get-scenario-details (${detailsRes.status})`);
+                            }
+                        }
+
+                        // Fallback/Mock data if n8n is not configured or failed
+                        if (!scenarioDetails) {
+                            addLiveLog(`[Reprise] Webhook indisponible ou en erreur. Utilisation des données locales.`);
+                            scenarioDetails = {
+                                title: selectedScenario.title,
+                                theme: selectedScenario.theme || "Années 20 / Prohibition",
+                                pitch: selectedScenario.pitch || "Un parrain de la mafia est retrouvé mort dans son club de jazz clandestin.",
+                                epoch: selectedScenario.epoch || "passé",
+                                victim: {
+                                    name: selectedScenario.victim || "Lord James Lenoir (Le Propriétaire)",
+                                    genre: "Homme",
+                                    short_hook: selectedScenario.pitch || "Propriétaire du Speakeasy retrouvé mort.",
+                                    outfit: selectedScenario.victimOutfit || "Smoking en velours noir...",
+                                    marker: "Une bague de chevalière tête de lion"
+                                },
+                                suspects: selectedScenario.suspects || CHARACTER_TEMPLATES.map((char, index) => {
+                                    return {
+                                        name: char.name,
+                                        genre: char.genre || "Non-Binaire",
+                                        role: index === 0 ? "Le Coupable" : "Suspect",
+                                        relation_to_victim: char.relation || "Lien avec la victime",
+                                        character_traits: ["Inconnu"],
+                                        secret: char.secret || "",
+                                        marker: char.marker || ""
+                                    };
+                                })
+                            };
+                        }
+
+                        appState.pendingScenarioId = selectedScenario.id;
+                        appState.pendingScenarioData = {
+                            scenario_id: selectedScenario.id,
+                            title: scenarioDetails.title || selectedScenario.title,
+                            theme: scenarioDetails.theme || selectedScenario.theme || "",
+                            pitch: scenarioDetails.pitch || selectedScenario.pitch || "",
+                            epoch: scenarioDetails.epoch || selectedScenario.epoch || "passé",
+                            victim: scenarioDetails.victim,
+                            suspects: scenarioDetails.suspects || []
+                        };
+                        savePersistedState();
+
+                        // Open the victim/suspects validation modal with the fetched data
+                        showVictimValidationModal(appState.pendingScenarioData.victim, false);
+
+                    } catch (err) {
+                        console.error("Error resuming scenario draft:", err);
+                        addLiveLog(`Erreur lors de la reprise : ${err.message}`);
+                        showToast("Erreur de reprise", "Impossible de charger les suspects. Veuillez réessayer.", "error");
+                    } finally {
+                        submitBtn.removeAttribute('disabled');
+                        if (selectedScenario.status === "En cours de génération" || selectedScenario.status === "En cours de generation") {
+                            submitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Vérifier le scénario`;
+                        } else {
+                            submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la session`;
+                        }
+                        renderOrganizerDashboard();
+                    }
+                    return;
+                }
 
                 let rawIllustration = selectedScenario.illustration || "";
                 let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";

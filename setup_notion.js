@@ -57,7 +57,6 @@ async function run() {
         // ----------------------------------------------------------------------
         // 1. Create [MP] Scénarios Database
         // ----------------------------------------------------------------------
-        console.log("\n📁 1/4. Création de la base [MP] Scénarios...");
         const scenariosPayload = {
             parent: { type: "page_id", page_id: parentPageId },
             title: [{ type: "text", text: { content: "[MP] Scénarios" } }],
@@ -80,6 +79,9 @@ async function run() {
                 "taille_ref": { number: { format: "number" } },
                 "Email Organisateur": { email: {} },
                 "Illustration": { rich_text: {} },
+                "Thème": { rich_text: {} },
+                "Époque": { rich_text: {} },
+                "Étape Génération": { number: { format: "number" } },
                 "Photo Homme": { files: {} },
                 "Json Photo Homme": { rich_text: {} },
                 "Photo Femme": { files: {} },
