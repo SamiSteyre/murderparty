@@ -1593,21 +1593,31 @@ function startVictimPolling(scenarioId) {
 
             if (appState.n8nBaseUrl) {
                 try {
-                    const res = await fetch(`${appState.n8nBaseUrl}/webhook/mp-list-scenarios`, {
+                    const res = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: appState.currentUser ? appState.currentUser.email : '' })
+                        body: JSON.stringify({ scenario_id: scenarioId })
                     });
                     if (res.ok) {
                         const data = await res.json();
-                        const rawScenarios = getScenariosFromArrayOrObject(data);
-                        const found = rawScenarios.find(s => (s.id === scenarioId || s.scenario_id === scenarioId));
-                        if (found) {
-                            scenarioDetails = mapScenarioProperties(found);
+                        let rawScenario = null;
+                        if (data) {
+                            if (Array.isArray(data) && data.length > 0) {
+                                rawScenario = data[0];
+                            } else if (data.scenario) {
+                                rawScenario = data.scenario;
+                            } else if (data.success && data.scenario) {
+                                rawScenario = data.scenario;
+                            } else if (data.id || data.property_nom || data.name) {
+                                rawScenario = data;
+                            }
+                        }
+                        if (rawScenario) {
+                            scenarioDetails = mapScenarioProperties(rawScenario);
                         }
                     }
                 } catch (err) {
-                    console.warn("Polling list-scenarios failed", err);
+                    console.warn("Polling get-scenario-details failed", err);
                 }
             }
 
@@ -1629,17 +1639,27 @@ function startVictimPolling(scenarioId) {
                             
                             if (statusName === "Vérifié" || statusName === "Vérifie" || statusName === "Verify") {
                                 if (appState.n8nBaseUrl) {
-                                    const listRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-list-scenarios`, {
+                                    const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email: appState.currentUser ? appState.currentUser.email : '' })
+                                        body: JSON.stringify({ scenario_id: scenarioId })
                                     });
-                                    if (listRes.ok) {
-                                        const listData = await listRes.json();
-                                        const rawScenarios = getScenariosFromArrayOrObject(listData);
-                                        const found = rawScenarios.find(s => (s.id === scenarioId || s.scenario_id === scenarioId));
-                                        if (found) {
-                                            scenarioDetails = mapScenarioProperties(found);
+                                    if (detailsRes.ok) {
+                                        const detailsData = await detailsRes.json();
+                                        let rawScenario = null;
+                                        if (detailsData) {
+                                            if (Array.isArray(detailsData) && detailsData.length > 0) {
+                                                rawScenario = detailsData[0];
+                                            } else if (detailsData.scenario) {
+                                                rawScenario = detailsData.scenario;
+                                            } else if (detailsData.success && detailsData.scenario) {
+                                                rawScenario = detailsData.scenario;
+                                            } else if (detailsData.id || detailsData.property_nom || detailsData.name) {
+                                                rawScenario = detailsData;
+                                            }
+                                        }
+                                        if (rawScenario) {
+                                            scenarioDetails = mapScenarioProperties(rawScenario);
                                         }
                                     }
                                 }
