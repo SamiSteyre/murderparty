@@ -1243,10 +1243,6 @@ function showVictimValidationModal(victim, isSimulation) {
         }
 
         updateValidationSlides();
-
-        if (!isSimulation) {
-            startVictimPolling(appState.pendingScenarioId);
-        }
     };
 
     // Play reveal video before showing results
@@ -1400,6 +1396,11 @@ async function handleApproveVictim() {
         }
     }
 
+    // Start polling Notion / list-scenarios webhook for completion status
+    if (!appState.isSimulationMode && appState.pendingScenarioId) {
+        startVictimPolling(appState.pendingScenarioId);
+    }
+
     try {
         let dataScenario = null;
 
@@ -1484,6 +1485,11 @@ async function handleApproveVictim() {
                 statusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blood"></i> Requête envoyée. Génération finale en cours...`;
             }
             return;
+        }
+
+        if (victimPollInterval) {
+            clearInterval(victimPollInterval);
+            victimPollInterval = null;
         }
 
         showToast("Erreur de validation", err.message || "Impossible de valider la victime.", "error");
@@ -2006,9 +2012,9 @@ async function handleUnifiedSessionSubmit(e) {
             if (!scenarioId) {
                 throw new Error("Veuillez sélectionner un scénario existant.");
             }
-            const scenarioTitle = existingSelect.options[existingSelect.selectedIndex].text;
 
             const selectedScenario = appState.loadedScenarios ? appState.loadedScenarios.find(s => s.id === scenarioId) : null;
+            const scenarioTitle = selectedScenario ? selectedScenario.title : "Scénario";
             if (selectedScenario) {
                 // Keep selectedScenario in dataScenario so clues will be populated from it
                 dataScenario = selectedScenario;
