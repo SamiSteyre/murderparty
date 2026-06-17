@@ -1699,12 +1699,12 @@ async function handleApproveVictim() {
     }
 
     if (genOverlay) {
-        if (overlayText) overlayText.textContent = "Génération des suspects, pièces et indices en cours...";
+        if (overlayText) overlayText.textContent = "";
         
         // Dynamically replace IAsmina video and text with IArthur for step 2
         const titleText = document.getElementById('scenarioGeneratingTitle');
         if (titleText) {
-            titleText.textContent = "L'IA-gens portraitiste IArthur réalise les portraits de la victime et des 16 suspects";
+            titleText.textContent = "L'IA-gens Portraitiste IArthur réalise les portraits de la victime et des 16 suspects";
         }
         
         const loadVideo = document.getElementById('iasminaLoadingVideo');
