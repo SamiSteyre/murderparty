@@ -623,7 +623,7 @@ function renderOrganizerDashboard() {
                     tr.innerHTML = `
                         <td class="py-3 font-semibold text-slate-200">
                             <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full ${p.avatarUrl ? 'bg-blood shadow-[0_0_5px_#b30b0b]' : 'bg-red-900 animate-pulse'}" title="${p.avatarUrl ? 'Profil généré' : 'En attente d\'onboarding'}"></span>
+                                <span class="w-2.5 h-2.5 rounded-full ${p.avatarUrl ? 'bg-blood shadow-[0_0_5px_#f59e0b]' : 'bg-red-900 animate-pulse'}" title="${p.avatarUrl ? 'Profil généré' : 'En attente d\'onboarding'}"></span>
                                 ${p.roleName}
                             </div>
                         </td>

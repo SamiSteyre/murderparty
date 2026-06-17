@@ -7,7 +7,7 @@
     <!-- Google Fonts: Cinzel (Headers) and Inter (UI text) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700;800&family=Italianno&family=Dancing+Script:wght@400;700&family=Special+Elite&family=Architects+Daughter&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=Italianno&family=Dancing+Script:wght@400;700&family=Special+Elite&family=Architects+Daughter&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
     <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Tailwind CSS CDN -->
@@ -25,9 +25,9 @@
                             input: '#09090b'
                         },
                         blood: {
-                            DEFAULT: '#b30b0b',
-                            hover: '#d92626',
-                            glow: 'rgba(179, 11, 11, 0.45)'
+                            DEFAULT: '#f59e0b',
+                            hover: '#fbbf24',
+                            glow: 'rgba(245, 158, 11, 0.45)'
                         },
                         gold: {
                             DEFAULT: '#f59e0b',
@@ -36,7 +36,7 @@
                         }
                     },
                     fontFamily: {
-                        cinzel: ['Cinzel', 'serif'],
+                        cinzel: ['Orbitron', 'Outfit', 'sans-serif'],
                         inter: ['Inter', 'sans-serif']
                     }
                 }
@@ -75,7 +75,7 @@
                         </div>
                     </div>
                     
-                    <button type="button" id="requestOtpBtn" class="w-full bg-blood hover:bg-blood-hover text-white font-bold py-3 px-4 rounded-xl transition-all shadow-[0_4px_20px_rgba(179,11,11,0.25)] hover:shadow-[0_6px_25px_rgba(179,11,11,0.45)] transform hover:-translate-y-0.5 flex justify-center items-center gap-2 text-xs uppercase tracking-wider">
+                    <button type="button" id="requestOtpBtn" class="w-full bg-blood hover:bg-blood-hover text-white font-bold py-3 px-4 rounded-xl transition-all shadow-[0_4px_20px_rgba(245, 158, 11,0.25)] hover:shadow-[0_6px_25px_rgba(245, 158, 11,0.45)] transform hover:-translate-y-0.5 flex justify-center items-center gap-2 text-xs uppercase tracking-wider">
                         <i class="fa-solid fa-paper-plane"></i> Obtenir un code
                     </button>
                 </div>
@@ -152,15 +152,13 @@
                 
                 <!-- 2A. LANDING PANEL (Espace Organisateur) -->
                 <div id="orgaLandingPanel" class="max-w-4xl mx-auto w-full py-12 space-y-8">
-                    <div class="text-center space-y-3">
-                        <i class="fa-solid fa-crown text-4xl text-blood drop-shadow-[0_0_10px_rgba(179,11,11,0.6)]"></i>
-                        <h2 class="font-cinzel text-3xl font-extrabold text-white tracking-widest gothic-glow">ESPACE <span class="text-blood">ORGANISATEUR</span></h2>
-                        <p class="text-xs text-slate-400 uppercase tracking-widest font-semibold max-w-md mx-auto">Orchestration d'IArena assistée par les Agents IA</p>
+                    <div class="text-center py-6">
+                        <img src="images/iarena-logo.png" alt="IArena Logo" class="mx-auto h-48 md:h-56 object-contain drop-shadow-[0_0_25px_rgba(245,158,11,0.3)]">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto pt-6">
                         <!-- Card 1: Créer une session -->
-                        <div id="orgaCreateSessionBtn" class="glass-panel p-8 rounded-2xl border border-white/5 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 hover:border-blood/40 hover:shadow-[0_0_30px_rgba(179,11,11,0.15)] group transform hover:-translate-y-1">
+                        <div id="orgaCreateSessionBtn" class="glass-panel p-8 rounded-2xl border border-white/5 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 hover:border-blood/40 hover:shadow-[0_0_30px_rgba(245, 158, 11,0.15)] group transform hover:-translate-y-1">
                             <div class="space-y-4">
                                 <div class="w-16 h-16 mx-auto rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white transition-all group-hover:border-white/30 group-hover:bg-white/10">
                                     <i class="fa-solid fa-circle-plus text-2xl text-blood"></i>
@@ -176,9 +174,9 @@
                         </div>
 
                         <!-- Card 2: Session(s) en cours -->
-                        <div id="orgaActiveSessionBtn" class="hidden glass-panel p-8 rounded-2xl border border-blood/20 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 hover:border-blood hover:shadow-[0_0_30px_rgba(179,11,11,0.25)] bg-gradient-to-b from-blood/5 to-transparent group transform hover:-translate-y-1">
+                        <div id="orgaActiveSessionBtn" class="hidden glass-panel p-8 rounded-2xl border border-blood/20 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 hover:border-blood hover:shadow-[0_0_30px_rgba(245, 158, 11,0.25)] bg-gradient-to-b from-blood/5 to-transparent group transform hover:-translate-y-1">
                             <div class="space-y-4">
-                                <div class="w-16 h-16 mx-auto rounded-full bg-blood/10 border border-blood/30 flex items-center justify-center text-blood transition-all group-hover:bg-blood/20 group-hover:border-blood group-hover:shadow-[0_0_15px_rgba(179,11,11,0.4)]">
+                                <div class="w-16 h-16 mx-auto rounded-full bg-blood/10 border border-blood/30 flex items-center justify-center text-blood transition-all group-hover:bg-blood/20 group-hover:border-blood group-hover:shadow-[0_0_15px_rgba(245, 158, 11,0.4)]">
                                     <i class="fa-solid fa-hourglass-half text-2xl animate-pulse"></i>
                                 </div>
                                 <h3 class="font-cinzel text-xl font-bold text-white group-hover:text-blood transition-colors font-black">Session(s) en cours</h3>
@@ -212,7 +210,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Option A: Créer un scénario -->
                             <div id="orgaBtnCreateScenarioOption" class="orga-option-card p-6 rounded-xl text-center space-y-2">
-                                <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blood drop-shadow-[0_0_5px_rgba(179,11,11,0.5)]"></i>
+                                <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blood drop-shadow-[0_0_5px_rgba(245, 158, 11,0.5)]"></i>
                                 <h4 class="font-cinzel text-xs font-bold text-white uppercase tracking-wider">Créer un scénario (IA)</h4>
                                 <p class="text-3xs text-slate-400 font-light">Générez une intrigue sur-mesure (thématique, coupables, indices, biographies) en sollicitant les agents IA.</p>
                             </div>
@@ -240,7 +238,7 @@
                                 <div id="createScenarioFormFields" class="hidden space-y-4">
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <!-- Card 1: Thématique -->
-                                        <div id="btnOpenThemeModal" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-blood/40 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 group transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(179,11,11,0.15)] bg-black/30">
+                                        <div id="btnOpenThemeModal" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-blood/40 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 group transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(245, 158, 11,0.15)] bg-black/30">
                                             <div class="space-y-3">
                                                 <div class="w-12 h-12 mx-auto rounded-full bg-blood/10 border border-blood/30 flex items-center justify-center text-blood group-hover:scale-105 transition-all">
                                                     <i class="fa-solid fa-masks-theater text-lg"></i>
@@ -254,7 +252,7 @@
                                         </div>
 
                                         <!-- Card 2: Époque -->
-                                        <div id="btnOpenEpochModal" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-blood/40 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 group transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(179,11,11,0.15)] bg-black/30">
+                                        <div id="btnOpenEpochModal" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-blood/40 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 group transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(245, 158, 11,0.15)] bg-black/30">
                                             <div class="space-y-3">
                                                 <div class="w-12 h-12 mx-auto rounded-full bg-blood/10 border border-blood/30 flex items-center justify-center text-blood group-hover:scale-105 transition-all">
                                                     <i class="fa-solid fa-clock text-lg"></i>
@@ -268,7 +266,7 @@
                                         </div>
 
                                         <!-- Card 3: Intrigue / Pitch -->
-                                        <div id="btnOpenPitchModal" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-blood/40 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 group transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(179,11,11,0.15)] bg-black/30">
+                                        <div id="btnOpenPitchModal" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-blood/40 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 group transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(245, 158, 11,0.15)] bg-black/30">
                                             <div class="space-y-3">
                                                 <div class="w-12 h-12 mx-auto rounded-full bg-blood/10 border border-blood/30 flex items-center justify-center text-blood group-hover:scale-105 transition-all">
                                                     <i class="fa-solid fa-lightbulb text-lg"></i>
@@ -303,7 +301,7 @@
                             </div>
 
                             <!-- Submit Button -->
-                            <button type="submit" id="unifiedSubmitBtn" class="w-full bg-blood hover:bg-blood-hover text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_4px_15px_rgba(179,11,11,0.25)] hover:shadow-[0_4px_25px_rgba(179,11,11,0.45)] flex justify-center items-center gap-2 text-xs uppercase tracking-wider">
+                            <button type="submit" id="unifiedSubmitBtn" class="w-full bg-blood hover:bg-blood-hover text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_4px_15px_rgba(245, 158, 11,0.25)] hover:shadow-[0_4px_25px_rgba(245, 158, 11,0.45)] flex justify-center items-center gap-2 text-xs uppercase tracking-wider">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> Générer un scénario
                             </button>
                         </form>
@@ -371,7 +369,7 @@
                     <!-- Launch Session form container -->
                     <div class="space-y-4">
                         <div class="flex justify-center" id="triggerSessionSetupBtnContainer">
-                            <button id="triggerSessionSetupBtn" class="bg-blood hover:bg-blood-hover text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-[0_4px_15px_rgba(179,11,11,0.25)] hover:shadow-[0_4px_25px_rgba(179,11,11,0.45)] text-xs uppercase tracking-wider flex items-center gap-2">
+                            <button id="triggerSessionSetupBtn" class="bg-blood hover:bg-blood-hover text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-[0_4px_15px_rgba(245, 158, 11,0.25)] hover:shadow-[0_4px_25px_rgba(245, 158, 11,0.45)] text-xs uppercase tracking-wider flex items-center gap-2">
                                 <i class="fa-solid fa-address-book"></i> Distribuer les rôles et lancer la session
                             </button>
                         </div>
@@ -515,7 +513,7 @@
                     <div class="absolute top-0 right-0 w-24 h-24 bg-blood opacity-10 blur-2xl rounded-full"></div>
                     
                     <div class="text-center">
-                        <i class="fa-solid fa-user-plus text-3xl text-blood mb-2 drop-shadow-[0_0_8px_rgba(179,11,11,0.5)]"></i>
+                        <i class="fa-solid fa-user-plus text-3xl text-blood mb-2 drop-shadow-[0_0_8px_rgba(245, 158, 11,0.5)]"></i>
                         <h2 class="font-cinzel text-2xl font-bold text-white gothic-glow">Création du Profil Personnage</h2>
                         <p class="text-xs text-slate-400 mt-1">Vous avez été invité à participer. Finalisez la génération de votre avatar pour entrer en jeu.</p>
                     </div>
@@ -552,7 +550,7 @@
 
                         <!-- Submit Button -->
                         <button type="submit" id="onboardingSubmitBtn"
-                                class="w-full bg-blood hover:bg-blood-hover text-white font-bold py-3 rounded-xl transition-all shadow-[0_4px_15px_rgba(179,11,11,0.25)] flex justify-center items-center gap-2 text-xs uppercase tracking-wider">
+                                class="w-full bg-blood hover:bg-blood-hover text-white font-bold py-3 rounded-xl transition-all shadow-[0_4px_15px_rgba(245, 158, 11,0.25)] flex justify-center items-center gap-2 text-xs uppercase tracking-wider">
                             <i class="fa-solid fa-palette"></i> Générer mon Avatar & Marqueur Visuel
                         </button>
                     </form>
@@ -598,7 +596,7 @@
                             <div class="relative w-16 h-16 flex items-center justify-center bg-noir-input rounded-full border border-noir-border shadow-inner">
                                 <div id="dashActionPointsDisplay" class="text-xl font-black text-white">0</div>
                                 <svg class="absolute inset-0 w-full h-full transform -rotate-90">
-                                    <circle cx="32" cy="32" r="28" fill="transparent" stroke="#b30b0b" stroke-width="3" stroke-dasharray="175" id="dashProgressCircle" />
+                                    <circle cx="32" cy="32" r="28" fill="transparent" stroke="#f59e0b" stroke-width="3" stroke-dasharray="175" id="dashProgressCircle" />
                                 </svg>
                             </div>
                         </div>
@@ -735,7 +733,7 @@
 
     <!-- 1. Modal Thématique -->
     <div id="modalTheme" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="glass-panel border-blood/30 w-full max-w-2xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(179,11,11,0.3)] my-auto">
+        <div class="glass-panel border-blood/30 w-full max-w-2xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(245, 158, 11,0.3)] my-auto">
             <div class="flex justify-between items-center border-b border-white/5 pb-3">
                 <h3 class="font-cinzel text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-masks-theater text-blood"></i> Choisir une Thématique / Ambiance
@@ -759,14 +757,14 @@
 
             <div class="flex justify-end gap-3 pt-2">
                 <button class="close-modal-btn px-4 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-noir-input border border-noir-border text-slate-400 hover:text-white transition-colors" data-target="modalTheme">Fermer</button>
-                <button id="saveThemeBtn" class="px-5 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)]">Enregistrer</button>
+                <button id="saveThemeBtn" class="px-5 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(245, 158, 11,0.2)]">Enregistrer</button>
             </div>
         </div>
     </div>
 
     <!-- 2. Modal Époque -->
     <div id="modalEpoch" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="glass-panel border-blood/30 w-full max-w-xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(179,11,11,0.3)] my-auto">
+        <div class="glass-panel border-blood/30 w-full max-w-xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(245, 158, 11,0.3)] my-auto">
             <div class="flex justify-between items-center border-b border-white/5 pb-3">
                 <h3 class="font-cinzel text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-clock text-blood"></i> Choisir l'Époque du Jeu
@@ -790,14 +788,14 @@
 
             <div class="flex justify-end gap-3 pt-2">
                 <button class="close-modal-btn px-4 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-noir-input border border-noir-border text-slate-400 hover:text-white transition-colors" data-target="modalEpoch">Fermer</button>
-                <button id="saveEpochBtn" class="px-5 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)]">Enregistrer</button>
+                <button id="saveEpochBtn" class="px-5 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(245, 158, 11,0.2)]">Enregistrer</button>
             </div>
         </div>
     </div>
 
     <!-- 3. Modal Intrigue / Pitch -->
     <div id="modalPitch" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="glass-panel border-blood/30 w-full max-w-2xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(179,11,11,0.3)] my-auto">
+        <div class="glass-panel border-blood/30 w-full max-w-2xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(245, 158, 11,0.3)] my-auto">
             <div class="flex justify-between items-center border-b border-white/5 pb-3">
                 <h3 class="font-cinzel text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-lightbulb text-blood"></i> Choisir une Idée d'Intrigue
@@ -821,7 +819,7 @@
 
             <div class="flex justify-end gap-3 pt-2">
                 <button class="close-modal-btn px-4 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-noir-input border border-noir-border text-slate-400 hover:text-white transition-colors" data-target="modalPitch">Fermer</button>
-                <button id="savePitchBtn" class="px-5 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)]">Enregistrer</button>
+                <button id="savePitchBtn" class="px-5 py-2 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(245, 158, 11,0.2)]">Enregistrer</button>
             </div>
         </div>
     </div>
@@ -837,7 +835,7 @@
 
     <!-- 4. Modal Validation Victime -->
     <div id="modalValidateVictim" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="glass-panel border-blood/30 w-full max-w-2xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(179,11,11,0.3)] my-auto relative">
+        <div class="glass-panel border-blood/30 w-full max-w-2xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(245, 158, 11,0.3)] my-auto relative">
             <div class="flex justify-between items-center border-b border-white/5 pb-3">
                 <h3 id="validationModalTitle" class="font-cinzel text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-skull-crossbones text-blood animate-pulse"></i> Validation de la Victime
@@ -902,13 +900,13 @@
                     </button>
                 </div>
                 <div class="flex gap-2">
-                    <button id="btnNextValidationSlide" class="px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)] flex items-center gap-1.5">
+                    <button id="btnNextValidationSlide" class="px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(245, 158, 11,0.2)] flex items-center gap-1.5">
                         Suivant <i class="fa-solid fa-arrow-right"></i>
                     </button>
-                    <button id="btnSimulateApprove" class="hidden px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)] flex items-center gap-1.5">
+                    <button id="btnSimulateApprove" class="hidden px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(245, 158, 11,0.2)] flex items-center gap-1.5">
                         <i class="fa-solid fa-circle-check"></i> Valider et continuer (Simulé)
                     </button>
-                    <button id="approveVictimBtn" class="hidden px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(179,11,11,0.2)] flex items-center gap-1.5">
+                    <button id="approveVictimBtn" class="hidden px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-blood hover:bg-blood-hover text-white transition-all shadow-[0_2px_10px_rgba(245, 158, 11,0.2)] flex items-center gap-1.5">
                         <i class="fa-solid fa-circle-check"></i> Valider et continuer
                     </button>
                     <button id="closeVictimModalBtn" class="px-4 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-noir-input border border-noir-border text-slate-500 hover:text-white transition-colors">
