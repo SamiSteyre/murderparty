@@ -78,6 +78,7 @@ async function run() {
                 "Nombre Total d'Indices": { number: { format: "number" } },
                 "taille_ref": { number: { format: "number" } },
                 "Email Organisateur": { email: {} },
+                "Créateur": { email: {} },
                 "Illustration": { rich_text: {} },
                 "Thème": { rich_text: {} },
                 "Époque": { rich_text: {} },

@@ -2001,8 +2001,8 @@ async function handleUnifiedSessionSubmit(e) {
 
         } else {
             // Select scenario mode
-            const existingSelect = document.getElementById('existingScenarioSelect');
-            scenarioId = existingSelect.value;
+            const hiddenInput = document.getElementById('selectedScenarioId');
+            scenarioId = hiddenInput ? hiddenInput.value : "";
             if (!scenarioId) {
                 throw new Error("Veuillez sélectionner un scénario existant.");
             }
@@ -3045,10 +3045,14 @@ async function getNotionConfig() {
 }
 
 async function loadExistingScenarios() {
-    const select = document.getElementById('existingScenarioSelect');
-    if (!select) return;
+    const container = document.getElementById('existingScenariosCardsContainer');
+    if (!container) return;
     
-    select.innerHTML = '<option value="">⌛ Chargement des scénarios...</option>';
+    container.innerHTML = `
+        <div class="col-span-1 sm:col-span-2 text-center py-8 text-xs text-slate-500">
+            <i class="fa-solid fa-spinner animate-spin text-blood mr-1"></i> Chargement des scénarios en cours...
+        </div>
+    `;
     
     const email = appState.currentUser ? appState.currentUser.email : '';
     
@@ -3100,6 +3104,12 @@ async function loadExistingScenarios() {
                                         select: {
                                             equals: "En cours de generation"
                                         }
+                                    },
+                                    {
+                                        property: "Statut",
+                                        select: {
+                                            equals: "Vérifié"
+                                        }
                                     }
                                 ]
                             }
@@ -3133,6 +3143,9 @@ async function loadExistingScenarios() {
                             return {
                                 id: page.id,
                                 title: getText(props["Nom"]) || "Sans titre",
+                                theme: props["Thème"] ? getText(props["Thème"]) : "",
+                                epoch: props["Époque"] ? getText(props["Époque"]) : "",
+                                etapeGeneration: props["Étape Génération"] ? getNumber(props["Étape Génération"]) : null,
                                 pitch: getText(props["Pitch Global"]),
                                 crimeRoom: getText(props["Scène du Crime"]) || getText(props["Scene du Crime"]),
                                 victim: getText(props["Victime"]),
@@ -3141,8 +3154,9 @@ async function loadExistingScenarios() {
                                 cluesCount: getNumber(props["Nombre Total d'Indices"]) || 24,
                                 illustration: props["Illustration"] ? getText(props["Illustration"]) : "",
                                 status: props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "En cours de génération",
-                                email: props["Email Organisateur"] ? getEmail(props["Email Organisateur"]) : 
-                                       (props["email"] ? getEmail(props["email"]) : "")
+                                email: props["Créateur"] ? getEmail(props["Créateur"]) : 
+                                       (props["Email Organisateur"] ? getEmail(props["Email Organisateur"]) : 
+                                       (props["email"] ? getEmail(props["email"]) : ""))
                             };
                         });
                         
@@ -3174,6 +3188,7 @@ async function loadExistingScenarios() {
                     illustration: "illustrations/speakeasy.png",
                     chronology: "18:00 - Le Vestibule (Baptiste le Valet, M. Lenoir) : Accueil des invités.\n19:00 - Le Grand Salon (Mlle Rose, M. Lenoir) : Discussion cordiale.\n20:00 - Le Petit Salon (Colonel Moutarde, M. Lenoir) : Altercation bruyante.\n22:00 - Le Bureau : Heure estimée du crime.",
                     status: "En cours de génération",
+                    etapeGeneration: 1,
                     email: email
                 },
                 {
@@ -3188,6 +3203,7 @@ async function loadExistingScenarios() {
                     illustration: "illustrations/croft.png",
                     chronology: "18:00 - Le Hall d'Entrée : Arrivée des invités.\n19:00 - La Salle d'Armes : Présentation des reliques.\n20:30 - La Bibliothèque : Début des recherches.\n21:45 - La Bibliothèque : Heure présumée du meurtre.",
                     status: "En cours de génération",
+                    etapeGeneration: 1,
                     email: email
                 }
             ];
@@ -3196,35 +3212,245 @@ async function loadExistingScenarios() {
         appState.loadedScenarios = scenarios;
         savePersistedState();
         
-        select.innerHTML = '<option value="">-- Sélectionner un scénario en cours --</option>';
-        scenarios.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.id;
-            opt.textContent = `${s.title} (${s.theme || 'En cours de génération'})`;
-            select.appendChild(opt);
-        });
+        container.innerHTML = '';
+        if (scenarios.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-1 sm:col-span-2 text-center py-8 text-xs text-slate-500">
+                    <i class="fa-solid fa-folder-open text-blood mr-1"></i> Aucun scénario trouvé pour votre compte.
+                </div>
+            `;
+        } else {
+            scenarios.forEach(s => {
+                const card = document.createElement('div');
+                card.setAttribute('data-id', s.id);
+                
+                // Fallback step calculation
+                let etape = s.etapeGeneration;
+                if (etape === undefined || etape === null) {
+                    etape = (s.status === "Vérifié" || s.status === "Vérifie") ? 4 : 1;
+                }
+                
+                // Save calculated step on the object
+                s.etapeGeneration = etape;
+                
+                // Determine background styling
+                let bgStyle = "background: #09090b;"; // dark black
+                let isReady = etape >= 4;
+                
+                if (isReady && s.illustration) {
+                    let rawIllustration = s.illustration;
+                    let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+                    if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
+                        resolvedImageUrl = rawIllustration;
+                    } else {
+                        const cleanPath = rawIllustration.replace(/^\/+/, '');
+                        resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/raw/main/" + cleanPath;
+                    }
+                    bgStyle = `background-image: linear-gradient(180deg, rgba(9, 9, 11, 0.75) 0%, rgba(9, 9, 11, 0.95) 100%), url('${resolvedImageUrl}'); background-size: cover; background-position: center;`;
+                }
+                
+                card.style = bgStyle;
+                card.className = "scenario-card border border-white/5 hover:border-blood/50 p-4 rounded-xl relative overflow-hidden h-36 flex flex-col justify-between transition-all cursor-pointer group hover:shadow-[0_4px_12px_rgba(245,158,11,0.08)] select-none text-left";
+                
+                // Large step number on background
+                const bigNumColor = isReady ? "text-white/5 group-hover:text-blood/10" : "text-zinc-900 group-hover:text-zinc-850";
+                const badgeHtml = isReady 
+                    ? `<span class="px-2 py-0.5 text-[8px] bg-green-950/40 border border-green-800/40 text-green-400 rounded-md uppercase font-bold tracking-widest z-10 w-fit">Prêt à jouer</span>`
+                    : `<span class="px-2 py-0.5 text-[8px] bg-blood/10 border border-blood/20 text-blood-light rounded-md uppercase font-bold tracking-widest z-10 w-fit font-semibold">Étape ${etape} en cours</span>`;
+                
+                card.innerHTML = `
+                    <div class="absolute right-4 bottom-0 font-cinzel font-black text-7xl select-none leading-none z-0 ${bigNumColor} transition-colors pointer-events-none">${etape}</div>
+                    <div class="flex flex-col space-y-1.5 z-10 relative">
+                        ${badgeHtml}
+                        <h4 class="text-xs font-cinzel font-extrabold text-white line-clamp-1 group-hover:text-blood transition-colors mt-1">${s.title}</h4>
+                    </div>
+                    
+                    <div class="text-[9px] text-slate-400 font-medium z-10 relative flex flex-wrap gap-x-3 gap-y-1">
+                        <span><i class="fa-solid fa-masks-theater text-blood/60 mr-1"></i>${s.theme || 'Thème non défini'}</span>
+                        <span><i class="fa-solid fa-clock text-blood/60 mr-1"></i>${s.epoch || 'Époque non définie'}</span>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => handleScenarioCardClick(s.id));
+                container.appendChild(card);
+            });
+        }
         
         updateSelectScenarioSubmitBtn();
         
     } catch (err) {
         console.error("Failed to load scenarios list", err);
-        select.innerHTML = '<option value="">⚠️ Erreur de chargement</option>';
+        container.innerHTML = `
+            <div class="col-span-1 sm:col-span-2 text-center py-8 text-xs text-red-500">
+                <i class="fa-solid fa-triangle-exclamation text-blood mr-1"></i> Erreur lors du chargement des scénarios.
+            </div>
+        `;
+    }
+}
+
+async function handleScenarioCardClick(scenarioId) {
+    const selectedScenario = appState.loadedScenarios ? appState.loadedScenarios.find(s => s.id === scenarioId) : null;
+    if (!selectedScenario) return;
+
+    const etape = selectedScenario.etapeGeneration || (selectedScenario.status === "Vérifié" ? 4 : 1);
+    
+    // Set hidden input value
+    const hiddenInput = document.getElementById('selectedScenarioId');
+    if (hiddenInput) {
+        hiddenInput.value = scenarioId;
+    }
+    
+    // Highlight selected card visually
+    document.querySelectorAll('.scenario-card').forEach(c => {
+        c.classList.remove('border-blood', 'ring-2', 'ring-blood/20');
+        c.classList.add('border-white/5');
+    });
+    
+    const selectedCard = document.querySelector(`[data-id="${scenarioId}"]`);
+    if (selectedCard) {
+        selectedCard.classList.remove('border-white/5');
+        selectedCard.classList.add('border-blood', 'ring-2', 'ring-blood/20');
+    }
+
+    if (etape === 1) {
+        // Clic sur Étape 1 : On charge la victime et les suspects stockés dans Notion et on affiche la validation modal
+        const submitBtn = document.getElementById('unifiedSubmitBtn');
+        if (submitBtn) {
+            submitBtn.setAttribute('disabled', 'true');
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-sm mr-2"></i> Récupération Étape 1...`;
+        }
+        
+        try {
+            addLiveLog(`[Reprise] Clic sur scénario Étape 1 "${selectedScenario.title}" : chargement des suspects...`);
+            let scenarioDetails = null;
+
+            if (appState.n8nBaseUrl) {
+                const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scenario_id: selectedScenario.id })
+                });
+                
+                if (detailsRes.ok) {
+                    const detailsData = await detailsRes.json();
+                    if (detailsData.success && detailsData.scenario) {
+                        scenarioDetails = detailsData.scenario;
+                        addLiveLog(`[Reprise] Fiches de l'étape 1 chargées.`);
+                    }
+                }
+            }
+
+            if (!scenarioDetails) {
+                addLiveLog(`[Reprise] Webhook de détails indisponible. Utilisation des données locales.`);
+                scenarioDetails = {
+                    title: selectedScenario.title,
+                    theme: selectedScenario.theme || "Années 20 / Prohibition",
+                    pitch: selectedScenario.pitch || "",
+                    epoch: selectedScenario.epoch || "passé",
+                    victim: {
+                        name: selectedScenario.victim || "Lord James Lenoir",
+                        genre: "Homme",
+                        short_hook: selectedScenario.pitch || "",
+                        outfit: selectedScenario.victimOutfit || "",
+                        marker: "Une bague tête de lion"
+                    },
+                    suspects: selectedScenario.suspects || []
+                };
+            }
+
+            appState.pendingScenarioId = selectedScenario.id;
+            appState.pendingScenarioData = {
+                scenario_id: selectedScenario.id,
+                title: scenarioDetails.title || selectedScenario.title,
+                theme: scenarioDetails.theme || selectedScenario.theme || "",
+                pitch: scenarioDetails.pitch || selectedScenario.pitch || "",
+                epoch: scenarioDetails.epoch || selectedScenario.epoch || "passé",
+                victim: scenarioDetails.victim,
+                suspects: scenarioDetails.suspects || []
+            };
+            savePersistedState();
+
+            // Afficher le modal de validation de la victime (Étape 1 terminée)
+            showVictimValidationModal(appState.pendingScenarioData.victim, false);
+        } catch (err) {
+            console.error("Error loading scenario on card click:", err);
+            showToast("Erreur", "Impossible de charger ce scénario.", "error");
+        } finally {
+            if (submitBtn) {
+                submitBtn.removeAttribute('disabled');
+            }
+            updateSelectScenarioSubmitBtn();
+        }
+    } else {
+        // Clic sur Étape 2 et + : Encore à prévoir
+        showToast("Étape " + etape, "La gestion de la reprise à l'étape " + etape + " est encore à prévoir.", "info");
+        
+        // Si c'est l'étape 4 (ou prêt à jouer), on configure l'état pour lancer la session
+        if (etape >= 4) {
+            appState.scenario = {
+                id: selectedScenario.id,
+                title: selectedScenario.title,
+                theme: selectedScenario.theme || "Chargé",
+                pitch: selectedScenario.pitch || "",
+                crimeRoom: selectedScenario.crimeRoom || "Le Bureau",
+                victim: selectedScenario.victim || "Non définie",
+                victimOutfit: selectedScenario.victimOutfit || "",
+                cluesCount: selectedScenario.cluesCount || 24,
+                imageUrl: selectedScenario.illustration || "",
+                chronology: selectedScenario.chronology || "Aucune chronologie disponible."
+            };
+            
+            // On pré-remplit les joueurs pour la session
+            appState.players = (selectedScenario.suspects || CHARACTER_TEMPLATES).map((s, index) => {
+                const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+                return {
+                    email: s.email || "",
+                    roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
+                    roleName: s.name || s.roleName || charTemplate.name,
+                    history: s.bio || s.history || charTemplate.bio,
+                    lienVictime: s.relation || s.lienVictime || charTemplate.relation,
+                    marker: s.marker || charTemplate.marker,
+                    genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
+                    secret: s.secret || charTemplate.secret || "",
+                    chronology: s.chronology || charTemplate.chronology || "",
+                    outfit: s.outfit || charTemplate.outfit || "",
+                    relations: s.relations || [],
+                    characterTraits: "",
+                    avatarUrl: "",
+                    actionPoints: 1,
+                    status: "Créé",
+                    knowledge: [],
+                    missions: []
+                };
+            });
+            
+            savePersistedState();
+            addLiveLog(`Scénario sélectionné : "${selectedScenario.title}" prêt pour la session.`);
+        }
+        
+        updateSelectScenarioSubmitBtn();
     }
 }
 
 function updateSelectScenarioSubmitBtn() {
-    const select = document.getElementById('existingScenarioSelect');
+    const hiddenInput = document.getElementById('selectedScenarioId');
     const submitBtn = document.getElementById('unifiedSubmitBtn');
-    if (!select || !submitBtn) return;
+    if (!hiddenInput || !submitBtn) return;
     
-    const selectedId = select.value;
+    const selectedId = hiddenInput.value;
     const selectedScenario = appState.loadedScenarios ? appState.loadedScenarios.find(s => s.id === selectedId) : null;
     
-    // If scenario is 'En cours de génération', the button text changes to Verification
-    if (selectedScenario && (selectedScenario.status === "En cours de génération" || selectedScenario.status === "En cours de generation")) {
-        submitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Vérifier le scénario`;
+    if (selectedScenario) {
+        const etape = selectedScenario.etapeGeneration || (selectedScenario.status === "Vérifié" ? 4 : 1);
+        if (etape === 1) {
+            submitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Vérifier le scénario`;
+        } else if (etape >= 4) {
+            submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la session`;
+        } else {
+            submitBtn.innerHTML = `<i class="fa-solid fa-circle-question"></i> Étape ${etape} sélectionnée`;
+        }
     } else {
-        submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la session`;
+        submitBtn.innerHTML = `<i class="fa-solid fa-circle-info"></i> Sélectionner un scénario`;
     }
 }
 

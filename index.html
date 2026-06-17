@@ -292,13 +292,13 @@
                                 <!-- Sub-Form B: Select Existing Scenario (Notion) Fields -->
                                 <div id="selectScenarioFormFields" class="hidden space-y-4">
                                     <div>
-                                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-bold mb-1.5">Sélectionner un Scénario</label>
-                                        <select id="existingScenarioSelect" class="w-full bg-noir-input border border-noir-border rounded-xl py-2.5 px-3 text-slate-250 text-xs focus:outline-none focus:border-blood transition-all font-medium">
-                                            <option value="sc_default">-- Charger depuis Notion --</option>
-                                            <option value="sc_speakeasy">Le Dernier Souffle du Speakeasy (Années 20)</option>
-                                            <option value="sc_croft">Meurtre au Manoir Croft (Présent)</option>
-                                            <option value="sc_neon">Néon Noir à Neo-Tokyo (Futur)</option>
-                                        </select>
+                                        <label class="block text-xs uppercase tracking-wider text-slate-455 font-bold mb-3">Sélectionner un Scénario existant</label>
+                                        <div id="existingScenariosCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[380px] overflow-y-auto pr-1.5 custom-scrollbar">
+                                            <div class="col-span-1 sm:col-span-2 text-center py-8 text-xs text-slate-500">
+                                                <i class="fa-solid fa-hourglass-half text-blood mr-1 animate-pulse"></i> Chargement des scénarios...
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="selectedScenarioId" value="">
                                     </div>
                                 </div>
                             </div>
