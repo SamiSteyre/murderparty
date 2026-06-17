@@ -3409,7 +3409,12 @@ async function loadExistingScenarios() {
                     const data = await res.json();
                     const rawScenarios = getScenariosFromArrayOrObject(data);
                     if (rawScenarios.length > 0) {
-                        scenarios = rawScenarios.map(s => mapScenarioProperties(s));
+                        let mapped = rawScenarios.map(s => mapScenarioProperties(s));
+                        if (email) {
+                            scenarios = mapped.filter(s => s.email && s.email.toLowerCase().trim() === email.toLowerCase().trim());
+                        } else {
+                            scenarios = mapped;
+                        }
                     }
                 }
             } catch (err) {
