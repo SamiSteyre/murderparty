@@ -1245,7 +1245,7 @@ function showVictimValidationModal(victim, isSimulation) {
         updateValidationSlides();
     };
 
-    playRevealVideo("images/IAsmina2.mp4", proceedToShowResults);
+    playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IAsmina2.mp4", proceedToShowResults);
 }
 
 function playRevealVideo(videoSrc, onEndedCallback) {
@@ -1296,7 +1296,7 @@ function handleStep2Completion(scenarioDetails) {
     
     closeVictimModal();
 
-    playRevealVideo("images/IArthur2.mp4", () => {
+    playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IArthur2.mp4", () => {
         loadScenarioData(scenarioDetails);
         showPortraitsVerificationModal();
     });
@@ -1447,8 +1447,47 @@ function handleNextPortrait() {
     }
 }
 
-function handleApprovePortraits() {
+async function handleApprovePortraits() {
     const modal = document.getElementById('modalVerifyPortraits');
+    const btnApprove = document.getElementById('btnApprovePortraits');
+
+    if (btnApprove) {
+        btnApprove.setAttribute('disabled', 'true');
+        btnApprove.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Lancement Étape 3...`;
+    }
+
+    try {
+        if (appState.n8nBaseUrl && !appState.isSimulationMode) {
+            addLiveLog(`[Validation] Lancement de l'étape 3 (mp-generate-scenario-3) en arrière-plan...`);
+            
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario-3`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scenario_id: appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : ""),
+                    organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com'
+                })
+            });
+
+            if (!response.ok) {
+                console.warn(`Erreur lors du lancement de l'étape 3 (${response.status})`);
+                showToast("Attention", "L'étape 3 n'a pas pu être lancée automatiquement.", "warning");
+            } else {
+                showToast("Étape 3 Lancée", "La génération des indices et de la scène de crime a démarré !", "success");
+            }
+        } else {
+            showToast("Portraits Validés", "Simulation terminée.", "success");
+        }
+    } catch (err) {
+        console.error("Error triggering step 3 webhook:", err);
+        showToast("Erreur", "Impossible de contacter le serveur pour lancer l'étape 3.", "error");
+    } finally {
+        if (btnApprove) {
+            btnApprove.removeAttribute('disabled');
+            btnApprove.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer`;
+        }
+    }
+
     if (modal) modal.classList.add('hidden');
     
     closeVictimModal();
@@ -1574,7 +1613,7 @@ async function handleApproveVictim() {
         
         const loadVideo = document.getElementById('iasminaLoadingVideo');
         if (loadVideo) {
-            loadVideo.src = "images/IArthur1.mp4";
+            loadVideo.src = "https://github.com/SamiSteyre/murderparty/raw/main/images/IArthur1.mp4";
             loadVideo.currentTime = 0;
             loadVideo.play().catch(err => console.warn("Loading video play failed:", err));
         }
@@ -1961,7 +2000,7 @@ async function handleSimulateApprove() {
         });
 
         closeVictimModal();
-        playRevealVideo("images/IArthur2.mp4", () => {
+        playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IArthur2.mp4", () => {
             showPortraitsVerificationModal();
             showToast("Scénario Prêt !", "Simulation de la génération complète réussie !", "success");
         });
@@ -2019,7 +2058,7 @@ async function handleUnifiedSessionSubmit(e) {
                 
                 const loadVideo = document.getElementById('iasminaLoadingVideo');
                 if (loadVideo) {
-                    loadVideo.src = "images/IAsmina1.mp4";
+                    loadVideo.src = "https://github.com/SamiSteyre/murderparty/raw/main/images/IAsmina1.mp4";
                     loadVideo.currentTime = 0;
                     loadVideo.play().catch(err => console.warn("Loading video play failed:", err));
                 }
