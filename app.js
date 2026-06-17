@@ -546,6 +546,16 @@ function renderOrganizerDashboard() {
                             <i class="fa-solid fa-shirt text-blood/70 mr-1"></i> <span class="text-slate-350">${p.outfit}</span>
                         </div>
                         ` : ''}
+                        ${p.relations && (Array.isArray(p.relations) ? p.relations.length > 0 : p.relations.trim().length > 0) ? `
+                        <div class="mt-2 text-[9px] text-slate-450 border-t border-white/5 pt-2 leading-relaxed">
+                            <i class="fa-solid fa-link text-blood/70 mr-1"></i> <strong class="text-slate-350">Relations :</strong>
+                            <div class="text-slate-350 mt-1 pl-1 space-y-1">
+                                ${Array.isArray(p.relations)
+                                    ? p.relations.map(r => `<div class="pl-2 border-l border-white/10 mt-1"><strong class="text-white">${r.with}</strong> : ${r.detail}</div>`).join('')
+                                    : p.relations.split('\n').map(line => `<div class="pl-2 border-l border-white/10 mt-1">${line}</div>`).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
                         <div class="mt-3 pt-2 border-t border-white/5 text-[9px] text-slate-500 uppercase font-semibold">
                             <i class="fa-solid fa-fingerprint text-blood mr-1"></i> Signature : <span class="text-white">${p.marker}</span>
                         </div>
@@ -1021,6 +1031,7 @@ function loadScenarioData(data) {
             secret: s.secret || charTemplate.secret || "",
             chronology: s.chronology || charTemplate.chronology || "",
             outfit: s.outfit || charTemplate.outfit || "",
+            relations: s.relations || [],
             characterTraits: "",
             avatarUrl: "",
             actionPoints: 1,
@@ -1093,6 +1104,15 @@ function renderValidationSuspects(suspects) {
                 <div>
                     <span class="text-[9px] uppercase tracking-widest text-slate-650 font-bold block"><i class="fa-solid fa-fingerprint text-blood/50 mr-1"></i> Signe distinctif</span>
                     <p class="text-slate-300">${cleanN8nExpression(s.marker, "Aucun")}</p>
+                </div>` : ''}
+                ${s.relations && (Array.isArray(s.relations) ? s.relations.length > 0 : s.relations.trim().length > 0) ? `
+                <div class="mt-2 border-t border-white/5 pt-2">
+                    <span class="text-[9px] uppercase tracking-widest text-slate-650 font-bold block mb-1"><i class="fa-solid fa-link text-blood/50 mr-1"></i> Relations</span>
+                    <div class="text-slate-300 space-y-1 font-light leading-relaxed">
+                        ${Array.isArray(s.relations)
+                            ? s.relations.map(r => `<div class="pl-2 border-l border-white/10"><strong class="text-white">${cleanN8nExpression(r.with, "Suspect")}</strong> : ${cleanN8nExpression(r.detail, "Relation")}</div>`).join('')
+                            : s.relations.split('\n').map(line => `<div class="pl-2 border-l border-white/10">${cleanN8nExpression(line, "")}</div>`).join('')}
+                    </div>
                 </div>` : ''}
             </div>
             
@@ -1727,6 +1747,7 @@ async function handleSimulateApprove() {
                 secret: charTemplate.secret || "",
                 chronology: charTemplate.chronology || "",
                 outfit: s.outfit || "",
+                relations: s.relations || [],
                 characterTraits: "",
                 avatarUrl: "",
                 actionPoints: 1,
@@ -1965,6 +1986,7 @@ async function handleUnifiedSessionSubmit(e) {
                         return rawChrono;
                     })(),
                     outfit: s.outfit || charTemplate.outfit || "",
+                    relations: s.relations || [],
                     characterTraits: "",
                     avatarUrl: "",
                     actionPoints: 1,
@@ -2047,6 +2069,7 @@ async function handleUnifiedSessionSubmit(e) {
                             return rawChrono;
                         })(),
                         outfit: s.outfit || charTemplate.outfit || "",
+                        relations: s.relations || [],
                         characterTraits: "",
                         avatarUrl: "",
                         actionPoints: 1,
@@ -2097,6 +2120,7 @@ async function handleUnifiedSessionSubmit(e) {
                         secret: char.secret || "",
                         chronology: char.chronology || "",
                         outfit: char.outfit || "",
+                        relations: char.relations || [],
                         characterTraits: "",
                         avatarUrl: "",
                         actionPoints: 1,
