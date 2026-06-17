@@ -1674,6 +1674,11 @@ function closeVictimModal() {
 }
 
 async function handleApproveVictim() {
+    const validationModal = document.getElementById('modalValidateVictim');
+    if (validationModal) {
+        validationModal.classList.add('hidden');
+    }
+
     const approveBtn = document.getElementById('approveVictimBtn');
     const rejectBtn = document.getElementById('rejectVictimBtn');
     const statusText = document.getElementById('victimValidationStatus');
