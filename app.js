@@ -1025,7 +1025,8 @@ function mapScenarioProperties(s) {
         genre: s.victimGenre || s.property_victime_genre || "",
         short_hook: s.victimShortHook || s.property_victime_short_hook || "",
         outfit: s.victimOutfit || s.property_tenue_victime || "",
-        marker: s.victimMarker || s.property_victime_marker || ""
+        marker: s.victimMarker || s.property_victime_marker || "",
+        avatarUrl: s.property_photo_victime || s.photo_victime || s.victimPhoto || s.property_avatar_photo || ""
     });
 
     return {
@@ -1587,7 +1588,25 @@ async function handleApprovePortraits() {
 function startVictimPolling(scenarioId) {
     if (victimPollInterval) clearInterval(victimPollInterval);
 
+    let pollCount = 0;
+    const maxPolls = 160; // 8 minutes timeout (160 * 3s = 480s)
+
     victimPollInterval = setInterval(async () => {
+        pollCount++;
+        if (pollCount >= maxPolls) {
+            clearInterval(victimPollInterval);
+            victimPollInterval = null;
+            const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+            if (genOverlay) {
+                genOverlay.classList.add('hidden');
+                const loadVideo = document.getElementById('iasminaLoadingVideo');
+                if (loadVideo) loadVideo.pause();
+            }
+            showToast("Délai dépassé", "La génération des suspects prend plus de temps que prévu. Veuillez vérifier l'état de votre workflow n8n.", "warning");
+            addLiveLog(`[Polling] Timeout de génération dépassé après 8 minutes.`);
+            return;
+        }
+
         try {
             let scenarioDetails = null;
 
@@ -1668,6 +1687,30 @@ function startVictimPolling(scenarioId) {
                     } catch (notionErr) {
                         console.error("Polling direct Notion failed", notionErr);
                     }
+                }
+            }
+
+            if (scenarioDetails) {
+                let totalImages = 0;
+                let targetCount = 17; // 1 victim + 16 suspects
+
+                if (scenarioDetails.victimObj && scenarioDetails.victimObj.avatarUrl) {
+                    totalImages++;
+                } else if (scenarioDetails.illustration || scenarioDetails.property_photo_victime) {
+                    totalImages++;
+                }
+
+                if (Array.isArray(scenarioDetails.suspects)) {
+                    scenarioDetails.suspects.forEach(sus => {
+                        if (sus.avatarUrl || sus.avatar_url || sus.illustration || sus.property_avatar_photo) {
+                            totalImages++;
+                        }
+                    });
+                }
+
+                const titleText = document.getElementById('scenarioGeneratingTitle');
+                if (titleText) {
+                    titleText.textContent = `L'IA-gens Portraitiste IArthur réalise les portraits de la victime et des 16 suspects (${totalImages} / ${targetCount} terminés)`;
                 }
             }
 
@@ -1807,7 +1850,6 @@ async function handleApproveVictim() {
         }
 
         addLiveLog(`[Validation] Requête envoyée. Attente de la mise à jour Notion...`);
-        showToast("Validation envoyée", "Génération des suspects en cours...", "info");
 
     } catch (err) {
         console.error("Error approving victim:", err);
@@ -1818,7 +1860,6 @@ async function handleApproveVictim() {
         // We let the polling finish the job instead of blocking the user.
         if (err.message === "Failed to fetch" || err.name === "TypeError") {
             addLiveLog(`[Validation] CORS/Erreur Réseau détectée. Tentative de poursuite via le polling Notion...`);
-            showToast("Validation envoyée", "Génération en cours (Vérification Notion)...", "info");
             
             if (statusText) {
                 statusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blood"></i> Requête envoyée. Génération finale en cours...`;
