@@ -6,16 +6,19 @@
     --color-bg-main: #000000;
     --color-border-subtle: rgba(255, 255, 255, 0.05);
     --color-border-crimson: rgba(179, 11, 11, 0.25);
+    --color-border-gold: rgba(245, 158, 11, 0.25);
     --color-blood: #b30b0b;
     --color-blood-glow: rgba(179, 11, 11, 0.5);
+    --color-gold: #f59e0b;
+    --color-gold-glow: rgba(245, 158, 11, 0.4);
 }
 
 /* Custom Typography & Body Configuration with Eerie Fog Gradients */
 body {
     background-color: var(--color-bg-main);
     background-image: 
-        radial-gradient(at 10% 10%, rgba(179, 11, 11, 0.08) 0px, transparent 45%),
-        radial-gradient(at 90% 90%, rgba(179, 11, 11, 0.04) 0px, transparent 40%),
+        radial-gradient(at 10% 10%, rgba(245, 158, 11, 0.09) 0px, transparent 45%),
+        radial-gradient(at 90% 90%, rgba(179, 11, 11, 0.06) 0px, transparent 40%),
         radial-gradient(at 50% 40%, rgba(0, 0, 0, 0.95) 0px, transparent 100%);
     background-attachment: fixed;
 }
@@ -31,12 +34,13 @@ body {
 }
 
 .glass-panel:hover {
-    border-color: var(--color-border-crimson);
+    border-color: var(--color-border-gold);
+    box-shadow: 0 15px 55px 0 rgba(245, 158, 11, 0.05);
 }
 
 /* Dynamic Gothic Glow for Cinematic Serifs */
 .gothic-glow {
-    text-shadow: 0 0 10px rgba(179, 11, 11, 0.7), 0 0 20px rgba(179, 11, 11, 0.3);
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 20px rgba(179, 11, 11, 0.4);
 }
 
 .gothic-glow-white {
