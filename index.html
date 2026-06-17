@@ -151,12 +151,15 @@
             <main id="organizerView" class="hidden h-full overflow-y-auto p-6 space-y-6">
                 
                 <!-- 2A. LANDING PANEL (Espace Organisateur) -->
-                <div id="orgaLandingPanel" class="max-w-4xl mx-auto w-full py-12 space-y-8">
-                    <div class="text-center py-6">
-                        <img src="images/iarena-logo.png" alt="IArena Logo" class="mx-auto h-48 md:h-56 object-contain drop-shadow-[0_0_25px_rgba(245,158,11,0.3)]">
+                <div id="orgaLandingPanel" class="max-w-4xl mx-auto w-full py-6 space-y-8">
+                    <div class="max-w-3xl mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.85)] group relative aspect-[16/9] bg-noir-card">
+                        <img src="images/iarena-battle.jpg" alt="IArena Battle Banner" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.03]">
+                        <!-- Subtle ambient top & bottom shadows -->
+                        <div class="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/30 to-transparent"></div>
+                        <div class="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-black/30 to-transparent"></div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto pt-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto pt-4">
                         <!-- Card 1: Créer une session -->
                         <div id="orgaCreateSessionBtn" class="glass-panel p-8 rounded-2xl border border-white/5 text-center flex flex-col justify-between cursor-pointer transition-all duration-300 hover:border-blood/40 hover:shadow-[0_0_30px_rgba(245, 158, 11,0.15)] group transform hover:-translate-y-1">
                             <div class="space-y-4">
