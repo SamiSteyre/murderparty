@@ -944,6 +944,110 @@ function cleanN8nExpression(value, fallback) {
     return value;
 }
 
+function mapSuspectProperties(s, index) {
+    const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+    if (typeof s === 'string') {
+        return {
+            id: s,
+            email: "",
+            roleType: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent"),
+            roleName: charTemplate.name,
+            history: charTemplate.bio,
+            lienVictime: charTemplate.relation,
+            marker: charTemplate.marker,
+            genre: charTemplate.genre || "Non-Binaire",
+            secret: charTemplate.secret || "",
+            chronology: charTemplate.chronology || "",
+            outfit: charTemplate.outfit || "",
+            relations: charTemplate.relations || [],
+            characterTraits: "",
+            avatarUrl: "",
+            actionPoints: 1,
+            status: "Créé",
+            knowledge: [],
+            missions: []
+        };
+    }
+    return {
+        id: s.id || s.scenario_id || s.character_id || "",
+        email: s.email || s.property_email || "",
+        roleType: s.status || s.roleType || s.property_role_type || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
+        roleName: s.name || s.roleName || s.property_nom || s.role_name || charTemplate.name,
+        history: s.bio || s.history || s.property_r_le_histoire || s.property_role_histoire || charTemplate.bio,
+        lienVictime: s.relation || s.lienVictime || s.property_lien_avec_la_victime || charTemplate.relation,
+        marker: s.marker || s.property_marqueur_visuel || charTemplate.marker,
+        genre: s.genre || s.roleGenre || s.property_genre || charTemplate.genre || "Non-Binaire",
+        secret: s.secret || s.property_secret || charTemplate.secret || "",
+        chronology: s.chronology || s.property_timeline || charTemplate.chronology || "",
+        outfit: s.outfit || s.property_tenue || charTemplate.outfit || "",
+        relations: s.relations || [],
+        characterTraits: s.characterTraits || s.property_traits_de_caractere || "",
+        avatarUrl: s.avatarUrl || s.avatar_url || s.avatar || s.illustration || s.property_avatar_photo || "",
+        actionPoints: s.actionPoints !== undefined ? s.actionPoints : (s.property_solde_points_d_action !== undefined ? s.property_solde_points_d_action : 1),
+        status: s.status || "Créé",
+        knowledge: s.knowledge || s.property_connaissances || [],
+        missions: s.missions || s.property_missions || []
+    };
+}
+
+function getScenariosFromArrayOrObject(data) {
+    if (!data) return [];
+    if (Array.isArray(data)) {
+        return data;
+    }
+    if (data.scenarios && Array.isArray(data.scenarios)) {
+        return data.scenarios;
+    }
+    if (data.success && Array.isArray(data.scenarios)) {
+        return data.scenarios;
+    }
+    return [];
+}
+
+function mapScenarioProperties(s) {
+    if (!s) return null;
+    
+    const rawSuspects = s.suspects || s.property_bases_personnages || [];
+    const suspects = Array.isArray(rawSuspects) ? rawSuspects.map((x, index) => mapSuspectProperties(x, index)) : [];
+
+    let etapeNum = null;
+    let rawEtape = s.etapeGeneration !== undefined && s.etapeGeneration !== null ? s.etapeGeneration : s.property_etape_generation;
+    if (rawEtape !== undefined && rawEtape !== null) {
+        if (typeof rawEtape === 'object') {
+            etapeNum = rawEtape.number || (rawEtape.select ? parseInt(rawEtape.select.name) : null) || null;
+        } else {
+            etapeNum = parseInt(rawEtape);
+        }
+    }
+
+    const victimObj = s.victimObj || (s.victim && typeof s.victim === 'object' ? s.victim : {
+        name: s.victim || s.property_victime || "",
+        genre: s.victimGenre || s.property_victime_genre || "",
+        short_hook: s.victimShortHook || s.property_victime_short_hook || "",
+        outfit: s.victimOutfit || s.property_tenue_victime || "",
+        marker: s.victimMarker || s.property_victime_marker || ""
+    });
+
+    return {
+        id: s.id || s.scenario_id,
+        title: s.title || s.property_nom || s.name || "Sans titre",
+        theme: s.theme || s.property_theme || "",
+        epoch: s.epoch || s.property_epoque || "",
+        etapeGeneration: etapeNum,
+        pitch: s.pitch || s.property_pitch_global || "",
+        crimeRoom: s.crimeRoom || s.property_scene_du_crime || s.property_scene_de_crime || s.murder_room || "",
+        victim: s.victim && typeof s.victim === 'object' ? (s.victim.name || "") : (s.victim || s.property_victime || ""),
+        victimOutfit: s.victimOutfit || s.property_tenue_victime || "",
+        chronology: s.chronology || s.property_chronologie || "",
+        cluesCount: s.cluesCount || s.property_nombre_total_d_indices || 24,
+        illustration: s.illustration || s.property_illustration || "",
+        status: s.status || s.property_statut || "En cours de génération",
+        email: s.email || s.property_createur || "",
+        suspects: suspects,
+        victimObj: victimObj
+    };
+}
+
 function loadScenarioData(data) {
     let rawIllustration = data.illustration || data.Illustration || data.illustration_url || "";
     let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
@@ -1019,26 +1123,7 @@ function loadScenarioData(data) {
 
     const suspectsData = data.suspects || CHARACTER_TEMPLATES;
     appState.players = suspectsData.map((s, index) => {
-        const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
-        return {
-            email: s.email || "",
-            roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
-            roleName: s.name || s.roleName || charTemplate.name,
-            history: s.bio || s.history || charTemplate.bio,
-            lienVictime: s.relation || s.lienVictime || charTemplate.relation,
-            marker: s.marker || charTemplate.marker,
-            genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
-            secret: s.secret || charTemplate.secret || "",
-            chronology: s.chronology || charTemplate.chronology || "",
-            outfit: s.outfit || charTemplate.outfit || "",
-            relations: s.relations || [],
-            characterTraits: "",
-            avatarUrl: s.avatarUrl || s.avatar_url || s.avatar || s.illustration || "",
-            actionPoints: 1,
-            status: "Créé",
-            knowledge: [],
-            missions: []
-        };
+        return mapSuspectProperties(s, index);
     });
 
     appState.clues = [];
@@ -1515,8 +1600,10 @@ function startVictimPolling(scenarioId) {
                     });
                     if (res.ok) {
                         const data = await res.json();
-                        if (data.success && Array.isArray(data.scenarios)) {
-                            scenarioDetails = data.scenarios.find(s => s.id === scenarioId);
+                        const rawScenarios = getScenariosFromArrayOrObject(data);
+                        const found = rawScenarios.find(s => (s.id === scenarioId || s.scenario_id === scenarioId));
+                        if (found) {
+                            scenarioDetails = mapScenarioProperties(found);
                         }
                     }
                 } catch (err) {
@@ -1549,7 +1636,11 @@ function startVictimPolling(scenarioId) {
                                     });
                                     if (listRes.ok) {
                                         const listData = await listRes.json();
-                                        scenarioDetails = listData.scenarios.find(s => s.id === scenarioId);
+                                        const rawScenarios = getScenariosFromArrayOrObject(listData);
+                                        const found = rawScenarios.find(s => (s.id === scenarioId || s.scenario_id === scenarioId));
+                                        if (found) {
+                                            scenarioDetails = mapScenarioProperties(found);
+                                        }
                                     }
                                 }
                             }
@@ -2264,8 +2355,20 @@ async function handleUnifiedSessionSubmit(e) {
                             
                             if (detailsRes.ok) {
                                 const detailsData = await detailsRes.json();
-                                if (detailsData.success && detailsData.scenario) {
-                                    scenarioDetails = detailsData.scenario;
+                                let rawScenario = null;
+                                if (detailsData) {
+                                    if (Array.isArray(detailsData) && detailsData.length > 0) {
+                                        rawScenario = detailsData[0];
+                                    } else if (detailsData.scenario) {
+                                        rawScenario = detailsData.scenario;
+                                    } else if (detailsData.success && detailsData.scenario) {
+                                        rawScenario = detailsData.scenario;
+                                    } else if (detailsData.id || detailsData.property_nom || detailsData.name) {
+                                        rawScenario = detailsData;
+                                    }
+                                }
+                                if (rawScenario) {
+                                    scenarioDetails = mapScenarioProperties(rawScenario);
                                     addLiveLog(`[Reprise] Données récupérées avec succès depuis n8n.`);
                                 } else {
                                     console.warn("Format de réponse n8n invalide:", detailsData);
@@ -2283,7 +2386,7 @@ async function handleUnifiedSessionSubmit(e) {
                                 theme: selectedScenario.theme || "Années 20 / Prohibition",
                                 pitch: selectedScenario.pitch || "Un parrain de la mafia est retrouvé mort dans son club de jazz clandestin.",
                                 epoch: selectedScenario.epoch || "passé",
-                                victim: {
+                                victimObj: {
                                     name: selectedScenario.victim || "Lord James Lenoir (Le Propriétaire)",
                                     genre: "Homme",
                                     short_hook: selectedScenario.pitch || "Propriétaire du Speakeasy retrouvé mort.",
@@ -2311,7 +2414,7 @@ async function handleUnifiedSessionSubmit(e) {
                             theme: scenarioDetails.theme || selectedScenario.theme || "",
                             pitch: scenarioDetails.pitch || selectedScenario.pitch || "",
                             epoch: scenarioDetails.epoch || selectedScenario.epoch || "passé",
-                            victim: scenarioDetails.victim,
+                            victim: scenarioDetails.victimObj || scenarioDetails.victim,
                             suspects: scenarioDetails.suspects || []
                         };
                         savePersistedState();
@@ -3304,8 +3407,9 @@ async function loadExistingScenarios() {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.success && Array.isArray(data.scenarios)) {
-                        scenarios = data.scenarios;
+                    const rawScenarios = getScenariosFromArrayOrObject(data);
+                    if (rawScenarios.length > 0) {
+                        scenarios = rawScenarios.map(s => mapScenarioProperties(s));
                     }
                 }
             } catch (err) {
@@ -3375,7 +3479,7 @@ async function loadExistingScenarios() {
                                 return "";
                             };
 
-                            return {
+                            return mapScenarioProperties({
                                 id: page.id,
                                 title: getText(props["Nom"]) || "Sans titre",
                                 theme: props["Thème"] ? getText(props["Thème"]) : "",
@@ -3392,7 +3496,7 @@ async function loadExistingScenarios() {
                                 email: props["Créateur"] ? getEmail(props["Créateur"]) : 
                                        (props["Email Organisateur"] ? getEmail(props["Email Organisateur"]) : 
                                        (props["email"] ? getEmail(props["email"]) : ""))
-                            };
+                            });
                         });
                         
                         // Filter by creator email if email property matches
@@ -3568,8 +3672,20 @@ async function handleScenarioCardClick(scenarioId) {
                 
                 if (detailsRes.ok) {
                     const detailsData = await detailsRes.json();
-                    if (detailsData.success && detailsData.scenario) {
-                        scenarioDetails = detailsData.scenario;
+                    let rawScenario = null;
+                    if (detailsData) {
+                        if (Array.isArray(detailsData) && detailsData.length > 0) {
+                            rawScenario = detailsData[0];
+                        } else if (detailsData.scenario) {
+                            rawScenario = detailsData.scenario;
+                        } else if (detailsData.success && detailsData.scenario) {
+                            rawScenario = detailsData.scenario;
+                        } else if (detailsData.id || detailsData.property_nom || detailsData.name) {
+                            rawScenario = detailsData;
+                        }
+                    }
+                    if (rawScenario) {
+                        scenarioDetails = mapScenarioProperties(rawScenario);
                         addLiveLog(`[Reprise] Fiches de l'étape 1 chargées.`);
                     }
                 }
@@ -3582,7 +3698,7 @@ async function handleScenarioCardClick(scenarioId) {
                     theme: selectedScenario.theme || "Années 20 / Prohibition",
                     pitch: selectedScenario.pitch || "",
                     epoch: selectedScenario.epoch || "passé",
-                    victim: {
+                    victimObj: {
                         name: selectedScenario.victim || "Lord James Lenoir",
                         genre: "Homme",
                         short_hook: selectedScenario.pitch || "",
@@ -3600,7 +3716,7 @@ async function handleScenarioCardClick(scenarioId) {
                 theme: scenarioDetails.theme || selectedScenario.theme || "",
                 pitch: scenarioDetails.pitch || selectedScenario.pitch || "",
                 epoch: scenarioDetails.epoch || selectedScenario.epoch || "passé",
-                victim: scenarioDetails.victim,
+                victim: scenarioDetails.victimObj || scenarioDetails.victim,
                 suspects: scenarioDetails.suspects || []
             };
             savePersistedState();
@@ -3637,26 +3753,7 @@ async function handleScenarioCardClick(scenarioId) {
             
             // On pré-remplit les joueurs pour la session
             appState.players = (selectedScenario.suspects || CHARACTER_TEMPLATES).map((s, index) => {
-                const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
-                return {
-                    email: s.email || "",
-                    roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
-                    roleName: s.name || s.roleName || charTemplate.name,
-                    history: s.bio || s.history || charTemplate.bio,
-                    lienVictime: s.relation || s.lienVictime || charTemplate.relation,
-                    marker: s.marker || charTemplate.marker,
-                    genre: s.genre || s.roleGenre || charTemplate.genre || "Non-Binaire",
-                    secret: s.secret || charTemplate.secret || "",
-                    chronology: s.chronology || charTemplate.chronology || "",
-                    outfit: s.outfit || charTemplate.outfit || "",
-                    relations: s.relations || [],
-                    characterTraits: "",
-                    avatarUrl: "",
-                    actionPoints: 1,
-                    status: "Créé",
-                    knowledge: [],
-                    missions: []
-                };
+                return mapSuspectProperties(s, index);
             });
             
             savePersistedState();
