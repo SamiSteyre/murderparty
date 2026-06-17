@@ -1176,12 +1176,6 @@ function showVictimValidationModal(victim, isSimulation) {
     }
     renderValidationSuspects(suspectsToRender);
 
-    const modal = document.getElementById('modalValidateVictim');
-    const statusText = document.getElementById('victimValidationStatus');
-    const btnSimulate = document.getElementById('btnSimulateApprove');
-    const btnApprove = document.getElementById('approveVictimBtn');
-    const rejectBtn = document.getElementById('rejectVictimBtn');
-
     // Update count label in the tab header
     const countSpan = document.getElementById('validateSuspectsCount');
     if (countSpan) {
@@ -1190,26 +1184,82 @@ function showVictimValidationModal(victim, isSimulation) {
 
     // Hide general scenario generation overlay if it was open
     const genOverlay = document.getElementById('scenarioGeneratingOverlay');
-    if (genOverlay) genOverlay.classList.add('hidden');
-
-    if (modal) modal.classList.remove('hidden');
-
-    if (btnApprove) {
-        btnApprove.removeAttribute('disabled');
-        btnApprove.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer`;
-    }
-    if (btnSimulate) {
-        btnSimulate.removeAttribute('disabled');
-        btnSimulate.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer (Simulé)`;
-    }
-    if (rejectBtn) {
-        rejectBtn.removeAttribute('disabled');
+    if (genOverlay) {
+        genOverlay.classList.add('hidden');
+        const loadVideo = document.getElementById('iasminaLoadingVideo');
+        if (loadVideo) loadVideo.pause();
     }
 
-    updateValidationSlides();
+    const proceedToShowResults = () => {
+        // Stop and reset the reveal video
+        const revealVideo = document.getElementById('iasminaRevealVideo');
+        if (revealVideo) {
+            revealVideo.pause();
+            revealVideo.currentTime = 0;
+        }
 
-    if (!isSimulation) {
-        startVictimPolling(appState.pendingScenarioId);
+        // Hide video overlay
+        const videoOverlay = document.getElementById('iasminaVideoOverlay');
+        if (videoOverlay) videoOverlay.classList.add('hidden');
+
+        // Show validation results modal
+        const modal = document.getElementById('modalValidateVictim');
+        if (modal) modal.classList.remove('hidden');
+
+        const btnSimulate = document.getElementById('btnSimulateApprove');
+        const btnApprove = document.getElementById('approveVictimBtn');
+        const rejectBtn = document.getElementById('rejectVictimBtn');
+
+        if (btnApprove) {
+            btnApprove.removeAttribute('disabled');
+            btnApprove.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer`;
+        }
+        if (btnSimulate) {
+            btnSimulate.removeAttribute('disabled');
+            btnSimulate.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer (Simulé)`;
+        }
+        if (rejectBtn) {
+            rejectBtn.removeAttribute('disabled');
+        }
+
+        updateValidationSlides();
+
+        if (!isSimulation) {
+            startVictimPolling(appState.pendingScenarioId);
+        }
+    };
+
+    // Play reveal video before showing results
+    const videoOverlay = document.getElementById('iasminaVideoOverlay');
+    const revealVideo = document.getElementById('iasminaRevealVideo');
+    const nextBtn = document.getElementById('iasminaVideoNextBtn');
+
+    if (videoOverlay && revealVideo) {
+        videoOverlay.classList.remove('hidden');
+        revealVideo.muted = false;
+        revealVideo.volume = 1.0;
+        revealVideo.currentTime = 0;
+
+        revealVideo.play().catch(err => {
+            console.warn("Reveal video play blocked or failed, playing muted as fallback:", err);
+            revealVideo.muted = true;
+            revealVideo.play().catch(e => {
+                console.error("Reveal video failed entirely:", e);
+                proceedToShowResults();
+            });
+        });
+
+        revealVideo.onended = () => {
+            proceedToShowResults();
+        };
+
+        if (nextBtn) {
+            nextBtn.onclick = () => {
+                proceedToShowResults();
+            };
+        }
+    } else {
+        proceedToShowResults();
     }
 }
 
@@ -1323,6 +1373,11 @@ async function handleApproveVictim() {
     if (genOverlay) {
         if (overlayText) overlayText.textContent = "Génération des suspects, pièces et indices en cours...";
         genOverlay.classList.remove('hidden');
+        const loadVideo = document.getElementById('iasminaLoadingVideo');
+        if (loadVideo) {
+            loadVideo.currentTime = 0;
+            loadVideo.play().catch(err => console.warn("Loading video play failed:", err));
+        }
     }
 
     try {
@@ -1745,7 +1800,14 @@ async function handleUnifiedSessionSubmit(e) {
             }
 
             const genOverlay = document.getElementById('scenarioGeneratingOverlay');
-            if (genOverlay) genOverlay.classList.remove('hidden');
+            if (genOverlay) {
+                genOverlay.classList.remove('hidden');
+                const loadVideo = document.getElementById('iasminaLoadingVideo');
+                if (loadVideo) {
+                    loadVideo.currentTime = 0;
+                    loadVideo.play().catch(err => console.warn("Loading video play failed:", err));
+                }
+            }
 
             addLiveLog(`[Agent 1: Scénariste] Génération de l'intrigue (Thème: "${theme}", Époque: "${epoch}")...`);
             renderOrganizerDashboard();
@@ -2107,7 +2169,11 @@ async function handleUnifiedSessionSubmit(e) {
         showToast("Erreur d'orchestration", err.message || "Une erreur est survenue.", "error");
     } finally {
         const genOverlay = document.getElementById('scenarioGeneratingOverlay');
-        if (genOverlay) genOverlay.classList.add('hidden');
+        if (genOverlay) {
+            genOverlay.classList.add('hidden');
+            const loadVideo = document.getElementById('iasminaLoadingVideo');
+            if (loadVideo) loadVideo.pause();
+        }
 
         submitBtn.removeAttribute('disabled');
         const mode = document.getElementById('scenarioMode').value;
