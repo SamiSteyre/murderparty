@@ -1033,7 +1033,7 @@ function loadScenarioData(data) {
             outfit: s.outfit || charTemplate.outfit || "",
             relations: s.relations || [],
             characterTraits: "",
-            avatarUrl: "",
+            avatarUrl: s.avatarUrl || s.avatar_url || s.avatar || s.illustration || "",
             actionPoints: 1,
             status: "Créé",
             knowledge: [],
@@ -1245,38 +1245,219 @@ function showVictimValidationModal(victim, isSimulation) {
         updateValidationSlides();
     };
 
-    // Play reveal video before showing results
+    playRevealVideo("images/IAsmina2.mp4", proceedToShowResults);
+}
+
+function playRevealVideo(videoSrc, onEndedCallback) {
     const videoOverlay = document.getElementById('iasminaVideoOverlay');
     const revealVideo = document.getElementById('iasminaRevealVideo');
     const nextBtn = document.getElementById('iasminaVideoNextBtn');
 
     if (videoOverlay && revealVideo) {
+        revealVideo.src = videoSrc;
         videoOverlay.classList.remove('hidden');
         revealVideo.muted = false;
         revealVideo.volume = 1.0;
         revealVideo.currentTime = 0;
+
+        const proceed = () => {
+            revealVideo.pause();
+            revealVideo.currentTime = 0;
+            videoOverlay.classList.add('hidden');
+            if (onEndedCallback) onEndedCallback();
+        };
 
         revealVideo.play().catch(err => {
             console.warn("Reveal video play blocked or failed, playing muted as fallback:", err);
             revealVideo.muted = true;
             revealVideo.play().catch(e => {
                 console.error("Reveal video failed entirely:", e);
-                proceedToShowResults();
+                proceed();
             });
         });
 
         revealVideo.onended = () => {
-            proceedToShowResults();
+            proceed();
         };
 
         if (nextBtn) {
             nextBtn.onclick = () => {
-                proceedToShowResults();
+                proceed();
             };
         }
     } else {
-        proceedToShowResults();
+        if (onEndedCallback) onEndedCallback();
     }
+}
+
+function handleStep2Completion(scenarioDetails) {
+    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+    if (genOverlay) genOverlay.classList.add('hidden');
+    
+    closeVictimModal();
+
+    playRevealVideo("images/IArthur2.mp4", () => {
+        loadScenarioData(scenarioDetails);
+        showPortraitsVerificationModal();
+    });
+}
+
+function showPortraitsVerificationModal() {
+    const list = [];
+    
+    // 1. Add Victim
+    let victimImg = appState.scenario ? appState.scenario.imageUrl : "";
+    if (!victimImg || victimImg.includes('unsplash.com')) {
+        victimImg = "images/iarena-battle.jpg";
+    }
+    list.push({
+        name: appState.scenario ? (appState.scenario.victim || "La Victime") : "La Victime",
+        role: "La Victime",
+        imageUrl: victimImg,
+        bio: appState.scenario ? (appState.scenario.victimOutfit || "Tenue vestimentaire de la victime.") : "Tenue vestimentaire de la victime."
+    });
+
+    // 2. Add Suspects
+    const portraitPool = [
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop&q=80"
+    ];
+    if (appState.players && appState.players.length > 0) {
+        appState.players.forEach((p, idx) => {
+            let avatar = p.avatarUrl;
+            if (!avatar) {
+                avatar = portraitPool[idx % portraitPool.length];
+            }
+            list.push({
+                name: p.roleName,
+                role: p.roleType || "Suspect",
+                imageUrl: avatar,
+                bio: p.history || ""
+            });
+        });
+    }
+
+    appState.portraitsToVerify = list;
+    appState.activePortraitIndex = 0;
+    savePersistedState();
+
+    const modal = document.getElementById('modalVerifyPortraits');
+    if (modal) {
+        modal.classList.remove('hidden');
+        renderActivePortrait();
+    }
+}
+
+// Helper slugification function
+function slugify(text) {
+    return text
+        .toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+}
+
+function renderActivePortrait() {
+    const list = appState.portraitsToVerify;
+    const idx = appState.activePortraitIndex;
+    if (!list || list.length === 0 || idx < 0 || idx >= list.length) return;
+
+    const portrait = list[idx];
+
+    const counter = document.getElementById('portraitVerifyCounter');
+    if (counter) counter.textContent = `Portrait ${idx + 1}/${list.length}`;
+
+    const nameEl = document.getElementById('portraitVerifyName');
+    if (nameEl) nameEl.textContent = portrait.name;
+
+    const roleEl = document.getElementById('portraitVerifyRole');
+    if (roleEl) {
+        roleEl.textContent = portrait.role;
+        if (portrait.role === "La Victime") {
+            roleEl.className = "px-2.5 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-red-950/20 border border-red-500/20 text-red-500 inline-block";
+        } else if (portrait.role === "Le Coupable" || portrait.role === "Coupable") {
+            roleEl.className = "px-2.5 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-blood/20 border border-blood/30 text-blood inline-block";
+        } else if (portrait.role === "Faux-Coupable") {
+            roleEl.className = "px-2.5 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-amber-500/10 border border-amber-500/20 text-amber-500 inline-block";
+        } else {
+            roleEl.className = "px-2.5 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-gold/10 border border-gold/20 text-gold inline-block";
+        }
+    }
+
+    const descEl = document.getElementById('portraitVerifyDesc');
+    if (descEl) descEl.textContent = portrait.bio || "Aucune description.";
+
+    const imgEl = document.getElementById('portraitVerifyImage');
+    const spinner = document.getElementById('portraitVerifySpinner');
+    if (imgEl) {
+        if (spinner) spinner.classList.remove('hidden');
+        imgEl.style.opacity = "0";
+        imgEl.onload = () => {
+            if (spinner) spinner.classList.add('hidden');
+            imgEl.style.opacity = "1";
+        };
+        imgEl.onerror = () => {
+            if (spinner) spinner.classList.add('hidden');
+            imgEl.src = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=300";
+            imgEl.style.opacity = "1";
+        };
+        imgEl.src = portrait.imageUrl;
+    }
+
+    const btnPrev = document.getElementById('btnPrevPortrait');
+    const btnNext = document.getElementById('btnNextPortrait');
+    if (btnPrev) {
+        if (idx === 0) {
+            btnPrev.setAttribute('disabled', 'true');
+            btnPrev.style.opacity = "0.3";
+        } else {
+            btnPrev.removeAttribute('disabled');
+            btnPrev.style.opacity = "1";
+        }
+    }
+    if (btnNext) {
+        if (idx === list.length - 1) {
+            btnNext.setAttribute('disabled', 'true');
+            btnNext.style.opacity = "0.3";
+        } else {
+            btnNext.removeAttribute('disabled');
+            btnNext.style.opacity = "1";
+        }
+    }
+}
+
+function handlePrevPortrait() {
+    if (appState.activePortraitIndex > 0) {
+        appState.activePortraitIndex--;
+        renderActivePortrait();
+    }
+}
+
+function handleNextPortrait() {
+    if (appState.portraitsToVerify && appState.activePortraitIndex < appState.portraitsToVerify.length - 1) {
+        appState.activePortraitIndex++;
+        renderActivePortrait();
+    }
+}
+
+function handleApprovePortraits() {
+    const modal = document.getElementById('modalVerifyPortraits');
+    if (modal) modal.classList.add('hidden');
+    
+    closeVictimModal();
+    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+    if (genOverlay) genOverlay.classList.add('hidden');
+    
+    appState.orgaView = 'generated';
+    savePersistedState();
+    renderOrganizerDashboard();
 }
 
 function startVictimPolling(scenarioId) {
@@ -1344,11 +1525,7 @@ function startVictimPolling(scenarioId) {
                 clearInterval(victimPollInterval);
                 victimPollInterval = null;
 
-                loadScenarioData(scenarioDetails);
-
-                const modal = document.getElementById('modalValidateVictim');
-                if (modal) modal.classList.add('hidden');
-
+                handleStep2Completion(scenarioDetails);
                 showToast("Génération Réussie !", "Le scénario et les suspects sont prêts !", "success");
             }
         } catch (e) {
@@ -1388,12 +1565,21 @@ async function handleApproveVictim() {
 
     if (genOverlay) {
         if (overlayText) overlayText.textContent = "Génération des suspects, pièces et indices en cours...";
-        genOverlay.classList.remove('hidden');
+        
+        // Dynamically replace IAsmina video and text with IArthur for step 2
+        const titleText = document.getElementById('scenarioGeneratingTitle');
+        if (titleText) {
+            titleText.textContent = "L'IA-gens portraitiste IArthur réalise les portraits de la victime et des 16 suspects";
+        }
+        
         const loadVideo = document.getElementById('iasminaLoadingVideo');
         if (loadVideo) {
+            loadVideo.src = "images/IArthur1.mp4";
             loadVideo.currentTime = 0;
             loadVideo.play().catch(err => console.warn("Loading video play failed:", err));
         }
+        
+        genOverlay.classList.remove('hidden');
     }
 
     // Start polling Notion / list-scenarios webhook for completion status
@@ -1460,9 +1646,7 @@ async function handleApproveVictim() {
                 victimPollInterval = null;
             }
             
-            loadScenarioData(dataScenario);
-            closeVictimModal();
-            if (genOverlay) genOverlay.classList.add('hidden');
+            handleStep2Completion(dataScenario);
             showToast("Succès", "Scénario généré avec succès !", "success");
             return;
         }
@@ -1777,10 +1961,10 @@ async function handleSimulateApprove() {
         });
 
         closeVictimModal();
-        appState.orgaView = 'generated';
-        savePersistedState();
-        showToast("Scénario Prêt !", "Simulation de la génération complète réussie !", "success");
-        renderOrganizerDashboard();
+        playRevealVideo("images/IArthur2.mp4", () => {
+            showPortraitsVerificationModal();
+            showToast("Scénario Prêt !", "Simulation de la génération complète réussie !", "success");
+        });
     } catch (err) {
         console.error(err);
         showToast("Erreur Simulation", err.message || "Erreur de génération simulée.", "error");
@@ -1828,12 +2012,18 @@ async function handleUnifiedSessionSubmit(e) {
 
             const genOverlay = document.getElementById('scenarioGeneratingOverlay');
             if (genOverlay) {
-                genOverlay.classList.remove('hidden');
+                const titleText = document.getElementById('scenarioGeneratingTitle');
+                if (titleText) {
+                    titleText.textContent = "L'IA-gens Profiler IAsmina identifie la victime et dresse la liste des 16 suspects";
+                }
+                
                 const loadVideo = document.getElementById('iasminaLoadingVideo');
                 if (loadVideo) {
+                    loadVideo.src = "images/IAsmina1.mp4";
                     loadVideo.currentTime = 0;
                     loadVideo.play().catch(err => console.warn("Loading video play failed:", err));
                 }
+                genOverlay.classList.remove('hidden');
             }
 
             addLiveLog(`[Agent 1: Scénariste] Génération de l'intrigue (Thème: "${theme}", Époque: "${epoch}")...`);
@@ -3613,6 +3803,16 @@ function init() {
 
     const closeVictimModalBtn = document.getElementById('closeVictimModalBtn');
     if (closeVictimModalBtn) closeVictimModalBtn.addEventListener('click', closeVictimModal);
+
+    // Portraits Verification Modal Event Listeners
+    const btnPrevPortrait = document.getElementById('btnPrevPortrait');
+    if (btnPrevPortrait) btnPrevPortrait.addEventListener('click', handlePrevPortrait);
+
+    const btnNextPortrait = document.getElementById('btnNextPortrait');
+    if (btnNextPortrait) btnNextPortrait.addEventListener('click', handleNextPortrait);
+
+    const btnApprovePortraits = document.getElementById('btnApprovePortraits');
+    if (btnApprovePortraits) btnApprovePortraits.addEventListener('click', handleApprovePortraits);
 }
 
 window.addEventListener('DOMContentLoaded', init);
