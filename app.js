@@ -1930,7 +1930,7 @@ function renderActivePortrait() {
             if (isGithubUrl) {
                 attempts++;
                 if (spinnerText) {
-                    spinnerText.textContent = `Récupération en cours (tentative ${attempts})...`;
+                    spinnerText.textContent = "Récupération en cours...";
                 }
                 portraitRetryTimeout = setTimeout(tryLoad, 3000);
             } else {
