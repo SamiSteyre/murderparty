@@ -1098,33 +1098,46 @@ function mapScenarioProperties(s) {
     };
 
     const getFileUrl = (prop) => {
-        if (!prop || !prop.files || prop.files.length === 0) return "";
-        const f = prop.files[0];
-        if (f.file) return f.file.url;
-        if (f.external) return f.external.url;
-        return "";
-    };
-
-    const getFile = (val) => {
-        if (!val) return "";
-        if (typeof val === 'string') return val;
-        if (Array.isArray(val) && val.length > 0) {
-            const f = val[0];
-            if (typeof f === 'string') return f;
+        if (!prop) return "";
+        
+        // 1. If it's a direct string
+        if (typeof prop === 'string') return prop.trim();
+        
+        // 2. If it's a Notion files property
+        if (prop.files && Array.isArray(prop.files) && prop.files.length > 0) {
+            const f = prop.files[0];
             if (f.file && f.file.url) return f.file.url;
             if (f.external && f.external.url) return f.external.url;
             if (f.url) return f.url;
         }
-        if (typeof val === 'object') {
-            if (val.url) return val.url;
-            if (val.files && Array.isArray(val.files) && val.files.length > 0) {
-                const f = val.files[0];
-                if (f.file && f.file.url) return f.file.url;
-                if (f.external && f.external.url) return f.external.url;
-                if (f.url) return f.url;
-            }
+        
+        // 3. If it's a Notion url property
+        if (prop.url) return prop.url;
+        
+        // 4. If it's a Notion rich_text property containing the URL
+        if (prop.rich_text && Array.isArray(prop.rich_text)) {
+            return prop.rich_text.map(t => t.plain_text).join("").trim();
         }
+        
+        // 5. If it's an array of files/strings directly
+        if (Array.isArray(prop) && prop.length > 0) {
+            const f = prop[0];
+            if (typeof f === 'string') return f.trim();
+            if (f.file && f.file.url) return f.file.url;
+            if (f.external && f.external.url) return f.external.url;
+            if (f.url) return f.url;
+        }
+        
+        // 6. Direct object checks
+        if (typeof prop === 'object') {
+            if (prop.url) return prop.url;
+        }
+        
         return "";
+    };
+
+    const getFile = (val) => {
+        return getFileUrl(val);
     };
 
     let isRawNotion = false;
