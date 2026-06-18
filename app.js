@@ -1399,6 +1399,7 @@ function loadScenarioData(data) {
 
 let victimPollInterval = null;
 let step2CompletionTriggered = false;
+let portraitRetryTimeout = null;
 
 function renderValidationSuspects(suspects) {
     const container = document.getElementById('validateSuspectsContainer');
@@ -1705,6 +1706,10 @@ function slugify(text) {
 }
 
 function renderActivePortrait() {
+    if (portraitRetryTimeout) {
+        clearTimeout(portraitRetryTimeout);
+        portraitRetryTimeout = null;
+    }
     const list = appState.portraitsToVerify;
     const idx = appState.activePortraitIndex;
     if (!list || list.length === 0 || idx < 0 || idx >= list.length) return;
@@ -1736,19 +1741,46 @@ function renderActivePortrait() {
 
     const imgEl = document.getElementById('portraitVerifyImage');
     const spinner = document.getElementById('portraitVerifySpinner');
+    const spinnerText = document.getElementById('portraitVerifySpinnerText');
     if (imgEl) {
         if (spinner) spinner.classList.remove('hidden');
+        if (spinnerText) spinnerText.textContent = "Chargement...";
         imgEl.style.opacity = "0";
+
+        let attempts = 0;
+        const maxAttempts = 20; // 60 seconds total window (20 * 3s)
+        const baseSrc = portrait.imageUrl;
+        const isGithubUrl = baseSrc.includes("raw.githubusercontent.com") || baseSrc.includes("github.com");
+
+        const tryLoad = () => {
+            let finalSrc = baseSrc;
+            if (attempts > 0 && isGithubUrl) {
+                const separator = baseSrc.includes('?') ? '&' : '?';
+                finalSrc = `${baseSrc}${separator}t=${Date.now()}`;
+            }
+            imgEl.src = finalSrc;
+        };
+
         imgEl.onload = () => {
             if (spinner) spinner.classList.add('hidden');
             imgEl.style.opacity = "1";
         };
+
         imgEl.onerror = () => {
-            if (spinner) spinner.classList.add('hidden');
-            imgEl.src = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=300";
-            imgEl.style.opacity = "1";
+            if (isGithubUrl && attempts < maxAttempts) {
+                attempts++;
+                if (spinnerText) {
+                    spinnerText.textContent = `Récupération en cours (${attempts}/${maxAttempts})...`;
+                }
+                portraitRetryTimeout = setTimeout(tryLoad, 3000);
+            } else {
+                if (spinner) spinner.classList.add('hidden');
+                imgEl.src = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=300";
+                imgEl.style.opacity = "1";
+            }
         };
-        imgEl.src = portrait.imageUrl;
+
+        tryLoad();
     }
 
     const btnPrev = document.getElementById('btnPrevPortrait');
