@@ -1858,8 +1858,9 @@ function startVictimPolling(scenarioId) {
 
                             const statusProp = page.properties["Statut"];
                             const statusName = statusProp && statusProp.select ? statusProp.select.name : "";
+                            const lowerStatus = (statusName || "").toLowerCase();
                             
-                            if (statusName === "Vérifié" || statusName === "Vérifie" || statusName === "Verify") {
+                            if (lowerStatus === "vérifié" || lowerStatus === "vérifie" || lowerStatus === "verifie" || lowerStatus === "verify") {
                                 if (appState.n8nBaseUrl) {
                                     try {
                                         const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
@@ -1922,7 +1923,9 @@ function startVictimPolling(scenarioId) {
                 }
             }
 
-            if (scenarioDetails && (scenarioDetails.status === "Vérifié" || scenarioDetails.status === "Vérifie" || scenarioDetails.status === "Verify")) {
+            const statusLower = (scenarioDetails && scenarioDetails.status) ? scenarioDetails.status.toLowerCase() : "";
+            const isFinished = statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify" || (scenarioDetails && totalImages >= targetCount);
+            if (scenarioDetails && isFinished) {
                 clearInterval(victimPollInterval);
                 victimPollInterval = null;
 
@@ -3845,7 +3848,8 @@ async function loadExistingScenarios() {
                 // Fallback step calculation
                 let etape = s.etapeGeneration;
                 if (etape === undefined || etape === null) {
-                    etape = (s.status === "Vérifié" || s.status === "Vérifie") ? 4 : 1;
+                    const statusLower = (s.status || "").toLowerCase();
+                    etape = (statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify") ? 4 : 1;
                 }
                 
                 // Save calculated step on the object
@@ -3910,7 +3914,8 @@ async function handleScenarioCardClick(scenarioId) {
     const selectedScenario = appState.loadedScenarios ? appState.loadedScenarios.find(s => s.id === scenarioId) : null;
     if (!selectedScenario) return;
 
-    const etape = selectedScenario.etapeGeneration || (selectedScenario.status === "Vérifié" ? 4 : 1);
+    const statusLower = (selectedScenario.status || "").toLowerCase();
+    const etape = selectedScenario.etapeGeneration || ((statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify") ? 4 : 1);
     
     // Set hidden input value
     const hiddenInput = document.getElementById('selectedScenarioId');
@@ -4052,7 +4057,8 @@ function updateSelectScenarioSubmitBtn() {
     const selectedScenario = appState.loadedScenarios ? appState.loadedScenarios.find(s => s.id === selectedId) : null;
     
     if (selectedScenario) {
-        const etape = selectedScenario.etapeGeneration || (selectedScenario.status === "Vérifié" ? 4 : 1);
+        const statusLower = (selectedScenario.status || "").toLowerCase();
+        const etape = selectedScenario.etapeGeneration || ((statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify") ? 4 : 1);
         if (etape === 1) {
             submitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Vérifier le scénario`;
         } else if (etape >= 4) {
