@@ -1168,7 +1168,7 @@ function mapScenarioProperties(s) {
     const pitch = isRawNotion ? getText(props["Pitch Global"]) : (s.pitch || s.property_pitch_global || "");
     const crimeRoom = isRawNotion ? (getText(props["Scène du Crime"]) || getText(props["Scene du Crime"])) : (s.crimeRoom || s.property_scene_du_crime || s.property_scene_de_crime || s.murder_room || "");
     const victim = isRawNotion ? getText(props["Victime"]) : (s.victim && typeof s.victim === 'object' ? (s.victim.name || "") : (s.victim || s.property_victime || ""));
-    const victimOutfit = isRawNotion ? getText(props["Tenue Victime"]) : (s.victimOutfit || s.property_tenue_victime || "");
+    const victimOutfit = isRawNotion ? getText(props["Tenue Victime"]) : (s.victimOutfit || (s.victim && typeof s.victim === 'object' ? s.victim.outfit : "") || s.property_tenue_victime || "");
     const chronology = isRawNotion ? getText(props["Chronologie"]) : (s.chronology || s.property_chronologie || "");
     const cluesCount = isRawNotion ? (getNumber(props["Nombre Total d'Indices"]) || 24) : (s.cluesCount || s.property_nombre_total_d_indices || 24);
     const illustration = isRawNotion ? getText(props["Illustration"]) : (s.illustration || s.property_illustration || "");
@@ -1189,7 +1189,7 @@ function mapScenarioProperties(s) {
         email = s.email || s.property_createur || "";
     }
 
-    let victimGenre = isRawNotion ? (props["Genre Victime"] ? props["Genre Victime"].select?.name : (props["Victime Genre"] ? props["Victime Genre"].select?.name : "")) : (s.victimGenre || s.property_victime_genre || "");
+    let victimGenre = isRawNotion ? (props["Genre Victime"] ? props["Genre Victime"].select?.name : (props["Victime Genre"] ? props["Victime Genre"].select?.name : "")) : (s.victimGenre || (s.victim && typeof s.victim === 'object' ? s.victim.genre : "") || s.property_victime_genre || "");
     if (!victimGenre && isRawNotion) {
         victimGenre = "Non-Binaire";
     }
@@ -1202,7 +1202,7 @@ function mapScenarioProperties(s) {
         const rawPhotoHomme = s.property_photo_homme || s.photo_homme || s.photoHomme || s["Photo Homme"];
         const rawPhotoFemme = s.property_photo_femme || s.photo_femme || s.photoFemme || s["Photo Femme"];
         const rawPhotoNB = s.property_photo_nbinaire || s.photo_nbinaire || s.photoNBinaire || s.property_photo_n_binaire || s.photo_n_binaire || s["Photo NBinaire"];
-        const rawIllustration = s.illustration || s.property_illustration || s.property_photo_victime || s.photo_victime || s.victimPhoto || s.property_avatar_photo || s["Photo Victime"] || s.property_photo_victime || s.photoVictime;
+        const rawIllustration = s.illustration || s.property_illustration || s.property_photo_victime || s.photo_victime || s.victimPhoto || s.property_avatar_photo || s["Photo Victime"] || s.property_photo_victime || s.photoVictime || (s.victim && typeof s.victim === 'object' ? (s.victim.photo || s.victim.photo_victime || s.victim.avatarUrl || s.victim.photo_url || s.victim.illustration) : "");
         
         if (genreLower === 'homme' || genreLower === 'male' || genreLower === 'masculin') {
             victimPhotoUrl = getFile(rawIllustration) || getFile(rawPhotoHomme);
