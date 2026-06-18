@@ -1242,9 +1242,24 @@ function mapScenarioProperties(s) {
     };
 }
 
+async function fetchGithubImagesList() {
+    try {
+        const res = await fetch("https://api.github.com/repos/SamiSteyre/murderparty/contents/images");
+        if (res.ok) {
+            const files = await res.json();
+            return Array.isArray(files) ? files : [];
+        }
+    } catch (e) {
+        console.warn("Failed to fetch images list from GitHub API", e);
+    }
+    return [];
+}
+
 function enrichScenarioWithImages(scenario, images) {
     if (!scenario || !images || !Array.isArray(images)) return scenario;
 
+    const suspectImages = [];
+    
     images.forEach(img => {
         const fileObj = img.content || img;
         const name = fileObj.name || "";
@@ -1258,25 +1273,56 @@ function enrichScenarioWithImages(scenario, images) {
             }
             scenario.illustration = downloadUrl;
         } else if (name.toLowerCase().includes("suspect")) {
+            suspectImages.push({ name, downloadUrl });
+        }
+    });
+
+    if (suspectImages.length > 0 && scenario.suspects && Array.isArray(scenario.suspects)) {
+        // Sort suspect images by name so they are in chronological order (due to timestamp at the end)
+        suspectImages.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Try mapping by ID first.
+        let matchedSuspectIds = new Set();
+        const matchesById = [];
+
+        suspectImages.forEach(img => {
             let suspectId = "";
-            const cleanName = name.replace("suspect", "");
+            const cleanName = img.name.replace("suspect", "");
             const parts = cleanName.split("-");
             if (parts.length >= 5) {
                 suspectId = parts.slice(0, 5).join("-");
             }
             
-            if (suspectId && scenario.suspects && Array.isArray(scenario.suspects)) {
-                const suspect = scenario.suspects.find(sus => {
+            if (suspectId) {
+                const cleanTargetId = suspectId.toLowerCase().replace(/-/g, "");
+                const susIdx = scenario.suspects.findIndex(sus => {
                     const cleanSusId = (sus.id || "").toLowerCase().replace(/-/g, "");
-                    const cleanTargetId = suspectId.toLowerCase().replace(/-/g, "");
                     return cleanSusId === cleanTargetId || (sus.id && suspectId.includes(sus.id));
                 });
-                if (suspect) {
-                    suspect.avatarUrl = downloadUrl;
+                if (susIdx !== -1) {
+                    matchedSuspectIds.add(scenario.suspects[susIdx].id);
+                    matchesById.push({ img, idx: susIdx });
                 }
             }
+        });
+
+        // If we matched multiple distinct suspects (i.e. more than 1), then the IDs in filenames are probably correct
+        if (matchedSuspectIds.size > 1) {
+            console.log(`[enrichScenarioWithImages] Matching by ID (found ${matchedSuspectIds.size} unique suspects)`);
+            matchesById.forEach(match => {
+                scenario.suspects[match.idx].avatarUrl = match.img.downloadUrl;
+            });
+        } else {
+            // Otherwise, we fall back to index-based mapping
+            console.log(`[enrichScenarioWithImages] Falling back to index-based matching (matched only ${matchedSuspectIds.size} unique suspects by ID)`);
+            scenario.suspects.forEach((sus, idx) => {
+                if (idx < suspectImages.length) {
+                    sus.avatarUrl = suspectImages[idx].downloadUrl;
+                    console.log(`[enrichScenarioWithImages] Matched suspect ${sus.roleName || sus.id} to image index ${idx}: ${suspectImages[idx].name}`);
+                }
+            });
         }
-    });
+    }
 
     return scenario;
 }
@@ -1284,59 +1330,101 @@ function enrichScenarioWithImages(scenario, images) {
 function extractRawScenario(data) {
     if (!data) return null;
     
-    let scenarioField = data.scenario;
-    if (typeof scenarioField === 'string') {
-        try {
-            scenarioField = JSON.parse(scenarioField);
-        } catch (e) {
-            console.warn("Failed to parse scenario string in extractRawScenario", e);
-        }
+    // If it's an array, look at the first element
+    let target = data;
+    if (Array.isArray(data)) {
+        if (data.length === 0) return null;
+        target = data[0];
     }
 
-    if (Array.isArray(data) && data.length > 0) {
-        return data[0];
+    // Now target is an object (or whatever the first element was)
+    if (target && typeof target === 'object') {
+        // If it has a scenario property, parse it
+        if (target.scenario) {
+            let parsed = target.scenario;
+            if (typeof parsed === 'string') {
+                try {
+                    parsed = JSON.parse(parsed);
+                } catch (e) {
+                    console.warn("Failed to parse scenario string in extractRawScenario", e);
+                }
+            }
+            // If the parsed object is also an array (e.g. [ { id: ... } ])
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                parsed = parsed[0];
+            }
+            return parsed;
+        }
+
+        // If target itself looks like a scenario object
+        if (target.id || target.scenario_id || target.property_nom || target.name) {
+            return target;
+        }
+        
+        // If it has success and scenario
+        if (target.success && target.scenario) {
+            let parsed = target.scenario;
+            if (typeof parsed === 'string') {
+                try {
+                    parsed = JSON.parse(parsed);
+                } catch (e) {
+                    console.warn("Failed to parse success.scenario string in extractRawScenario", e);
+                }
+            }
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                parsed = parsed[0];
+            }
+            return parsed;
+        }
     }
-    if (scenarioField) {
-        return Array.isArray(scenarioField) ? scenarioField[0] : scenarioField;
-    }
-    if (data.success && scenarioField) {
-        return Array.isArray(scenarioField) ? scenarioField[0] : scenarioField;
-    }
-    if (data.id || data.scenario_id || data.property_nom || data.name) {
-        return data;
-    }
+    
     return null;
 }
 
-function loadScenarioData(data) {
-    let rawIllustration = data.illustration || data.Illustration || data.illustration_url || (data.victimObj ? data.victimObj.avatarUrl : "") || "";
-    let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
-    
-    if (rawIllustration) {
-        if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
-            resolvedImageUrl = rawIllustration;
-        } else {
-            resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/raw/main/" + rawIllustration.replace(/^\/+/, '');
-        }
-    }
-
-    if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty') && 
-        !resolvedImageUrl.includes('/raw/') && 
-        !resolvedImageUrl.includes('raw.githubusercontent.com')) {
-        
-        if (resolvedImageUrl.includes('/blob/')) {
-            resolvedImageUrl = resolvedImageUrl.replace('/blob/', '/raw/');
-        } else {
-            resolvedImageUrl = resolvedImageUrl.replace('github.com/SamiSteyre/murderparty/', 'github.com/SamiSteyre/murderparty/raw/main/');
-        }
-    }
-
+function loadScenarioData(data, gitFiles = []) {
     const id = data.scenario_id || data.id;
     const title = data.title;
     const theme = data.theme || appState.scenario?.theme || "Généré";
     const pitch = data.pitch || "";
     const crimeRoom = data.murder_room || data.crimeRoom || "Non défini";
+
+    let rawIllustration = data.illustration || data.Illustration || data.illustration_url || (data.victimObj ? data.victimObj.avatarUrl : "") || "";
+    let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
     
+    // Check GitHub file list fallback first for the victim image
+    let victimGitFile = null;
+    if (Array.isArray(gitFiles) && gitFiles.length > 0 && id) {
+        const cleanId = id.toLowerCase().replace(/-/g, "");
+        victimGitFile = gitFiles.find(f => {
+            const nameLower = (f.name || "").toLowerCase();
+            return nameLower.includes("victim") && nameLower.includes(cleanId);
+        });
+        if (!victimGitFile) {
+            // Also try with dashes included
+            victimGitFile = gitFiles.find(f => {
+                const nameLower = (f.name || "").toLowerCase();
+                return nameLower.includes("victim") && nameLower.includes(id.toLowerCase());
+            });
+        }
+    }
+
+    if (victimGitFile && victimGitFile.download_url) {
+        resolvedImageUrl = victimGitFile.download_url;
+    } else if (rawIllustration) {
+        if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
+            resolvedImageUrl = rawIllustration;
+        } else {
+            resolvedImageUrl = "https://raw.githubusercontent.com/SamiSteyre/murderparty/main/" + rawIllustration.replace(/^\/+/, '');
+        }
+    }
+
+    // Convert github.com/.../raw/ to raw.githubusercontent.com
+    if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty')) {
+        resolvedImageUrl = resolvedImageUrl
+            .replace('github.com/SamiSteyre/murderparty/raw/main/', 'raw.githubusercontent.com/SamiSteyre/murderparty/main/')
+            .replace('github.com/SamiSteyre/murderparty/blob/main/', 'raw.githubusercontent.com/SamiSteyre/murderparty/main/');
+    }
+
     let victimName = "Non définie";
     if (data.victim_name) {
         victimName = data.victim_name;
@@ -1381,10 +1469,45 @@ function loadScenarioData(data) {
         chronology
     };
 
+    // Filter suspect files from gitFiles
+    const suspectGitFiles = [];
+    if (Array.isArray(gitFiles) && gitFiles.length > 0 && id) {
+        const cleanScenarioId = id.toLowerCase().replace(/-/g, "");
+        gitFiles.forEach(f => {
+            const nameLower = (f.name || "").toLowerCase();
+            if (nameLower.includes("suspect") && (nameLower.includes(cleanScenarioId) || nameLower.includes(id.toLowerCase()))) {
+                suspectGitFiles.push(f);
+            }
+        });
+        // Sort alphabetically/chronologically by filename
+        suspectGitFiles.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    }
+
     const suspectsData = data.suspects || CHARACTER_TEMPLATES;
     appState.players = suspectsData.map((s, index) => {
         let mapped = mapSuspectProperties(s, index);
         
+        // Find avatar image from gitFiles first
+        let avatar = "";
+        if (suspectGitFiles.length > 0) {
+            const cleanSusId = (mapped.id || "").toLowerCase().replace(/-/g, "");
+            // Find matches for this specific suspect ID
+            const matches = suspectGitFiles.filter(f => f.name.toLowerCase().includes(cleanSusId));
+            if (matches.length === 1) {
+                avatar = matches[0].download_url;
+            } else {
+                // If there's ambiguous matching (e.g. n8n bug where all files have the first suspect's ID),
+                // map by index
+                if (index < suspectGitFiles.length) {
+                    avatar = suspectGitFiles[index].download_url;
+                }
+            }
+        }
+
+        if (avatar) {
+            mapped.avatarUrl = avatar;
+        }
+
         // Merge with existing pending suspects to keep their bios, names, etc.
         if (appState.pendingScenarioData && appState.pendingScenarioData.suspects) {
             const existing = appState.pendingScenarioData.suspects.find(p => {
@@ -1401,6 +1524,16 @@ function loadScenarioData(data) {
                 };
             }
         }
+
+        // Convert any relative avatar path to raw.githubusercontent.com
+        if (mapped.avatarUrl && !mapped.avatarUrl.startsWith('http://') && !mapped.avatarUrl.startsWith('https://')) {
+            mapped.avatarUrl = "https://raw.githubusercontent.com/SamiSteyre/murderparty/main/" + mapped.avatarUrl.replace(/^\/+/, '');
+        } else if (mapped.avatarUrl && mapped.avatarUrl.includes('github.com/SamiSteyre/murderparty')) {
+            mapped.avatarUrl = mapped.avatarUrl
+                .replace('github.com/SamiSteyre/murderparty/raw/main/', 'raw.githubusercontent.com/SamiSteyre/murderparty/main/')
+                .replace('github.com/SamiSteyre/murderparty/blob/main/', 'raw.githubusercontent.com/SamiSteyre/murderparty/main/');
+        }
+
         return mapped;
     });
 
@@ -1655,7 +1788,7 @@ function playRevealVideo(videoSrc, onEndedCallback) {
     }
 }
 
-function handleStep2Completion(scenarioDetails) {
+async function handleStep2Completion(scenarioDetails) {
     if (step2CompletionTriggered) return;
     step2CompletionTriggered = true;
 
@@ -1664,8 +1797,9 @@ function handleStep2Completion(scenarioDetails) {
     
     closeVictimModal();
 
-    playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IArthur2.mp4", () => {
-        loadScenarioData(scenarioDetails);
+    playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IArthur2.mp4", async () => {
+        const gitFiles = await fetchGithubImagesList();
+        loadScenarioData(scenarioDetails, gitFiles);
         showPortraitsVerificationModal();
     });
 }
@@ -1936,7 +2070,25 @@ function startVictimPolling(scenarioId) {
                         if (rawScenario) {
                             console.log("[Polling] rawScenario récupéré depuis n8n :", rawScenario);
                             scenarioDetails = mapScenarioProperties(rawScenario);
-                            console.log("[Polling] scenarioDetails mappé :", scenarioDetails);
+                            
+                            // Extract and merge images in polling too!
+                            let rawImages = null;
+                            if (Array.isArray(data) && data.length > 0) {
+                                rawImages = data[0].images;
+                            } else if (data && data.images) {
+                                rawImages = data.images;
+                            }
+                            
+                            if (typeof rawImages === 'string') {
+                                try {
+                                    rawImages = JSON.parse(rawImages);
+                                } catch (e) {}
+                            }
+                            
+                            if (Array.isArray(rawImages) && scenarioDetails) {
+                                scenarioDetails = enrichScenarioWithImages(scenarioDetails, rawImages);
+                            }
+                            console.log("[Polling] scenarioDetails mappé et enrichi :", scenarioDetails);
                         } else {
                             console.log("[Polling] Aucun rawScenario extrait des données webhook :", data);
                         }
@@ -1982,6 +2134,24 @@ function startVictimPolling(scenarioId) {
                                             let rawScenario = extractRawScenario(detailsData);
                                             if (rawScenario) {
                                                 scenarioDetails = mapScenarioProperties(rawScenario);
+                                                
+                                                // Extract and merge images here too!
+                                                let rawImages = null;
+                                                if (Array.isArray(detailsData) && detailsData.length > 0) {
+                                                    rawImages = detailsData[0].images;
+                                                } else if (detailsData && detailsData.images) {
+                                                    rawImages = detailsData.images;
+                                                }
+                                                
+                                                if (typeof rawImages === 'string') {
+                                                    try {
+                                                        rawImages = JSON.parse(rawImages);
+                                                    } catch (e) {}
+                                                }
+                                                
+                                                if (Array.isArray(rawImages) && scenarioDetails) {
+                                                    scenarioDetails = enrichScenarioWithImages(scenarioDetails, rawImages);
+                                                }
                                                 console.log("[Polling] Mappage final après statut Vérifié depuis n8n :", scenarioDetails);
                                             }
                                         }
