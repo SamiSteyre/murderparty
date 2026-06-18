@@ -495,7 +495,7 @@ function renderOrganizerDashboard() {
         // Render Generated Scenario details
         if (appState.scenario) {
             const coverImg = document.getElementById('genScenarioImage');
-            if (coverImg) coverImg.src = appState.scenario.imageUrl || "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+            if (coverImg) coverImg.src = appState.scenario.imageUrl || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
             document.getElementById('genScenarioTitle').textContent = appState.scenario.title;
             document.getElementById('genScenarioPitch').textContent = appState.scenario.pitch;
             const victimEl = document.getElementById('genScenarioVictim');
@@ -1389,7 +1389,7 @@ function loadScenarioData(data, gitFiles = []) {
     const crimeRoom = data.murder_room || data.crimeRoom || "Non défini";
 
     let rawIllustration = data.illustration || data.Illustration || data.illustration_url || (data.victimObj ? data.victimObj.avatarUrl : "") || "";
-    let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+    let resolvedImageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
     
     // Check GitHub file list fallback first for the victim image
     let victimGitFile = null;
@@ -1418,11 +1418,11 @@ function loadScenarioData(data, gitFiles = []) {
         }
     }
 
-    // Convert github.com/.../raw/ to raw.githubusercontent.com
+    // Convert any branch / commit ref raw/blob URLs to raw.githubusercontent.com format
     if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty')) {
         resolvedImageUrl = resolvedImageUrl
-            .replace('github.com/SamiSteyre/murderparty/raw/main/', 'raw.githubusercontent.com/SamiSteyre/murderparty/main/')
-            .replace('github.com/SamiSteyre/murderparty/blob/main/', 'raw.githubusercontent.com/SamiSteyre/murderparty/main/');
+            .replace('github.com/SamiSteyre/murderparty/blob/', 'raw.githubusercontent.com/SamiSteyre/murderparty/')
+            .replace('github.com/SamiSteyre/murderparty/raw/', 'raw.githubusercontent.com/SamiSteyre/murderparty/');
     }
 
     let victimName = "Non définie";
@@ -1530,8 +1530,8 @@ function loadScenarioData(data, gitFiles = []) {
             mapped.avatarUrl = "https://raw.githubusercontent.com/SamiSteyre/murderparty/main/" + mapped.avatarUrl.replace(/^\/+/, '');
         } else if (mapped.avatarUrl && mapped.avatarUrl.includes('github.com/SamiSteyre/murderparty')) {
             mapped.avatarUrl = mapped.avatarUrl
-                .replace('github.com/SamiSteyre/murderparty/raw/main/', 'raw.githubusercontent.com/SamiSteyre/murderparty/main/')
-                .replace('github.com/SamiSteyre/murderparty/blob/main/', 'raw.githubusercontent.com/SamiSteyre/murderparty/main/');
+                .replace('github.com/SamiSteyre/murderparty/blob/', 'raw.githubusercontent.com/SamiSteyre/murderparty/')
+                .replace('github.com/SamiSteyre/murderparty/raw/', 'raw.githubusercontent.com/SamiSteyre/murderparty/');
         }
 
         return mapped;
@@ -1936,7 +1936,7 @@ function renderActivePortrait() {
                 portraitRetryTimeout = setTimeout(tryLoad, 3000);
             } else {
                 if (spinner) spinner.classList.add('hidden');
-                imgEl.src = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=300";
+                imgEl.src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=300";
                 imgEl.style.opacity = "1";
             }
         };
@@ -2798,7 +2798,7 @@ async function handleUnifiedSessionSubmit(e) {
 
             // Compute scenario illustration image URL using SamiSteyre repo + Notion column content
             let rawIllustration = dataScenario.illustration || dataScenario.Illustration || dataScenario.illustration_url || "";
-            let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+            let resolvedImageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
 
             if (rawIllustration) {
                 if (typeof rawIllustration === 'string') {
@@ -2821,16 +2821,11 @@ async function handleUnifiedSessionSubmit(e) {
                     }
                 }
 
-                // If it is a GitHub URL, make sure it is a raw URL so that browsers can display it directly
-                if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty') && 
-                    !resolvedImageUrl.includes('/raw/') && 
-                    !resolvedImageUrl.includes('raw.githubusercontent.com')) {
-                    
-                    if (resolvedImageUrl.includes('/blob/')) {
-                        resolvedImageUrl = resolvedImageUrl.replace('/blob/', '/raw/');
-                    } else {
-                        resolvedImageUrl = resolvedImageUrl.replace('github.com/SamiSteyre/murderparty/', 'github.com/SamiSteyre/murderparty/raw/main/');
-                    }
+                // Convert any branch / commit ref raw/blob URLs to raw.githubusercontent.com format
+                if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty')) {
+                    resolvedImageUrl = resolvedImageUrl
+                        .replace('github.com/SamiSteyre/murderparty/blob/', 'raw.githubusercontent.com/SamiSteyre/murderparty/')
+                        .replace('github.com/SamiSteyre/murderparty/raw/', 'raw.githubusercontent.com/SamiSteyre/murderparty/');
                 }
             }
 
@@ -3014,7 +3009,7 @@ async function handleUnifiedSessionSubmit(e) {
                 }
 
                 let rawIllustration = selectedScenario.illustration || "";
-                let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+                let resolvedImageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
                 
                 if (rawIllustration) {
                     if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
@@ -3024,15 +3019,11 @@ async function handleUnifiedSessionSubmit(e) {
                         resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/" + cleanPath;
                     }
                     
-                    if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty') && 
-                        !resolvedImageUrl.includes('/raw/') && 
-                        !resolvedImageUrl.includes('raw.githubusercontent.com')) {
-                        
-                        if (resolvedImageUrl.includes('/blob/')) {
-                            resolvedImageUrl = resolvedImageUrl.replace('/blob/', '/raw/');
-                        } else {
-                            resolvedImageUrl = resolvedImageUrl.replace('github.com/SamiSteyre/murderparty/', 'github.com/SamiSteyre/murderparty/raw/main/');
-                        }
+                    // Convert any branch / commit ref raw/blob URLs to raw.githubusercontent.com format
+                    if (resolvedImageUrl.includes('github.com/SamiSteyre/murderparty')) {
+                        resolvedImageUrl = resolvedImageUrl
+                            .replace('github.com/SamiSteyre/murderparty/blob/', 'raw.githubusercontent.com/SamiSteyre/murderparty/')
+                            .replace('github.com/SamiSteyre/murderparty/raw/', 'raw.githubusercontent.com/SamiSteyre/murderparty/');
                     }
                 }
 
@@ -3089,7 +3080,7 @@ async function handleUnifiedSessionSubmit(e) {
                     simulatedIllustration = "illustrations/neon.png";
                 }
 
-                let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+                let resolvedImageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
                 if (simulatedIllustration) {
                     resolvedImageUrl = "https://github.com/SamiSteyre/murderparty/raw/main/" + simulatedIllustration;
                 }
@@ -4159,7 +4150,7 @@ async function loadExistingScenarios() {
                 
                 if (isReady && s.illustration) {
                     let rawIllustration = s.illustration;
-                    let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
+                    let resolvedImageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
                     if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
                         resolvedImageUrl = rawIllustration;
                     } else {
