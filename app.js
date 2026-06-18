@@ -1283,14 +1283,24 @@ function enrichScenarioWithImages(scenario, images) {
 
 function extractRawScenario(data) {
     if (!data) return null;
+    
+    let scenarioField = data.scenario;
+    if (typeof scenarioField === 'string') {
+        try {
+            scenarioField = JSON.parse(scenarioField);
+        } catch (e) {
+            console.warn("Failed to parse scenario string in extractRawScenario", e);
+        }
+    }
+
     if (Array.isArray(data) && data.length > 0) {
         return data[0];
     }
-    if (data.scenario) {
-        return Array.isArray(data.scenario) ? data.scenario[0] : data.scenario;
+    if (scenarioField) {
+        return Array.isArray(scenarioField) ? scenarioField[0] : scenarioField;
     }
-    if (data.success && data.scenario) {
-        return Array.isArray(data.scenario) ? data.scenario[0] : data.scenario;
+    if (data.success && scenarioField) {
+        return Array.isArray(scenarioField) ? scenarioField[0] : scenarioField;
     }
     if (data.id || data.scenario_id || data.property_nom || data.name) {
         return data;
@@ -2140,12 +2150,23 @@ async function handleApproveVictim() {
 
         let images = null;
         if (dataScenario) {
-            if (dataScenario.images && Array.isArray(dataScenario.images)) {
-                images = dataScenario.images;
-            } else if (Array.isArray(dataScenario) && dataScenario.length > 0 && dataScenario[0].images && Array.isArray(dataScenario[0].images)) {
-                images = dataScenario[0].images;
-            } else if (rawScenario && rawScenario.images && Array.isArray(rawScenario.images)) {
-                images = rawScenario.images;
+            let rawImages = dataScenario.images;
+            if (Array.isArray(dataScenario) && dataScenario.length > 0) {
+                rawImages = dataScenario[0].images;
+            } else if (rawScenario && rawScenario.images) {
+                rawImages = rawScenario.images;
+            }
+            
+            if (typeof rawImages === 'string') {
+                try {
+                    rawImages = JSON.parse(rawImages);
+                } catch (e) {
+                    console.warn("Failed to parse images string in handleApproveVictim", e);
+                }
+            }
+            
+            if (Array.isArray(rawImages)) {
+                images = rawImages;
             }
         }
 
