@@ -1021,12 +1021,19 @@ function mapSuspectProperties(s, index) {
 
     const id = (typeof s === 'string') ? s : (s.id || s.scenario_id || s.character_id || "");
     const email = isRawNotion ? (props["Email"] ? props["Email"].email : "") : (s.email || s.property_email || "");
-    const roleType = isRawNotion ? (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "") : (s.status || s.roleType || s.property_role_type || "");
-    const roleName = isRawNotion ? getText(props["Nom"]) : (s.name || s.roleName || s.property_nom || s.role_name || "");
+    const roleType = isRawNotion ? (
+        (props["Badge"] && props["Badge"].select ? props["Badge"].select.name : "") ||
+        (props["badge"] && props["badge"].select ? props["badge"].select.name : "") ||
+        (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "")
+    ) : (s.status || s.roleType || s.property_role_type || "");
+    const roleName = isRawNotion ? (getText(props["Nom"]) || getText(props["Nom Fictif"])) : (s.name || s.roleName || s.property_nom || s.role_name || "");
     const history = isRawNotion ? getText(props["Rôle / Histoire"]) : (s.bio || s.history || s.property_r_le_histoire || s.property_role_histoire || "");
     const lienVictime = isRawNotion ? getText(props["Lien avec la Victime"]) : (s.relation || s.lienVictime || s.property_lien_avec_la_victime || "");
     const marker = isRawNotion ? getText(props["Marqueur Visuel"]) : (s.marker || s.property_marqueur_visuel || "");
-    const genre = isRawNotion ? (props["Genre"] && props["Genre"].select ? props["Genre"].select.name : "Non-Binaire") : (s.genre || s.roleGenre || s.property_genre || "");
+    const genre = isRawNotion ? (
+        (props["Genre"] && props["Genre"].select ? props["Genre"].select.name : "") ||
+        (props["genre"] && props["genre"].select ? props["genre"].select.name : "Non-Binaire")
+    ) : (s.genre || s.roleGenre || s.property_genre || "");
     const secret = isRawNotion ? getText(props["Secret"]) : (s.secret || s.property_secret || "");
     const chronology = isRawNotion ? getText(props["Timeline"]) : (s.chronology || s.property_timeline || "");
     const outfit = isRawNotion ? getText(props["Tenue"]) : (s.outfit || s.property_tenue || "");
@@ -1788,6 +1795,70 @@ function playRevealVideo(videoSrc, onEndedCallback) {
     }
 }
 
+async function fetchScenarioAndSuspectsFromNotion(scenarioId) {
+    const config = await getNotionConfig();
+    if (!config || !config.NOTION_TOKEN) {
+        throw new Error("Token Notion non configuré.");
+    }
+
+    const headers = {
+        'Authorization': `Bearer ${config.NOTION_TOKEN}`,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json'
+    };
+
+    // 1. Fetch Scenario Page
+    const scenarioRes = await fetch(`https://api.notion.com/v1/pages/${scenarioId}`, {
+        method: 'GET',
+        headers
+    });
+    if (!scenarioRes.ok) {
+        throw new Error(`Erreur lors de la récupération du scénario (${scenarioRes.status})`);
+    }
+    const scenarioPage = await scenarioRes.json();
+    console.log("[NotionDirect] Scenario page loaded:", scenarioPage);
+
+    // Map scenario properties
+    const mappedScenario = mapScenarioProperties(scenarioPage);
+
+    // Extract suspect page IDs from relation field
+    const basesPersonnagesProp = scenarioPage.properties["Bases Personnages"] || scenarioPage.properties["property_bases_personnages"] || scenarioPage.properties["Bases personnages"] || scenarioPage.properties["Bases Personnage"];
+    let suspectIds = [];
+    if (basesPersonnagesProp && basesPersonnagesProp.relation) {
+        suspectIds = basesPersonnagesProp.relation.map(r => r.id);
+    }
+
+    console.log("[NotionDirect] Found suspect IDs:", suspectIds);
+
+    // 2. Fetch all suspect pages in parallel
+    const suspectPromises = suspectIds.map(async (suspectId, index) => {
+        try {
+            const suspectRes = await fetch(`https://api.notion.com/v1/pages/${suspectId}`, {
+                method: 'GET',
+                headers
+            });
+            if (suspectRes.ok) {
+                const suspectPage = await suspectRes.json();
+                console.log(`[NotionDirect] Suspect ${index} loaded:`, suspectPage);
+                return suspectPage;
+            }
+        } catch (err) {
+            console.warn(`Failed to fetch suspect ${suspectId} from Notion`, err);
+        }
+        return null;
+    });
+
+    const suspectPages = (await Promise.all(suspectPromises)).filter(p => p !== null);
+
+    // Map suspect pages
+    const mappedSuspects = suspectPages.map((page, index) => mapSuspectProperties(page, index));
+
+    // Overwrite the suspects list on scenario
+    mappedScenario.suspects = mappedSuspects;
+
+    return mappedScenario;
+}
+
 async function handleStep2Completion(scenarioDetails) {
     if (step2CompletionTriggered) return;
     step2CompletionTriggered = true;
@@ -1807,8 +1878,18 @@ async function handleStep2Completion(scenarioDetails) {
     if (genOverlay) genOverlay.classList.add('hidden');
 
     playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IArthur2.mp4", async () => {
-        const gitFiles = await fetchGithubImagesList();
-        loadScenarioData(scenarioDetails, gitFiles);
+        const scenarioId = scenarioDetails.scenario_id || scenarioDetails.id;
+        try {
+            addLiveLog(`[NotionDirect] Récupération directe du scénario et des personnages depuis Notion...`);
+            const completeScenario = await fetchScenarioAndSuspectsFromNotion(scenarioId);
+            const gitFiles = await fetchGithubImagesList();
+            loadScenarioData(completeScenario, gitFiles);
+        } catch (err) {
+            console.error("Failed to load scenario directly from Notion", err);
+            addLiveLog(`[NotionDirect] Échec du chargement direct. Fallback sur les détails reçus.`);
+            const gitFiles = await fetchGithubImagesList();
+            loadScenarioData(scenarioDetails, gitFiles);
+        }
         showPortraitsVerificationModal();
     });
 }
