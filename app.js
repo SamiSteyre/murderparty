@@ -1023,23 +1023,35 @@ function mapSuspectProperties(s, index) {
     const email = isRawNotion ? (props["Email"] ? props["Email"].email : "") : (s.email || s.property_email || "");
     const roleType = isRawNotion ? (
         (props["Badge"] && props["Badge"].select ? props["Badge"].select.name : "") ||
+        (props["Badge"] && props["Badge"].rich_text ? getText(props["Badge"]) : "") ||
         (props["badge"] && props["badge"].select ? props["badge"].select.name : "") ||
+        (props["badge"] && props["badge"].rich_text ? getText(props["badge"]) : "") ||
         (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "")
     ) : (s.status || s.roleType || s.property_role_type || "");
-    const roleName = isRawNotion ? (getText(props["Nom"]) || getText(props["Nom Fictif"])) : (s.name || s.roleName || s.property_nom || s.role_name || "");
+    const roleName = isRawNotion ? (getText(props["Nom Fictif"]) || getText(props["Nom"])) : (s.name || s.roleName || s.property_nom || s.role_name || "");
     const history = isRawNotion ? getText(props["Rôle / Histoire"]) : (s.bio || s.history || s.property_r_le_histoire || s.property_role_histoire || "");
     const lienVictime = isRawNotion ? getText(props["Lien avec la Victime"]) : (s.relation || s.lienVictime || s.property_lien_avec_la_victime || "");
     const marker = isRawNotion ? getText(props["Marqueur Visuel"]) : (s.marker || s.property_marqueur_visuel || "");
-    const genre = isRawNotion ? (
-        (props["Genre"] && props["Genre"].select ? props["Genre"].select.name : "") ||
-        (props["genre"] && props["genre"].select ? props["genre"].select.name : "Non-Binaire")
-    ) : (s.genre || s.roleGenre || s.property_genre || "");
+    
+    let genre = "";
+    if (isRawNotion) {
+        const g = props["Genre"] || props["genre"];
+        if (g) {
+            if (g.select) genre = g.select.name;
+            else if (g.rich_text) genre = g.rich_text.map(t => t.plain_text).join("");
+            else if (g.title) genre = g.title.map(t => t.plain_text).join("");
+        }
+        if (!genre) genre = "Non-Binaire";
+    } else {
+        genre = s.genre || s.roleGenre || s.property_genre || "";
+    }
+
     const secret = isRawNotion ? getText(props["Secret"]) : (s.secret || s.property_secret || "");
     const chronology = isRawNotion ? getText(props["Timeline"]) : (s.chronology || s.property_timeline || "");
     const outfit = isRawNotion ? getText(props["Tenue"]) : (s.outfit || s.property_tenue || "");
     const characterTraits = isRawNotion ? getText(props["Traits de Caractère"]) : (s.characterTraits || s.property_traits_de_caractere || "");
     
-    const avatarUrl = isRawNotion ? (getFileUrl(props["photo_suspect"]) || getFileUrl(props["Avatar / Photo"]) || getFileUrl(props["Photo Suspect"]) || getFileUrl(props["photo"])) : getFile(s.avatarUrl || s.avatar_url || s.avatar || s.illustration || s.property_avatar___photo || s.property_avatar__photo || s.property_avatar_photo || s.avatar___photo || s.avatar__photo || s.avatar_photo || s["Avatar / Photo"] || s.property_photo_suspect || s.photo_suspect || s.property_photo || s.photo || "");
+    const avatarUrl = isRawNotion ? (getText(props["photo_suspect"]) || getFileUrl(props["photo_suspect"]) || getFileUrl(props["Avatar / Photo"]) || getFileUrl(props["Photo Suspect"]) || getFileUrl(props["photo"])) : getFile(s.avatarUrl || s.avatar_url || s.avatar || s.illustration || s.property_avatar___photo || s.property_avatar__photo || s.property_avatar_photo || s.avatar___photo || s.avatar__photo || s.avatar_photo || s["Avatar / Photo"] || s.property_photo_suspect || s.photo_suspect || s.property_photo || s.photo || "");
     const actionPoints = isRawNotion ? getNumber(props["Solde Points d'Action"]) : (s.actionPoints !== undefined ? s.actionPoints : (s.property_solde_points_d_action !== undefined ? s.property_solde_points_d_action : 1));
     const status = isRawNotion ? (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "Créé") : (s.status || "Créé");
 
@@ -1196,14 +1208,24 @@ function mapScenarioProperties(s) {
         email = s.email || s.property_createur || "";
     }
 
-    let victimGenre = isRawNotion ? (props["Genre Victime"] ? props["Genre Victime"].select?.name : (props["Victime Genre"] ? props["Victime Genre"].select?.name : "")) : (s.victimGenre || (s.victim && typeof s.victim === 'object' ? s.victim.genre : "") || s.property_victime_genre || "");
-    if (!victimGenre && isRawNotion) {
-        victimGenre = "Non-Binaire";
+    let victimGenre = "";
+    if (isRawNotion) {
+        const vg = props["victime_genre"] || props["Genre Victime"] || props["Victime Genre"];
+        if (vg) {
+            if (vg.select) victimGenre = vg.select.name;
+            else if (vg.rich_text) victimGenre = vg.rich_text.map(t => t.plain_text).join("");
+            else if (vg.title) victimGenre = vg.title.map(t => t.plain_text).join("");
+        }
+        if (!victimGenre) {
+            victimGenre = "Non-Binaire";
+        }
+    } else {
+        victimGenre = s.victimGenre || (s.victim && typeof s.victim === 'object' ? s.victim.genre : "") || s.property_victime_genre || "";
     }
 
     let victimPhotoUrl = "";
     if (isRawNotion) {
-        victimPhotoUrl = getFileUrl(props["Photo Victime"]) || getFileUrl(props["Photo Homme"]) || getFileUrl(props["Photo Femme"]) || getFileUrl(props["Photo NBinaire"]) || getFileUrl(props["Illustration"]);
+        victimPhotoUrl = getFileUrl(props["Photo Victime"]) || getText(props["Photo Victime"]) || getFileUrl(props["Photo Homme"]) || getFileUrl(props["Photo Femme"]) || getFileUrl(props["Photo NBinaire"]) || getFileUrl(props["Illustration"]);
     } else {
         const genreLower = (victimGenre || "").toLowerCase();
         const rawPhotoHomme = s.property_photo_homme || s.photo_homme || s.photoHomme || s["Photo Homme"];
@@ -1223,7 +1245,7 @@ function mapScenarioProperties(s) {
     const victimObj = s.victimObj || {
         name: victim,
         genre: victimGenre,
-        short_hook: isRawNotion ? getText(props["Accroche Victime"]) || getText(props["Victime Accroche"]) : (s.victimShortHook || s.property_victime_short_hook || ""),
+        short_hook: isRawNotion ? getText(props["victime_short_hook"]) || getText(props["Accroche Victime"]) || getText(props["Victime Accroche"]) : (s.victimShortHook || s.property_victime_short_hook || ""),
         outfit: victimOutfit,
         marker: isRawNotion ? getText(props["Marqueur Victime"]) || getText(props["Victime Marqueur"]) || getText(props["Marqueur Visuel Victime"]) : (s.victimMarker || s.property_victime_marker || ""),
         avatarUrl: victimPhotoUrl
@@ -1822,7 +1844,7 @@ async function fetchScenarioAndSuspectsFromNotion(scenarioId) {
     const mappedScenario = mapScenarioProperties(scenarioPage);
 
     // Extract suspect page IDs from relation field
-    const basesPersonnagesProp = scenarioPage.properties["Bases Personnages"] || scenarioPage.properties["property_bases_personnages"] || scenarioPage.properties["Bases personnages"] || scenarioPage.properties["Bases Personnage"];
+    const basesPersonnagesProp = scenarioPage.properties["bases personnages"] || scenarioPage.properties["Bases Personnages"] || scenarioPage.properties["property_bases_personnages"] || scenarioPage.properties["Bases personnages"] || scenarioPage.properties["Bases Personnage"];
     let suspectIds = [];
     if (basesPersonnagesProp && basesPersonnagesProp.relation) {
         suspectIds = basesPersonnagesProp.relation.map(r => r.id);
