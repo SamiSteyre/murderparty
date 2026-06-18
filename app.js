@@ -982,7 +982,7 @@ function mapSuspectProperties(s, index) {
         outfit: s.outfit || s.property_tenue || charTemplate.outfit || "",
         relations: s.relations || [],
         characterTraits: s.characterTraits || s.property_traits_de_caractere || "",
-        avatarUrl: s.avatarUrl || s.avatar_url || s.avatar || s.illustration || s.property_avatar_photo || "",
+        avatarUrl: s.avatarUrl || s.avatar_url || s.avatar || s.illustration || s.property_avatar_photo || s.property_photo_suspect || s.photo_suspect || s.property_photo || s.photo || "",
         actionPoints: s.actionPoints !== undefined ? s.actionPoints : (s.property_solde_points_d_action !== undefined ? s.property_solde_points_d_action : 1),
         status: s.status || "Créé",
         knowledge: s.knowledge || s.property_connaissances || [],
