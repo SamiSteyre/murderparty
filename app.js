@@ -1420,19 +1420,21 @@ function loadScenarioData(data, gitFiles = []) {
     let rawIllustration = data.illustration || data.Illustration || data.illustration_url || (data.victimObj ? data.victimObj.avatarUrl : "") || "";
     let resolvedImageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
     
-    // Check GitHub file list fallback first for the victim image
+    // Check GitHub file list fallback first for the victim image (ignore files <= 1000 bytes)
     let victimGitFile = null;
     if (Array.isArray(gitFiles) && gitFiles.length > 0 && id) {
         const cleanId = id.toLowerCase().replace(/-/g, "");
         victimGitFile = gitFiles.find(f => {
             const nameLower = (f.name || "").toLowerCase();
-            return nameLower.includes("victim") && nameLower.includes(cleanId);
+            const size = f.size !== undefined ? f.size : 999999;
+            return nameLower.includes("victim") && nameLower.includes(cleanId) && size > 1000;
         });
         if (!victimGitFile) {
             // Also try with dashes included
             victimGitFile = gitFiles.find(f => {
                 const nameLower = (f.name || "").toLowerCase();
-                return nameLower.includes("victim") && nameLower.includes(id.toLowerCase());
+                const size = f.size !== undefined ? f.size : 999999;
+                return nameLower.includes("victim") && nameLower.includes(id.toLowerCase()) && size > 1000;
             });
         }
     }
@@ -1495,6 +1497,7 @@ function loadScenarioData(data, gitFiles = []) {
         victimOutfit,
         cluesCount,
         imageUrl: resolvedImageUrl,
+        rawImageUrl: rawIllustration,
         chronology
     };
 
@@ -1512,23 +1515,29 @@ function loadScenarioData(data, gitFiles = []) {
         suspectGitFiles.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     }
 
-    const suspectsData = data.suspects || CHARACTER_TEMPLATES;
+    const suspectsData = (data.suspects && data.suspects.length > 0) ? data.suspects : CHARACTER_TEMPLATES;
     appState.players = suspectsData.map((s, index) => {
         let mapped = mapSuspectProperties(s, index);
         
+        // Store the original raw Notion avatar URL as a fallback before any GitHub overrides
+        mapped.rawAvatarUrl = mapped.rawAvatarUrl || mapped.avatarUrl || "";
+
         // Find avatar image from gitFiles first
         let avatar = "";
         if (suspectGitFiles.length > 0) {
             const cleanSusId = (mapped.id || "").toLowerCase().replace(/-/g, "");
-            // Find matches for this specific suspect ID
-            const matches = suspectGitFiles.filter(f => f.name.toLowerCase().includes(cleanSusId));
+            // Find matches for this specific suspect ID (ignore files <= 1000 bytes)
+            const matches = suspectGitFiles.filter(f => {
+                const size = f.size !== undefined ? f.size : 999999;
+                return f.name.toLowerCase().includes(cleanSusId) && size > 1000;
+            });
             if (matches.length === 1) {
                 avatar = matches[0].download_url;
             } else {
-                // If there's ambiguous matching (e.g. n8n bug where all files have the first suspect's ID),
-                // map by index
-                if (index < suspectGitFiles.length) {
-                    avatar = suspectGitFiles[index].download_url;
+                // If there's ambiguous matching, map by index (ignore files <= 1000 bytes)
+                const validFiles = suspectGitFiles.filter(f => (f.size !== undefined ? f.size : 999999) > 1000);
+                if (index < validFiles.length) {
+                    avatar = validFiles[index].download_url;
                 }
             }
         }
@@ -1545,9 +1554,10 @@ function loadScenarioData(data, gitFiles = []) {
                 return (cleanMappedId && cleanMappedId === cleanPendingId) || (p.roleName && p.roleName === mapped.roleName);
             });
             if (existing) {
+                // Keep the fetched names and badges as the source of truth, do not let old step 1 placeholder names override them
                 mapped = {
-                    ...existing,
-                    avatarUrl: mapped.avatarUrl || existing.avatarUrl,
+                    ...mapped,
+                    email: mapped.email || existing.email,
                     status: mapped.status || existing.status || "Créé",
                     actionPoints: mapped.actionPoints !== undefined ? mapped.actionPoints : existing.actionPoints
                 };
@@ -1787,11 +1797,21 @@ function playRevealVideo(videoSrc, onEndedCallback) {
         revealVideo.volume = 1.0;
         revealVideo.currentTime = 0;
 
-        const proceed = () => {
+        const proceed = async () => {
             revealVideo.pause();
             revealVideo.currentTime = 0;
+            if (nextBtn) {
+                nextBtn.setAttribute('disabled', 'true');
+                nextBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Chargement...`;
+            }
+            if (onEndedCallback) {
+                await onEndedCallback();
+            }
             videoOverlay.classList.add('hidden');
-            if (onEndedCallback) onEndedCallback();
+            if (nextBtn) {
+                nextBtn.removeAttribute('disabled');
+                nextBtn.innerHTML = `Suivant <i class="fa-solid fa-arrow-right"></i>`;
+            }
         };
 
         revealVideo.play().catch(err => {
@@ -1928,6 +1948,7 @@ function showPortraitsVerificationModal() {
         name: appState.scenario ? (appState.scenario.victim || "La Victime") : "La Victime",
         role: "La Victime",
         imageUrl: victimImg,
+        fallbackUrl: appState.scenario ? (appState.scenario.rawImageUrl || "") : "",
         bio: appState.scenario ? (appState.scenario.victimOutfit || "Tenue vestimentaire de la victime.") : "Tenue vestimentaire de la victime."
     });
 
@@ -1948,6 +1969,7 @@ function showPortraitsVerificationModal() {
                 name: p.roleName,
                 role: p.roleType || "Suspect",
                 imageUrl: avatar,
+                fallbackUrl: p.rawAvatarUrl || "",
                 bio: p.history || ""
             });
         });
@@ -2039,7 +2061,7 @@ function renderActivePortrait() {
         };
 
         imgEl.onerror = () => {
-            if (isGithubUrl) {
+            if (isGithubUrl && attempts < 2) {
                 attempts++;
                 if (spinnerText) {
                     spinnerText.textContent = "Récupération en cours...";
@@ -2047,8 +2069,22 @@ function renderActivePortrait() {
                 portraitRetryTimeout = setTimeout(tryLoad, 3000);
             } else {
                 if (spinner) spinner.classList.add('hidden');
-                imgEl.src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=300";
-                imgEl.style.opacity = "1";
+                
+                if (portrait.fallbackUrl) {
+                    const fb = portrait.fallbackUrl;
+                    portrait.fallbackUrl = ""; // clear to avoid loop
+                    
+                    let finalFallback = fb;
+                    if (finalFallback && !finalFallback.startsWith('http://') && !finalFallback.startsWith('https://')) {
+                        finalFallback = "https://raw.githubusercontent.com/SamiSteyre/murderparty/main/" + finalFallback.replace(/^\/+/, '');
+                    }
+                    
+                    console.log(`[NotionDirect] Image failed. Falling back to direct URL: ${finalFallback}`);
+                    imgEl.src = finalFallback;
+                } else {
+                    imgEl.src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=300";
+                    imgEl.style.opacity = "1";
+                }
             }
         };
 
