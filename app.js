@@ -1909,7 +1909,6 @@ function renderActivePortrait() {
         imgEl.style.opacity = "0";
 
         let attempts = 0;
-        const maxAttempts = 20; // 60 seconds total window (20 * 3s)
         const baseSrc = portrait.imageUrl;
         const isGithubUrl = baseSrc.includes("raw.githubusercontent.com") || baseSrc.includes("github.com");
 
@@ -1928,10 +1927,10 @@ function renderActivePortrait() {
         };
 
         imgEl.onerror = () => {
-            if (isGithubUrl && attempts < maxAttempts) {
+            if (isGithubUrl) {
                 attempts++;
                 if (spinnerText) {
-                    spinnerText.textContent = `Récupération en cours (${attempts}/${maxAttempts})...`;
+                    spinnerText.textContent = `Récupération en cours (tentative ${attempts})...`;
                 }
                 portraitRetryTimeout = setTimeout(tryLoad, 3000);
             } else {
