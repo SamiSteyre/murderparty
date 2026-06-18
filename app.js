@@ -1792,10 +1792,19 @@ async function handleStep2Completion(scenarioDetails) {
     if (step2CompletionTriggered) return;
     step2CompletionTriggered = true;
 
-    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
-    if (genOverlay) genOverlay.classList.add('hidden');
+    // Keep loading overlay active and display status message
+    const titleText = document.getElementById('scenarioGeneratingTitle');
+    if (titleText) {
+        titleText.textContent = "Récupération des portraits en cours...";
+    }
     
     closeVictimModal();
+
+    // Wait 25 seconds for GitHub CDN to propagate the images
+    await sleep(25000);
+
+    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+    if (genOverlay) genOverlay.classList.add('hidden');
 
     playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IArthur2.mp4", async () => {
         const gitFiles = await fetchGithubImagesList();
