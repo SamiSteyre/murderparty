@@ -1341,6 +1341,7 @@ function loadScenarioData(data) {
 }
 
 let victimPollInterval = null;
+let step2CompletionTriggered = false;
 
 function renderValidationSuspects(suspects) {
     const container = document.getElementById('validateSuspectsContainer');
@@ -1570,6 +1571,9 @@ function playRevealVideo(videoSrc, onEndedCallback) {
 }
 
 function handleStep2Completion(scenarioDetails) {
+    if (step2CompletionTriggered) return;
+    step2CompletionTriggered = true;
+
     const genOverlay = document.getElementById('scenarioGeneratingOverlay');
     if (genOverlay) genOverlay.classList.add('hidden');
     
@@ -1948,6 +1952,7 @@ function closeVictimModal() {
 }
 
 async function handleApproveVictim() {
+    step2CompletionTriggered = false;
     const validationModal = document.getElementById('modalValidateVictim');
     if (validationModal) {
         validationModal.classList.add('hidden');
