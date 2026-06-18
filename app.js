@@ -1899,10 +1899,10 @@ function startVictimPolling(scenarioId) {
                 }
             }
 
-            if (scenarioDetails) {
-                let totalImages = 0;
-                let targetCount = 17; // 1 victim + 16 suspects
+            let totalImages = 0;
+            let targetCount = 17; // 1 victim + 16 suspects
 
+            if (scenarioDetails) {
                 if (scenarioDetails.victimObj && scenarioDetails.victimObj.avatarUrl) {
                     totalImages++;
                 } else if (scenarioDetails.illustration || scenarioDetails.property_photo_victime) {
@@ -2047,7 +2047,20 @@ async function handleApproveVictim() {
             dataScenario = await response.json();
         }
 
-        if (dataScenario && (dataScenario.scenario_id || dataScenario.id)) {
+        let rawScenario = null;
+        if (dataScenario) {
+            if (Array.isArray(dataScenario) && dataScenario.length > 0) {
+                rawScenario = dataScenario[0];
+            } else if (dataScenario.scenario) {
+                rawScenario = dataScenario.scenario;
+            } else if (dataScenario.success && dataScenario.scenario) {
+                rawScenario = dataScenario.scenario;
+            } else if (dataScenario.id || dataScenario.scenario_id || dataScenario.property_nom || dataScenario.name) {
+                rawScenario = dataScenario;
+            }
+        }
+
+        if (rawScenario && (rawScenario.scenario_id || rawScenario.id)) {
             addLiveLog(`[Validation] Données complètes du scénario reçues et chargées.`);
             
             if (victimPollInterval) {
@@ -2055,7 +2068,8 @@ async function handleApproveVictim() {
                 victimPollInterval = null;
             }
             
-            handleStep2Completion(dataScenario);
+            const mappedScenario = mapScenarioProperties(rawScenario);
+            handleStep2Completion(mappedScenario);
             showToast("Succès", "Scénario généré avec succès !", "success");
             return;
         }
@@ -2064,8 +2078,6 @@ async function handleApproveVictim() {
 
     } catch (err) {
         console.error("Error approving victim:", err);
-        
-        if (genOverlay) genOverlay.classList.add('hidden');
         
         // If it's a network/CORS/Mixed-Content error, the request might have actually reached n8n successfully.
         // We let the polling finish the job instead of blocking the user.
@@ -2077,6 +2089,8 @@ async function handleApproveVictim() {
             }
             return;
         }
+
+        if (genOverlay) genOverlay.classList.add('hidden');
 
         if (victimPollInterval) {
             clearInterval(victimPollInterval);
