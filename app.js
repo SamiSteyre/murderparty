@@ -1281,6 +1281,23 @@ function enrichScenarioWithImages(scenario, images) {
     return scenario;
 }
 
+function extractRawScenario(data) {
+    if (!data) return null;
+    if (Array.isArray(data) && data.length > 0) {
+        return data[0];
+    }
+    if (data.scenario) {
+        return Array.isArray(data.scenario) ? data.scenario[0] : data.scenario;
+    }
+    if (data.success && data.scenario) {
+        return Array.isArray(data.scenario) ? data.scenario[0] : data.scenario;
+    }
+    if (data.id || data.scenario_id || data.property_nom || data.name) {
+        return data;
+    }
+    return null;
+}
+
 function loadScenarioData(data) {
     let rawIllustration = data.illustration || data.Illustration || data.illustration_url || (data.victimObj ? data.victimObj.avatarUrl : "") || "";
     let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
@@ -1905,18 +1922,7 @@ function startVictimPolling(scenarioId) {
                     });
                     if (res.ok) {
                         const data = await res.json();
-                        let rawScenario = null;
-                        if (data) {
-                            if (Array.isArray(data) && data.length > 0) {
-                                rawScenario = data[0];
-                            } else if (data.scenario) {
-                                rawScenario = data.scenario;
-                            } else if (data.success && data.scenario) {
-                                rawScenario = data.scenario;
-                            } else if (data.id || data.property_nom || data.name) {
-                                rawScenario = data;
-                            }
-                        }
+                        let rawScenario = extractRawScenario(data);
                         if (rawScenario) {
                             console.log("[Polling] rawScenario récupéré depuis n8n :", rawScenario);
                             scenarioDetails = mapScenarioProperties(rawScenario);
@@ -1963,18 +1969,7 @@ function startVictimPolling(scenarioId) {
                                         });
                                         if (detailsRes.ok) {
                                             const detailsData = await detailsRes.json();
-                                            let rawScenario = null;
-                                            if (detailsData) {
-                                                if (Array.isArray(detailsData) && detailsData.length > 0) {
-                                                    rawScenario = detailsData[0];
-                                                } else if (detailsData.scenario) {
-                                                    rawScenario = detailsData.scenario;
-                                                } else if (detailsData.success && detailsData.scenario) {
-                                                    rawScenario = detailsData.scenario;
-                                                } else if (detailsData.id || detailsData.property_nom || detailsData.name) {
-                                                    rawScenario = detailsData;
-                                                }
-                                            }
+                                            let rawScenario = extractRawScenario(detailsData);
                                             if (rawScenario) {
                                                 scenarioDetails = mapScenarioProperties(rawScenario);
                                                 console.log("[Polling] Mappage final après statut Vérifié depuis n8n :", scenarioDetails);
@@ -2141,18 +2136,7 @@ async function handleApproveVictim() {
             dataScenario = await response.json();
         }
 
-        let rawScenario = null;
-        if (dataScenario) {
-            if (Array.isArray(dataScenario) && dataScenario.length > 0) {
-                rawScenario = dataScenario[0];
-            } else if (dataScenario.scenario) {
-                rawScenario = dataScenario.scenario;
-            } else if (dataScenario.success && dataScenario.scenario) {
-                rawScenario = dataScenario.scenario;
-            } else if (dataScenario.id || dataScenario.scenario_id || dataScenario.property_nom || dataScenario.name) {
-                rawScenario = dataScenario;
-            }
-        }
+        let rawScenario = extractRawScenario(dataScenario);
 
         let images = null;
         if (dataScenario) {
@@ -4079,18 +4063,7 @@ async function handleScenarioCardClick(scenarioId) {
                 
                 if (detailsRes.ok) {
                     const detailsData = await detailsRes.json();
-                    let rawScenario = null;
-                    if (detailsData) {
-                        if (Array.isArray(detailsData) && detailsData.length > 0) {
-                            rawScenario = detailsData[0];
-                        } else if (detailsData.scenario) {
-                            rawScenario = detailsData.scenario;
-                        } else if (detailsData.success && detailsData.scenario) {
-                            rawScenario = detailsData.scenario;
-                        } else if (detailsData.id || detailsData.property_nom || detailsData.name) {
-                            rawScenario = detailsData;
-                        }
-                    }
+                    let rawScenario = extractRawScenario(detailsData);
                     if (rawScenario) {
                         scenarioDetails = mapScenarioProperties(rawScenario);
                         addLiveLog(`[Reprise] Fiches de l'étape 1 chargées.`);
