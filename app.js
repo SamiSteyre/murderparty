@@ -968,23 +968,91 @@ function mapSuspectProperties(s, index) {
             missions: []
         };
     }
+
+    // Helper to get text/number/file from Notion properties if present
+    let isRawNotion = false;
+    let props = {};
+    if (s && s.properties && typeof s.properties === 'object') {
+        isRawNotion = true;
+        props = s.properties;
+    }
+
+    const getText = (prop) => {
+        if (!prop) return "";
+        if (prop.rich_text) return prop.rich_text.map(t => t.plain_text).join("");
+        if (prop.title) return prop.title.map(t => t.plain_text).join("");
+        return "";
+    };
+
+    const getNumber = (prop) => {
+        if (!prop) return 0;
+        return prop.number || 0;
+    };
+
+    const getFileUrl = (prop) => {
+        if (!prop || !prop.files || prop.files.length === 0) return "";
+        const f = prop.files[0];
+        if (f.file) return f.file.url;
+        if (f.external) return f.external.url;
+        return "";
+    };
+
+    const getFile = (val) => {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        if (Array.isArray(val) && val.length > 0) {
+            const f = val[0];
+            if (typeof f === 'string') return f;
+            if (f.file && f.file.url) return f.file.url;
+            if (f.external && f.external.url) return f.external.url;
+            if (f.url) return f.url;
+        }
+        if (typeof val === 'object') {
+            if (val.url) return val.url;
+            if (val.files && Array.isArray(val.files) && val.files.length > 0) {
+                const f = val.files[0];
+                if (f.file && f.file.url) return f.file.url;
+                if (f.external && f.external.url) return f.external.url;
+                if (f.url) return f.url;
+            }
+        }
+        return "";
+    };
+
+    const id = s.id || s.scenario_id || s.character_id || "";
+    const email = isRawNotion ? (props["Email"] ? props["Email"].email : "") : (s.email || s.property_email || "");
+    const roleType = isRawNotion ? (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "") : (s.status || s.roleType || s.property_role_type || "");
+    const roleName = isRawNotion ? getText(props["Nom"]) : (s.name || s.roleName || s.property_nom || s.role_name || "");
+    const history = isRawNotion ? getText(props["Rôle / Histoire"]) : (s.bio || s.history || s.property_r_le_histoire || s.property_role_histoire || "");
+    const lienVictime = isRawNotion ? getText(props["Lien avec la Victime"]) : (s.relation || s.lienVictime || s.property_lien_avec_la_victime || "");
+    const marker = isRawNotion ? getText(props["Marqueur Visuel"]) : (s.marker || s.property_marqueur_visuel || "");
+    const genre = isRawNotion ? (props["Genre"] && props["Genre"].select ? props["Genre"].select.name : "Non-Binaire") : (s.genre || s.roleGenre || s.property_genre || "");
+    const secret = isRawNotion ? getText(props["Secret"]) : (s.secret || s.property_secret || "");
+    const chronology = isRawNotion ? getText(props["Timeline"]) : (s.chronology || s.property_timeline || "");
+    const outfit = isRawNotion ? getText(props["Tenue"]) : (s.outfit || s.property_tenue || "");
+    const characterTraits = isRawNotion ? getText(props["Traits de Caractère"]) : (s.characterTraits || s.property_traits_de_caractere || "");
+    
+    const avatarUrl = isRawNotion ? (getFileUrl(props["photo_suspect"]) || getFileUrl(props["Avatar / Photo"]) || getFileUrl(props["Photo Suspect"]) || getFileUrl(props["photo"])) : getFile(s.avatarUrl || s.avatar_url || s.avatar || s.illustration || s.property_avatar___photo || s.property_avatar__photo || s.property_avatar_photo || s.avatar___photo || s.avatar__photo || s.avatar_photo || s["Avatar / Photo"] || s.property_photo_suspect || s.photo_suspect || s.property_photo || s.photo || "");
+    const actionPoints = isRawNotion ? getNumber(props["Solde Points d'Action"]) : (s.actionPoints !== undefined ? s.actionPoints : (s.property_solde_points_d_action !== undefined ? s.property_solde_points_d_action : 1));
+    const status = isRawNotion ? (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "Créé") : (s.status || "Créé");
+
     return {
-        id: s.id || s.scenario_id || s.character_id || "",
-        email: s.email || s.property_email || "",
-        roleType: s.status || s.roleType || s.property_role_type || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
-        roleName: s.name || s.roleName || s.property_nom || s.role_name || charTemplate.name,
-        history: s.bio || s.history || s.property_r_le_histoire || s.property_role_histoire || charTemplate.bio,
-        lienVictime: s.relation || s.lienVictime || s.property_lien_avec_la_victime || charTemplate.relation,
-        marker: s.marker || s.property_marqueur_visuel || charTemplate.marker,
-        genre: s.genre || s.roleGenre || s.property_genre || charTemplate.genre || "Non-Binaire",
-        secret: s.secret || s.property_secret || charTemplate.secret || "",
-        chronology: s.chronology || s.property_timeline || charTemplate.chronology || "",
-        outfit: s.outfit || s.property_tenue || charTemplate.outfit || "",
+        id: id,
+        email: email,
+        roleType: roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
+        roleName: roleName || charTemplate.name,
+        history: history || charTemplate.bio,
+        lienVictime: lienVictime || charTemplate.relation,
+        marker: marker || charTemplate.marker,
+        genre: genre || charTemplate.genre || "Non-Binaire",
+        secret: secret || charTemplate.secret || "",
+        chronology: chronology || charTemplate.chronology || "",
+        outfit: outfit || charTemplate.outfit || "",
         relations: s.relations || [],
-        characterTraits: s.characterTraits || s.property_traits_de_caractere || "",
-        avatarUrl: s.avatarUrl || s.avatar_url || s.avatar || s.illustration || s.property_avatar_photo || s.property_photo_suspect || s.photo_suspect || s.property_photo || s.photo || "",
-        actionPoints: s.actionPoints !== undefined ? s.actionPoints : (s.property_solde_points_d_action !== undefined ? s.property_solde_points_d_action : 1),
-        status: s.status || "Créé",
+        characterTraits: characterTraits,
+        avatarUrl: avatarUrl,
+        actionPoints: actionPoints,
+        status: status,
         knowledge: s.knowledge || s.property_connaissances || [],
         missions: s.missions || s.property_missions || []
     };
@@ -1010,40 +1078,152 @@ function mapScenarioProperties(s) {
     const rawSuspects = s.suspects || s.property_bases_personnages || [];
     const suspects = Array.isArray(rawSuspects) ? rawSuspects.map((x, index) => mapSuspectProperties(x, index)) : [];
 
+    const getText = (prop) => {
+        if (!prop) return "";
+        if (prop.rich_text) return prop.rich_text.map(t => t.plain_text).join("");
+        if (prop.title) return prop.title.map(t => t.plain_text).join("");
+        return "";
+    };
+
+    const getNumber = (prop) => {
+        if (!prop) return 0;
+        return prop.number || 0;
+    };
+
+    const getEmail = (prop) => {
+        if (!prop) return "";
+        if (prop.email) return prop.email;
+        if (prop.rich_text) return prop.rich_text.map(t => t.plain_text).join("");
+        return "";
+    };
+
+    const getFileUrl = (prop) => {
+        if (!prop || !prop.files || prop.files.length === 0) return "";
+        const f = prop.files[0];
+        if (f.file) return f.file.url;
+        if (f.external) return f.external.url;
+        return "";
+    };
+
+    const getFile = (val) => {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        if (Array.isArray(val) && val.length > 0) {
+            const f = val[0];
+            if (typeof f === 'string') return f;
+            if (f.file && f.file.url) return f.file.url;
+            if (f.external && f.external.url) return f.external.url;
+            if (f.url) return f.url;
+        }
+        if (typeof val === 'object') {
+            if (val.url) return val.url;
+            if (val.files && Array.isArray(val.files) && val.files.length > 0) {
+                const f = val.files[0];
+                if (f.file && f.file.url) return f.file.url;
+                if (f.external && f.external.url) return f.external.url;
+                if (f.url) return f.url;
+            }
+        }
+        return "";
+    };
+
+    let isRawNotion = false;
+    let props = {};
+    if (s.properties && typeof s.properties === 'object') {
+        isRawNotion = true;
+        props = s.properties;
+    }
+
+    const title = isRawNotion ? (getText(props["Nom"]) || "Sans titre") : (s.title || s.property_nom || s.name || "Sans titre");
+    const theme = isRawNotion ? getText(props["Thème"]) : (s.theme || s.property_theme || "");
+    const epoch = isRawNotion ? getText(props["Époque"]) : (s.epoch || s.property_epoque || "");
+    
     let etapeNum = null;
-    let rawEtape = s.etapeGeneration !== undefined && s.etapeGeneration !== null ? s.etapeGeneration : s.property_etape_generation;
-    if (rawEtape !== undefined && rawEtape !== null) {
-        if (typeof rawEtape === 'object') {
-            etapeNum = rawEtape.number || (rawEtape.select ? parseInt(rawEtape.select.name) : null) || null;
-        } else {
-            etapeNum = parseInt(rawEtape);
+    if (isRawNotion) {
+        etapeNum = props["Étape Génération"] ? getNumber(props["Étape Génération"]) : null;
+    } else {
+        let rawEtape = s.etapeGeneration !== undefined && s.etapeGeneration !== null ? s.etapeGeneration : s.property_etape_generation;
+        if (rawEtape !== undefined && rawEtape !== null) {
+            if (typeof rawEtape === 'object') {
+                etapeNum = rawEtape.number || (rawEtape.select ? parseInt(rawEtape.select.name) : null) || null;
+            } else {
+                etapeNum = parseInt(rawEtape);
+            }
         }
     }
 
-    const victimObj = s.victimObj || (s.victim && typeof s.victim === 'object' ? s.victim : {
-        name: s.victim || s.property_victime || "",
-        genre: s.victimGenre || s.property_victime_genre || "",
-        short_hook: s.victimShortHook || s.property_victime_short_hook || "",
-        outfit: s.victimOutfit || s.property_tenue_victime || "",
-        marker: s.victimMarker || s.property_victime_marker || "",
-        avatarUrl: s.property_photo_victime || s.photo_victime || s.victimPhoto || s.property_avatar_photo || ""
-    });
+    const pitch = isRawNotion ? getText(props["Pitch Global"]) : (s.pitch || s.property_pitch_global || "");
+    const crimeRoom = isRawNotion ? (getText(props["Scène du Crime"]) || getText(props["Scene du Crime"])) : (s.crimeRoom || s.property_scene_du_crime || s.property_scene_de_crime || s.murder_room || "");
+    const victim = isRawNotion ? getText(props["Victime"]) : (s.victim && typeof s.victim === 'object' ? (s.victim.name || "") : (s.victim || s.property_victime || ""));
+    const victimOutfit = isRawNotion ? getText(props["Tenue Victime"]) : (s.victimOutfit || s.property_tenue_victime || "");
+    const chronology = isRawNotion ? getText(props["Chronologie"]) : (s.chronology || s.property_chronologie || "");
+    const cluesCount = isRawNotion ? (getNumber(props["Nombre Total d'Indices"]) || 24) : (s.cluesCount || s.property_nombre_total_d_indices || 24);
+    const illustration = isRawNotion ? getText(props["Illustration"]) : (s.illustration || s.property_illustration || "");
+
+    let status = "En cours de génération";
+    if (isRawNotion) {
+        status = props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "En cours de génération";
+    } else {
+        status = s.status || s.property_statut || "En cours de génération";
+    }
+
+    let email = "";
+    if (isRawNotion) {
+        email = props["Créateur"] ? getEmail(props["Créateur"]) : 
+                (props["Email Organisateur"] ? getEmail(props["Email Organisateur"]) : 
+                (props["email"] ? getEmail(props["email"]) : ""));
+    } else {
+        email = s.email || s.property_createur || "";
+    }
+
+    let victimGenre = isRawNotion ? (props["Genre Victime"] ? props["Genre Victime"].select?.name : (props["Victime Genre"] ? props["Victime Genre"].select?.name : "")) : (s.victimGenre || s.property_victime_genre || "");
+    if (!victimGenre && isRawNotion) {
+        victimGenre = "Non-Binaire";
+    }
+
+    let victimPhotoUrl = "";
+    if (isRawNotion) {
+        victimPhotoUrl = getFileUrl(props["Photo Victime"]) || getFileUrl(props["Photo Homme"]) || getFileUrl(props["Photo Femme"]) || getFileUrl(props["Photo NBinaire"]) || getFileUrl(props["Illustration"]);
+    } else {
+        const genreLower = (victimGenre || "").toLowerCase();
+        const rawPhotoHomme = s.property_photo_homme || s.photo_homme || s.photoHomme || s["Photo Homme"];
+        const rawPhotoFemme = s.property_photo_femme || s.photo_femme || s.photoFemme || s["Photo Femme"];
+        const rawPhotoNB = s.property_photo_nbinaire || s.photo_nbinaire || s.photoNBinaire || s.property_photo_n_binaire || s.photo_n_binaire || s["Photo NBinaire"];
+        const rawIllustration = s.illustration || s.property_illustration || s.property_photo_victime || s.photo_victime || s.victimPhoto || s.property_avatar_photo || s["Photo Victime"] || s.property_photo_victime || s.photoVictime;
+        
+        if (genreLower === 'homme' || genreLower === 'male' || genreLower === 'masculin') {
+            victimPhotoUrl = getFile(rawIllustration) || getFile(rawPhotoHomme);
+        } else if (genreLower === 'femme' || genreLower === 'female' || genreLower === 'féminin') {
+            victimPhotoUrl = getFile(rawIllustration) || getFile(rawPhotoFemme);
+        } else {
+            victimPhotoUrl = getFile(rawIllustration) || getFile(rawPhotoNB) || getFile(rawPhotoHomme) || getFile(rawPhotoFemme);
+        }
+    }
+
+    const victimObj = s.victimObj || {
+        name: victim,
+        genre: victimGenre,
+        short_hook: isRawNotion ? getText(props["Accroche Victime"]) || getText(props["Victime Accroche"]) : (s.victimShortHook || s.property_victime_short_hook || ""),
+        outfit: victimOutfit,
+        marker: isRawNotion ? getText(props["Marqueur Victime"]) || getText(props["Victime Marqueur"]) || getText(props["Marqueur Visuel Victime"]) : (s.victimMarker || s.property_victime_marker || ""),
+        avatarUrl: victimPhotoUrl
+    };
 
     return {
         id: s.id || s.scenario_id,
-        title: s.title || s.property_nom || s.name || "Sans titre",
-        theme: s.theme || s.property_theme || "",
-        epoch: s.epoch || s.property_epoque || "",
+        title: title,
+        theme: theme,
+        epoch: epoch,
         etapeGeneration: etapeNum,
-        pitch: s.pitch || s.property_pitch_global || "",
-        crimeRoom: s.crimeRoom || s.property_scene_du_crime || s.property_scene_de_crime || s.murder_room || "",
-        victim: s.victim && typeof s.victim === 'object' ? (s.victim.name || "") : (s.victim || s.property_victime || ""),
-        victimOutfit: s.victimOutfit || s.property_tenue_victime || "",
-        chronology: s.chronology || s.property_chronologie || "",
-        cluesCount: s.cluesCount || s.property_nombre_total_d_indices || 24,
-        illustration: s.illustration || s.property_illustration || "",
-        status: s.status || s.property_statut || "En cours de génération",
-        email: s.email || s.property_createur || "",
+        pitch: pitch,
+        crimeRoom: crimeRoom,
+        victim: victim,
+        victimOutfit: victimOutfit,
+        chronology: chronology,
+        cluesCount: cluesCount,
+        illustration: illustration,
+        status: status,
+        email: email,
         suspects: suspects,
         victimObj: victimObj
     };
@@ -1632,7 +1812,11 @@ function startVictimPolling(scenarioId) {
                             }
                         }
                         if (rawScenario) {
+                            console.log("[Polling] rawScenario récupéré depuis n8n :", rawScenario);
                             scenarioDetails = mapScenarioProperties(rawScenario);
+                            console.log("[Polling] scenarioDetails mappé :", scenarioDetails);
+                        } else {
+                            console.log("[Polling] Aucun rawScenario extrait des données webhook :", data);
                         }
                     }
                 } catch (err) {
@@ -1653,33 +1837,44 @@ function startVictimPolling(scenarioId) {
                         });
                         if (res.ok) {
                             const page = await res.json();
+                            console.log("[Polling] Page Notion récupérée directement :", page);
+                            
+                            // Map properties directly from Notion page
+                            scenarioDetails = mapScenarioProperties(page);
+                            console.log("[Polling] Mappage direct depuis Notion page :", scenarioDetails);
+
                             const statusProp = page.properties["Statut"];
                             const statusName = statusProp && statusProp.select ? statusProp.select.name : "";
                             
                             if (statusName === "Vérifié" || statusName === "Vérifie" || statusName === "Verify") {
                                 if (appState.n8nBaseUrl) {
-                                    const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ scenario_id: scenarioId })
-                                    });
-                                    if (detailsRes.ok) {
-                                        const detailsData = await detailsRes.json();
-                                        let rawScenario = null;
-                                        if (detailsData) {
-                                            if (Array.isArray(detailsData) && detailsData.length > 0) {
-                                                rawScenario = detailsData[0];
-                                            } else if (detailsData.scenario) {
-                                                rawScenario = detailsData.scenario;
-                                            } else if (detailsData.success && detailsData.scenario) {
-                                                rawScenario = detailsData.scenario;
-                                            } else if (detailsData.id || detailsData.property_nom || detailsData.name) {
-                                                rawScenario = detailsData;
+                                    try {
+                                        const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ scenario_id: scenarioId })
+                                        });
+                                        if (detailsRes.ok) {
+                                            const detailsData = await detailsRes.json();
+                                            let rawScenario = null;
+                                            if (detailsData) {
+                                                if (Array.isArray(detailsData) && detailsData.length > 0) {
+                                                    rawScenario = detailsData[0];
+                                                } else if (detailsData.scenario) {
+                                                    rawScenario = detailsData.scenario;
+                                                } else if (detailsData.success && detailsData.scenario) {
+                                                    rawScenario = detailsData.scenario;
+                                                } else if (detailsData.id || detailsData.property_nom || detailsData.name) {
+                                                    rawScenario = detailsData;
+                                                }
+                                            }
+                                            if (rawScenario) {
+                                                scenarioDetails = mapScenarioProperties(rawScenario);
+                                                console.log("[Polling] Mappage final après statut Vérifié depuis n8n :", scenarioDetails);
                                             }
                                         }
-                                        if (rawScenario) {
-                                            scenarioDetails = mapScenarioProperties(rawScenario);
-                                        }
+                                    } catch (detailsErr) {
+                                        console.warn("Direct Notion fallback get-scenario-details failed", detailsErr);
                                     }
                                 }
                             }
