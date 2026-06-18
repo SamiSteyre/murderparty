@@ -1019,7 +1019,7 @@ function mapSuspectProperties(s, index) {
         return "";
     };
 
-    const id = s.id || s.scenario_id || s.character_id || "";
+    const id = (typeof s === 'string') ? s : (s.id || s.scenario_id || s.character_id || "");
     const email = isRawNotion ? (props["Email"] ? props["Email"].email : "") : (s.email || s.property_email || "");
     const roleType = isRawNotion ? (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "") : (s.status || s.roleType || s.property_role_type || "");
     const roleName = isRawNotion ? getText(props["Nom"]) : (s.name || s.roleName || s.property_nom || s.role_name || "");
@@ -1242,8 +1242,47 @@ function mapScenarioProperties(s) {
     };
 }
 
+function enrichScenarioWithImages(scenario, images) {
+    if (!scenario || !images || !Array.isArray(images)) return scenario;
+
+    images.forEach(img => {
+        const fileObj = img.content || img;
+        const name = fileObj.name || "";
+        const downloadUrl = fileObj.download_url || fileObj.url || "";
+        
+        if (!name || !downloadUrl) return;
+
+        if (name.toLowerCase().includes("victim")) {
+            if (scenario.victimObj) {
+                scenario.victimObj.avatarUrl = downloadUrl;
+            }
+            scenario.illustration = downloadUrl;
+        } else if (name.toLowerCase().includes("suspect")) {
+            let suspectId = "";
+            const cleanName = name.replace("suspect", "");
+            const parts = cleanName.split("-");
+            if (parts.length >= 5) {
+                suspectId = parts.slice(0, 5).join("-");
+            }
+            
+            if (suspectId && scenario.suspects && Array.isArray(scenario.suspects)) {
+                const suspect = scenario.suspects.find(sus => {
+                    const cleanSusId = (sus.id || "").toLowerCase().replace(/-/g, "");
+                    const cleanTargetId = suspectId.toLowerCase().replace(/-/g, "");
+                    return cleanSusId === cleanTargetId || (sus.id && suspectId.includes(sus.id));
+                });
+                if (suspect) {
+                    suspect.avatarUrl = downloadUrl;
+                }
+            }
+        }
+    });
+
+    return scenario;
+}
+
 function loadScenarioData(data) {
-    let rawIllustration = data.illustration || data.Illustration || data.illustration_url || "";
+    let rawIllustration = data.illustration || data.Illustration || data.illustration_url || (data.victimObj ? data.victimObj.avatarUrl : "") || "";
     let resolvedImageUrl = "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=1200&auto=format&fit=crop";
     
     if (rawIllustration) {
@@ -1317,7 +1356,25 @@ function loadScenarioData(data) {
 
     const suspectsData = data.suspects || CHARACTER_TEMPLATES;
     appState.players = suspectsData.map((s, index) => {
-        return mapSuspectProperties(s, index);
+        let mapped = mapSuspectProperties(s, index);
+        
+        // Merge with existing pending suspects to keep their bios, names, etc.
+        if (appState.pendingScenarioData && appState.pendingScenarioData.suspects) {
+            const existing = appState.pendingScenarioData.suspects.find(p => {
+                const cleanMappedId = (mapped.id || "").toLowerCase().replace(/-/g, "");
+                const cleanPendingId = (p.id || "").toLowerCase().replace(/-/g, "");
+                return (cleanMappedId && cleanMappedId === cleanPendingId) || (p.roleName && p.roleName === mapped.roleName);
+            });
+            if (existing) {
+                mapped = {
+                    ...existing,
+                    avatarUrl: mapped.avatarUrl || existing.avatarUrl,
+                    status: mapped.status || existing.status || "Créé",
+                    actionPoints: mapped.actionPoints !== undefined ? mapped.actionPoints : existing.actionPoints
+                };
+            }
+        }
+        return mapped;
     });
 
     appState.clues = [];
@@ -2065,6 +2122,17 @@ async function handleApproveVictim() {
             }
         }
 
+        let images = null;
+        if (dataScenario) {
+            if (dataScenario.images && Array.isArray(dataScenario.images)) {
+                images = dataScenario.images;
+            } else if (Array.isArray(dataScenario) && dataScenario.length > 0 && dataScenario[0].images && Array.isArray(dataScenario[0].images)) {
+                images = dataScenario[0].images;
+            } else if (rawScenario && rawScenario.images && Array.isArray(rawScenario.images)) {
+                images = rawScenario.images;
+            }
+        }
+
         if (rawScenario && (rawScenario.scenario_id || rawScenario.id)) {
             addLiveLog(`[Validation] Données complètes du scénario reçues et chargées.`);
             
@@ -2073,7 +2141,11 @@ async function handleApproveVictim() {
                 victimPollInterval = null;
             }
             
-            const mappedScenario = mapScenarioProperties(rawScenario);
+            let mappedScenario = mapScenarioProperties(rawScenario);
+            if (images) {
+                mappedScenario = enrichScenarioWithImages(mappedScenario, images);
+                addLiveLog(`[Validation] ${images.length} portraits IA fusionnés depuis le webhook.`);
+            }
             handleStep2Completion(mappedScenario);
             showToast("Succès", "Scénario généré avec succès !", "success");
             return;
