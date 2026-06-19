@@ -1251,7 +1251,7 @@ function mapScenarioProperties(s) {
         }
     }
 
-    const pitch = isRawNotion ? getText(props["Pitch Global"]) : (s.pitch || s.property_pitch_global || "");
+    const pitch = isRawNotion ? getText(props["Pitch Global"]) : (s.pitch || s.pitch_global || s.property_pitch_global || "");
     const crimeRoom = isRawNotion ? (getText(props["Scène du Crime"]) || getText(props["Scene du Crime"])) : (s.crimeRoom || s.property_scene_du_crime || s.property_scene_de_crime || s.murder_room || "");
     const victim = isRawNotion ? getText(props["Victime"]) : (s.victim && typeof s.victim === 'object' ? (s.victim.name || "") : (s.victim || s.property_victime || ""));
     const victimOutfit = isRawNotion ? getText(props["Tenue Victime"]) : (s.victimOutfit || (s.victim && typeof s.victim === 'object' ? s.victim.outfit : "") || s.property_tenue_victime || "");
@@ -2973,14 +2973,19 @@ async function handleSimulateApprove() {
             id: dataScenario.scenario_id,
             title: dataScenario.title,
             theme: params.theme,
-            pitch: dataScenario.pitch,
+            pitch: dataScenario.pitch || dataScenario.pitch_global || "",
             crimeRoom: dataScenario.murder_room,
             victim: dataScenario.victim.name,
             victimOutfit: dataScenario.victim.outfit,
             victimShortHook: dataScenario.victim.short_hook || "",
             cluesCount: dataScenario.clues_count,
             imageUrl: resolvedImageUrl,
-            chronology: dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n')
+            chronology: dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n'),
+            medium: dataScenario.medium || "",
+            courantArtistique: dataScenario.courant_artistique || dataScenario.courantArtistique || "",
+            paletteCouleurs: dataScenario.palette_couleurs || dataScenario.paletteCouleurs || "",
+            eclairage: dataScenario.eclairage || "",
+            victimGenre: dataScenario.victim_genre || (dataScenario.victim ? dataScenario.victim.genre : "") || dataScenario.victimGenre || ""
         };
 
         const suspectsData = dataScenario.suspects;
@@ -3174,14 +3179,19 @@ async function handleUnifiedSessionSubmit(e) {
                 id: dataScenario.scenario_id,
                 title: dataScenario.title,
                 theme: theme,
-                pitch: dataScenario.pitch,
+                pitch: dataScenario.pitch || dataScenario.pitch_global || "",
                 crimeRoom: dataScenario.murder_room,
                 victim: dataScenario.victim_name || (dataScenario.victim ? (typeof dataScenario.victim === 'string' ? dataScenario.victim : dataScenario.victim.name) : "Non définie"),
                 victimOutfit: dataScenario.victim_outfit || (dataScenario.victim && typeof dataScenario.victim === 'object' ? dataScenario.victim.outfit : "") || "",
                 victimShortHook: dataScenario.victim_short_hook || (dataScenario.victim && typeof dataScenario.victim === 'object' ? dataScenario.victim.short_hook : "") || (dataScenario.victimObj ? dataScenario.victimObj.short_hook : "") || "",
                 cluesCount: dataScenario.clues_count || 24,
                 imageUrl: resolvedImageUrl,
-                chronology: dataScenario.chronology || (dataScenario.timeline ? dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n') : "Aucune chronologie disponible.")
+                chronology: dataScenario.chronology || (dataScenario.timeline ? dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n') : "Aucune chronologie disponible."),
+                medium: dataScenario.medium || "",
+                courantArtistique: dataScenario.courant_artistique || dataScenario.courantArtistique || "",
+                paletteCouleurs: dataScenario.palette_couleurs || dataScenario.paletteCouleurs || "",
+                eclairage: dataScenario.eclairage || "",
+                victimGenre: dataScenario.victim_genre || (dataScenario.victim ? dataScenario.victim.genre : "") || dataScenario.victimGenre || ""
             };
 
             scenarioId = dataScenario.scenario_id;
