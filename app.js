@@ -1032,7 +1032,7 @@ function mapSuspectProperties(s, index) {
         (props["Badge"] && props["Badge"].rich_text ? getText(props["Badge"]) : "") ||
         (props["badge"] && props["badge"].select ? props["badge"].select.name : "") ||
         (props["badge"] && props["badge"].rich_text ? getText(props["badge"]) : "")
-    ) : (s.Badge || s.badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "");
+    ) : (s.Badge || s.badge || s.property_badge || s.property_Badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "");
 
     const roleName = isRawNotion ? (getText(props["Nom Fictif"]) || getText(props["Nom"])) : (s.name || s.roleName || s.property_nom || s.role_name || "");
     const history = isRawNotion ? getText(props["Rôle / Histoire"]) : (s.bio || s.history || s.property_r_le_histoire || s.property_role_histoire || "");
@@ -1479,6 +1479,19 @@ function loadScenarioData(data, gitFiles = []) {
         victimOutfit = data.victimOutfit;
     }
 
+    let victimShortHook = "";
+    if (data.victim_short_hook) {
+        victimShortHook = data.victim_short_hook;
+    } else if (data.victim && typeof data.victim === 'object') {
+        victimShortHook = data.victim.short_hook || data.victim.victimShortHook || data.victim.victim_short_hook || "";
+    } else if (data.victimShortHook) {
+        victimShortHook = data.victimShortHook;
+    } else if (data.victimObj && typeof data.victimObj === 'object') {
+        victimShortHook = data.victimObj.short_hook || "";
+    } else if (data.property_victime_short_hook) {
+        victimShortHook = data.property_victime_short_hook;
+    }
+
     const cluesCount = data.clues_count || data.cluesCount || 24;
     
     let chronology = "Aucune chronologie disponible.";
@@ -1502,6 +1515,7 @@ function loadScenarioData(data, gitFiles = []) {
         crimeRoom,
         victim: victimName,
         victimOutfit,
+        victimShortHook,
         cluesCount,
         imageUrl: resolvedImageUrl,
         rawImageUrl: rawIllustration,
@@ -1958,7 +1972,7 @@ function showPortraitsVerificationModal() {
         role: "La Victime",
         imageUrl: victimImg,
         fallbackUrl: appState.scenario ? (appState.scenario.rawImageUrl || "") : "",
-        bio: appState.scenario ? (appState.scenario.victimOutfit || "Tenue vestimentaire de la victime.") : "Tenue vestimentaire de la victime."
+        bio: appState.scenario ? (appState.scenario.victimShortHook || appState.scenario.victimOutfit || "Tenue vestimentaire de la victime.") : "Tenue vestimentaire de la victime."
     });
 
     // 2. Add Suspects
@@ -2772,6 +2786,7 @@ async function handleSimulateApprove() {
             crimeRoom: dataScenario.murder_room,
             victim: dataScenario.victim.name,
             victimOutfit: dataScenario.victim.outfit,
+            victimShortHook: dataScenario.victim.short_hook || "",
             cluesCount: dataScenario.clues_count,
             imageUrl: resolvedImageUrl,
             chronology: dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n')
@@ -2972,6 +2987,7 @@ async function handleUnifiedSessionSubmit(e) {
                 crimeRoom: dataScenario.murder_room,
                 victim: dataScenario.victim_name || (dataScenario.victim ? (typeof dataScenario.victim === 'string' ? dataScenario.victim : dataScenario.victim.name) : "Non définie"),
                 victimOutfit: dataScenario.victim_outfit || (dataScenario.victim && typeof dataScenario.victim === 'object' ? dataScenario.victim.outfit : "") || "",
+                victimShortHook: dataScenario.victim_short_hook || (dataScenario.victim && typeof dataScenario.victim === 'object' ? dataScenario.victim.short_hook : "") || (dataScenario.victimObj ? dataScenario.victimObj.short_hook : "") || "",
                 cluesCount: dataScenario.clues_count || 24,
                 imageUrl: resolvedImageUrl,
                 chronology: dataScenario.chronology || (dataScenario.timeline ? dataScenario.timeline.map(e => e.time + ' - ' + e.room + ' (' + e.suspects.join(', ') + ') : ' + e.description).join('\n') : "Aucune chronologie disponible.")
@@ -3006,7 +3022,7 @@ async function handleUnifiedSessionSubmit(e) {
                     email: "", // Unassigned initially
                     roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
                     roleName: s.name || s.roleName || charTemplate.name,
-                    badge: s.Badge || s.badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "",
+                    badge: s.Badge || s.badge || s.property_badge || s.property_Badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "",
                     history: s.bio || s.history || charTemplate.bio,
                     lienVictime: s.relation || s.lienVictime || charTemplate.relation,
                     marker: s.marker || charTemplate.marker,
@@ -3173,6 +3189,7 @@ async function handleUnifiedSessionSubmit(e) {
                     crimeRoom: selectedScenario.crimeRoom || "Le Bureau",
                     victim: selectedScenario.victim || "Non définie",
                     victimOutfit: selectedScenario.victimOutfit || "",
+                    victimShortHook: selectedScenario.victimShortHook || (selectedScenario.victimObj ? selectedScenario.victimObj.short_hook : "") || "",
                     cluesCount: selectedScenario.cluesCount || 24,
                     imageUrl: resolvedImageUrl,
                     chronology: selectedScenario.chronology || "Aucune chronologie disponible."
@@ -3187,7 +3204,7 @@ async function handleUnifiedSessionSubmit(e) {
                         email: s.email || "",
                         roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
                         roleName: s.name || s.roleName || charTemplate.name,
-                        badge: s.Badge || s.badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "",
+                        badge: s.Badge || s.badge || s.property_badge || s.property_Badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "",
                         history: s.bio || s.history || charTemplate.bio,
                         lienVictime: s.relation || s.lienVictime || charTemplate.relation,
                         marker: s.marker || charTemplate.marker,
@@ -3234,6 +3251,7 @@ async function handleUnifiedSessionSubmit(e) {
                     crimeRoom: "Le Bureau",
                     victim: "M. Lenoir (cadavre)",
                     victimOutfit: "Un costume de soirée sombre classique avec gilet de velours pourpre.",
+                    victimShortHook: "Un célèbre collectionneur d'art retrouvé empoisonné dans son bureau lors d'une réception privée.",
                     cluesCount: 24,
                     imageUrl: resolvedImageUrl,
                     chronology: "18:00 - Le Vestibule (Baptiste le Valet, M. Lenoir) : Accueil des invités.\n19:00 - Le Grand Salon (Mlle Rose, M. Lenoir) : Discussion cordiale.\n20:00 - Le Petit Salon (Colonel Moutarde, M. Lenoir) : Altercation bruyante.\n22:00 - Le Bureau : Heure estimée du crime."
@@ -4359,6 +4377,7 @@ async function handleScenarioCardClick(scenarioId) {
             crimeRoom: selectedScenario.crimeRoom || "Le Bureau",
             victim: selectedScenario.victim || "Non définie",
             victimOutfit: selectedScenario.victimOutfit || "",
+            victimShortHook: selectedScenario.victimShortHook || (selectedScenario.victimObj ? selectedScenario.victimObj.short_hook : "") || "",
             cluesCount: selectedScenario.cluesCount || 24,
             imageUrl: selectedScenario.illustration || "",
             chronology: selectedScenario.chronology || "Aucune chronologie disponible."
