@@ -2269,6 +2269,7 @@ async function handleApprovePortraits() {
 
     try {
         const scenarioId = appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : "");
+        let detailsData = null;
 
         // Fetch fresh details from mp-get-scenario-details right before launching step 3
         if (appState.n8nBaseUrl && !appState.isSimulationMode && scenarioId) {
@@ -2280,7 +2281,7 @@ async function handleApprovePortraits() {
                     body: JSON.stringify({ scenario_id: scenarioId })
                 });
                 if (detailsRes.ok) {
-                    const detailsData = await detailsRes.json();
+                    detailsData = await detailsRes.json();
                     let rawScenario = extractRawScenario(detailsData);
                     if (rawScenario) {
                         const completeScenario = mapScenarioProperties(rawScenario);
@@ -2301,48 +2302,62 @@ async function handleApprovePortraits() {
         if (appState.n8nBaseUrl && !appState.isSimulationMode) {
             addLiveLog(`[Validation] Lancement de l'étape 3 (mp-generate-scenario-3) avec les détails du scénario et des personnages...`);
             
-            const payload = {
+            let payload = {
                 scenario_id: appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : ""),
-                organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com',
-                
-                // Nested structures as requested
-                scenario: {
-                    id: appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : ""),
+                organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com'
+            };
+
+            if (detailsData) {
+                // If detailsData is an array, take the first element
+                const rawObj = Array.isArray(detailsData) ? detailsData[0] : detailsData;
+                payload = {
+                    ...payload,
+                    ...rawObj
+                };
+                console.log("[Validation] Payload pour mp-generate-scenario-3 (données Notion reçues) :", payload);
+            } else {
+                console.warn("[Validation] Pas de detailsData fraîche, utilisation des données locales pour le payload.");
+                payload = {
+                    ...payload,
+                    // Nested structures as requested
+                    scenario: {
+                        id: appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : ""),
+                        theme: appState.scenario ? (appState.scenario.theme || "") : "",
+                        pitch_global: appState.scenario ? (appState.scenario.pitch || "") : ""
+                    },
+                    charte_graphique: {
+                        medium: appState.scenario ? (appState.scenario.medium || "") : "",
+                        courant_artistique: appState.scenario ? (appState.scenario.courantArtistique || "") : "",
+                        palette_couleurs: appState.scenario ? (appState.scenario.paletteCouleurs || "") : "",
+                        eclairage: appState.scenario ? (appState.scenario.eclairage || "") : ""
+                    },
+                    victim: {
+                        nom: appState.scenario ? (appState.scenario.victim || "") : "",
+                        short_hook: appState.scenario ? (appState.scenario.victimShortHook || "") : "",
+                        genre: appState.scenario ? (appState.scenario.victimGenre || "") : "",
+                        outfit: appState.scenario ? (appState.scenario.victimOutfit || "") : ""
+                    },
+                    suspects: (appState.players || []).map(p => ({
+                        nom: p.roleName || "",
+                        genre: p.genre || "",
+                        role: p.badge || "",
+                        secret: p.secret || "",
+                        relation_avec_la_victime: p.lienVictime || "",
+                        traits_de_caracteres: p.characterTraits || "",
+                        outfit: p.outfit || "",
+                        marker: p.marker || "",
+                        relations: p.relations || []
+                    })),
+
+                    // Flattened fallback properties at root
                     theme: appState.scenario ? (appState.scenario.theme || "") : "",
-                    pitch_global: appState.scenario ? (appState.scenario.pitch || "") : ""
-                },
-                charte_graphique: {
+                    pitch_global: appState.scenario ? (appState.scenario.pitch || "") : "",
                     medium: appState.scenario ? (appState.scenario.medium || "") : "",
                     courant_artistique: appState.scenario ? (appState.scenario.courantArtistique || "") : "",
                     palette_couleurs: appState.scenario ? (appState.scenario.paletteCouleurs || "") : "",
                     eclairage: appState.scenario ? (appState.scenario.eclairage || "") : ""
-                },
-                victim: {
-                    nom: appState.scenario ? (appState.scenario.victim || "") : "",
-                    short_hook: appState.scenario ? (appState.scenario.victimShortHook || "") : "",
-                    genre: appState.scenario ? (appState.scenario.victimGenre || "") : "",
-                    outfit: appState.scenario ? (appState.scenario.victimOutfit || "") : ""
-                },
-                suspects: (appState.players || []).map(p => ({
-                    nom: p.roleName || "",
-                    genre: p.genre || "",
-                    role: p.badge || "",
-                    secret: p.secret || "",
-                    relation_avec_la_victime: p.lienVictime || "",
-                    traits_de_caracteres: p.characterTraits || "",
-                    outfit: p.outfit || "",
-                    marker: p.marker || "",
-                    relations: p.relations || []
-                })),
-
-                // Flattened fallback properties at root
-                theme: appState.scenario ? (appState.scenario.theme || "") : "",
-                pitch_global: appState.scenario ? (appState.scenario.pitch || "") : "",
-                medium: appState.scenario ? (appState.scenario.medium || "") : "",
-                courant_artistique: appState.scenario ? (appState.scenario.courantArtistique || "") : "",
-                palette_couleurs: appState.scenario ? (appState.scenario.paletteCouleurs || "") : "",
-                eclairage: appState.scenario ? (appState.scenario.eclairage || "") : ""
-            };
+                };
+            }
 
             const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario-3`, {
                 method: 'POST',
