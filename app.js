@@ -2060,7 +2060,7 @@ function showPortraitsVerificationModal() {
                 role: p.badge || "Suspect",
                 imageUrl: avatar,
                 fallbackUrl: p.rawAvatarUrl || "",
-                bio: p.history || ""
+                bio: ""
             });
         });
     }
@@ -2118,7 +2118,18 @@ function renderActivePortrait() {
     }
 
     const descEl = document.getElementById('portraitVerifyDesc');
-    if (descEl) descEl.textContent = portrait.bio || "Aucune description.";
+    if (descEl) {
+        if (portrait.role !== "La Victime") {
+            descEl.textContent = "";
+            descEl.classList.add('hidden');
+        } else if (portrait.bio) {
+            descEl.textContent = portrait.bio;
+            descEl.classList.remove('hidden');
+        } else {
+            descEl.textContent = "";
+            descEl.classList.add('hidden');
+        }
+    }
 
     const imgEl = document.getElementById('portraitVerifyImage');
     const spinner = document.getElementById('portraitVerifySpinner');
