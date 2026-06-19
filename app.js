@@ -4277,7 +4277,8 @@ async function loadExistingScenarios() {
                 
                 // Determine background styling
                 let bgStyle = "background: #09090b;"; // dark black
-                let isReady = etape >= 4;
+                const statusLower = (s.status || "").toLowerCase();
+                let isReady = statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify";
                 
                 if (isReady && s.illustration) {
                     let rawIllustration = s.illustration;
@@ -4301,7 +4302,7 @@ async function loadExistingScenarios() {
                     : `<span class="px-2 py-0.5 text-[8px] bg-blood/10 border border-blood/20 text-blood-light rounded-md uppercase font-bold tracking-widest z-10 w-fit font-semibold">Étape ${etape} en cours</span>`;
                 
                 card.innerHTML = `
-                    <div class="absolute right-4 bottom-0 font-cinzel font-black text-7xl select-none leading-none z-0 ${bigNumColor} transition-colors pointer-events-none">${etape}</div>
+                    <div class="absolute right-4 bottom-0 font-cinzel font-black text-7xl select-none leading-none z-0 ${bigNumColor} transition-colors pointer-events-none">${isReady ? '✓' : etape}</div>
                     <div class="flex flex-col space-y-1.5 z-10 relative">
                         ${badgeHtml}
                         <h4 class="text-xs font-cinzel font-extrabold text-white line-clamp-1 group-hover:text-blood transition-colors mt-1">${s.title}</h4>
@@ -4335,7 +4336,8 @@ async function handleScenarioCardClick(scenarioId) {
     if (!selectedScenario) return;
 
     const statusLower = (selectedScenario.status || "").toLowerCase();
-    const etape = selectedScenario.etapeGeneration || ((statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify") ? 4 : 1);
+    const isReady = statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify";
+    const etape = selectedScenario.etapeGeneration || 1;
     
     // Set hidden input value
     const hiddenInput = document.getElementById('selectedScenarioId');
@@ -4355,7 +4357,30 @@ async function handleScenarioCardClick(scenarioId) {
         selectedCard.classList.add('border-blood', 'ring-2', 'ring-blood/20');
     }
 
-    if (etape === 1) {
+    if (isReady) {
+        // Clic sur un scénario prêt à jouer : on configure l'état pour lancer la session
+        appState.scenario = {
+            id: selectedScenario.id,
+            title: selectedScenario.title,
+            theme: selectedScenario.theme || "Chargé",
+            pitch: selectedScenario.pitch || "",
+            crimeRoom: selectedScenario.crimeRoom || "Le Bureau",
+            victim: selectedScenario.victim || "Non définie",
+            victimOutfit: selectedScenario.victimOutfit || "",
+            cluesCount: selectedScenario.cluesCount || 24,
+            imageUrl: selectedScenario.illustration || "",
+            chronology: selectedScenario.chronology || "Aucune chronologie disponible."
+        };
+        
+        // On pré-remplit les joueurs pour la session
+        appState.players = (selectedScenario.suspects || CHARACTER_TEMPLATES).map((s, index) => {
+            return mapSuspectProperties(s, index);
+        });
+        
+        savePersistedState();
+        addLiveLog(`Scénario sélectionné : "${selectedScenario.title}" prêt pour la session.`);
+        updateSelectScenarioSubmitBtn();
+    } else if (etape === 1) {
         // Clic sur Étape 1 : On charge la victime et les suspects stockés dans Notion et on affiche la validation modal
         const submitBtn = document.getElementById('unifiedSubmitBtn');
         if (submitBtn) {
@@ -4455,35 +4480,8 @@ async function handleScenarioCardClick(scenarioId) {
             updateSelectScenarioSubmitBtn();
         }
     } else {
-        // Clic sur Étape 3 et +
-        if (etape === 3) {
-            showToast("Étape 3", "La gestion de la reprise à l'étape 3 est encore à prévoir.", "info");
-        }
-        
-        // Si c'est l'étape 4 (ou prêt à jouer), on configure l'état pour lancer la session
-        if (etape >= 4) {
-            appState.scenario = {
-                id: selectedScenario.id,
-                title: selectedScenario.title,
-                theme: selectedScenario.theme || "Chargé",
-                pitch: selectedScenario.pitch || "",
-                crimeRoom: selectedScenario.crimeRoom || "Le Bureau",
-                victim: selectedScenario.victim || "Non définie",
-                victimOutfit: selectedScenario.victimOutfit || "",
-                cluesCount: selectedScenario.cluesCount || 24,
-                imageUrl: selectedScenario.illustration || "",
-                chronology: selectedScenario.chronology || "Aucune chronologie disponible."
-            };
-            
-            // On pré-remplit les joueurs pour la session
-            appState.players = (selectedScenario.suspects || CHARACTER_TEMPLATES).map((s, index) => {
-                return mapSuspectProperties(s, index);
-            });
-            
-            savePersistedState();
-            addLiveLog(`Scénario sélectionné : "${selectedScenario.title}" prêt pour la session.`);
-        }
-        
+        // Clic sur Étape 3 et + (quand non prêt à jouer)
+        showToast("Étape " + etape, "La gestion de la reprise à l'étape " + etape + " est encore à prévoir.", "info");
         updateSelectScenarioSubmitBtn();
     }
 }
@@ -4498,11 +4496,13 @@ function updateSelectScenarioSubmitBtn() {
     
     if (selectedScenario) {
         const statusLower = (selectedScenario.status || "").toLowerCase();
-        const etape = selectedScenario.etapeGeneration || ((statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify") ? 4 : 1);
-        if (etape === 1) {
-            submitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Vérifier le scénario`;
-        } else if (etape >= 4) {
+        const isReady = statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify";
+        const etape = selectedScenario.etapeGeneration || 1;
+        
+        if (isReady) {
             submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la session`;
+        } else if (etape === 1) {
+            submitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Vérifier le scénario`;
         } else {
             submitBtn.innerHTML = `<i class="fa-solid fa-circle-question"></i> Étape ${etape} sélectionnée`;
         }
