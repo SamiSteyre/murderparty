@@ -1302,8 +1302,12 @@ function mapScenarioProperties(s) {
     }
 
     const targetObj = isRawNotion ? props : s;
-    const victimShortHookVal = getPropValue(targetObj, ["victime_short_hook", "Accroche Victime", "Victime Accroche", "victimShortHook"]) || s.victimShortHook || s.property_victime_short_hook || "";
-    const victimMarkerVal = getPropValue(targetObj, ["Marqueur Victime", "Victime Marqueur", "Marqueur Visuel Victime", "victimMarker"]) || s.victimMarker || s.property_victime_marker || "";
+    const victimShortHookVal = getPropValue(targetObj, ["victime_short_hook", "Accroche Victime", "Victime Accroche", "victimShortHook"]) || 
+                               (s.victim && typeof s.victim === 'object' ? (s.victim.short_hook || s.victim.victimShortHook || s.victim.victim_short_hook) : "") ||
+                               s.victimShortHook || s.property_victime_short_hook || "";
+    const victimMarkerVal = getPropValue(targetObj, ["Marqueur Victime", "Victime Marqueur", "Marqueur Visuel Victime", "victimMarker"]) || 
+                            (s.victim && typeof s.victim === 'object' ? (s.victim.marker || s.victim.victimMarker || s.victim.victim_marker) : "") ||
+                            s.victimMarker || s.property_victime_marker || "";
 
     const victimObj = s.victimObj || {
         name: victim,
