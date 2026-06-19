@@ -1022,12 +1022,16 @@ function mapSuspectProperties(s, index) {
     const id = (typeof s === 'string') ? s : (s.id || s.scenario_id || s.character_id || "");
     const email = isRawNotion ? (props["Email"] ? props["Email"].email : "") : (s.email || s.property_email || "");
     const roleType = isRawNotion ? (
+        (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "")
+    ) : (s.status || s.roleType || s.property_role_type || "");
+
+    const badge = isRawNotion ? (
         (props["Badge"] && props["Badge"].select ? props["Badge"].select.name : "") ||
         (props["Badge"] && props["Badge"].rich_text ? getText(props["Badge"]) : "") ||
         (props["badge"] && props["badge"].select ? props["badge"].select.name : "") ||
-        (props["badge"] && props["badge"].rich_text ? getText(props["badge"]) : "") ||
-        (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "")
-    ) : (s.status || s.roleType || s.property_role_type || "");
+        (props["badge"] && props["badge"].rich_text ? getText(props["badge"]) : "")
+    ) : (s.role || s.badge || charTemplate.role || "");
+
     const roleName = isRawNotion ? (getText(props["Nom Fictif"]) || getText(props["Nom"])) : (s.name || s.roleName || s.property_nom || s.role_name || "");
     const history = isRawNotion ? getText(props["Rôle / Histoire"]) : (s.bio || s.history || s.property_r_le_histoire || s.property_role_histoire || "");
     const lienVictime = isRawNotion ? getText(props["Lien avec la Victime"]) : (s.relation || s.lienVictime || s.property_lien_avec_la_victime || "");
@@ -1061,6 +1065,7 @@ function mapSuspectProperties(s, index) {
         roleType: roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
         roleName: roleName || charTemplate.name,
         history: history || charTemplate.bio,
+        badge: badge || charTemplate.role || "",
         lienVictime: lienVictime || charTemplate.relation,
         marker: marker || charTemplate.marker,
         genre: genre || charTemplate.genre || "Non-Binaire",
@@ -1970,7 +1975,7 @@ function showPortraitsVerificationModal() {
                 role: p.roleType || "Suspect",
                 imageUrl: avatar,
                 fallbackUrl: p.rawAvatarUrl || "",
-                bio: p.history || ""
+                bio: p.badge || p.history || ""
             });
         });
     }
@@ -2042,53 +2047,32 @@ function renderActivePortrait() {
         if (spinnerText) spinnerText.textContent = "Chargement...";
         imgEl.style.opacity = "0";
 
-        let attempts = 0;
-        const baseSrc = portrait.imageUrl;
-        const isGithubUrl = baseSrc.includes("raw.githubusercontent.com") || baseSrc.includes("github.com");
-
-        const tryLoad = () => {
-            let finalSrc = baseSrc;
-            if (attempts > 0 && isGithubUrl) {
-                const separator = baseSrc.includes('?') ? '&' : '?';
-                finalSrc = `${baseSrc}${separator}t=${Date.now()}`;
-            }
-            imgEl.src = finalSrc;
-        };
-
         imgEl.onload = () => {
             if (spinner) spinner.classList.add('hidden');
             imgEl.style.opacity = "1";
         };
 
         imgEl.onerror = () => {
-            if (isGithubUrl && attempts < 2) {
-                attempts++;
-                if (spinnerText) {
-                    spinnerText.textContent = "Récupération en cours...";
-                }
-                portraitRetryTimeout = setTimeout(tryLoad, 3000);
-            } else {
-                if (spinner) spinner.classList.add('hidden');
+            if (spinner) spinner.classList.add('hidden');
+            
+            if (portrait.fallbackUrl) {
+                const fb = portrait.fallbackUrl;
+                portrait.fallbackUrl = ""; // clear to avoid loop
                 
-                if (portrait.fallbackUrl) {
-                    const fb = portrait.fallbackUrl;
-                    portrait.fallbackUrl = ""; // clear to avoid loop
-                    
-                    let finalFallback = fb;
-                    if (finalFallback && !finalFallback.startsWith('http://') && !finalFallback.startsWith('https://')) {
-                        finalFallback = "https://raw.githubusercontent.com/SamiSteyre/murderparty/main/" + finalFallback.replace(/^\/+/, '');
-                    }
-                    
-                    console.log(`[NotionDirect] Image failed. Falling back to direct URL: ${finalFallback}`);
-                    imgEl.src = finalFallback;
-                } else {
-                    imgEl.src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=300";
-                    imgEl.style.opacity = "1";
+                let finalFallback = fb;
+                if (finalFallback && !finalFallback.startsWith('http://') && !finalFallback.startsWith('https://')) {
+                    finalFallback = "https://raw.githubusercontent.com/SamiSteyre/murderparty/main/" + finalFallback.replace(/^\/+/, '');
                 }
+                
+                console.log(`[NotionDirect] Image failed. Falling back to direct URL: ${finalFallback}`);
+                imgEl.src = finalFallback;
+            } else {
+                imgEl.src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=300";
+                imgEl.style.opacity = "1";
             }
         };
 
-        tryLoad();
+        imgEl.src = portrait.imageUrl;
     }
 
     const btnPrev = document.getElementById('btnPrevPortrait');
