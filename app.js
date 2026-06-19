@@ -4425,9 +4425,40 @@ async function handleScenarioCardClick(scenarioId) {
             }
             updateSelectScenarioSubmitBtn();
         }
+    } else if (etape === 2) {
+        // Clic sur Étape 2 : Chargement immédiat du visualisateur de portraits
+        const submitBtn = document.getElementById('unifiedSubmitBtn');
+        if (submitBtn) {
+            submitBtn.setAttribute('disabled', 'true');
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-sm mr-2"></i> Récupération Étape 2...`;
+        }
+        
+        try {
+            addLiveLog(`[Reprise] Clic sur scénario Étape 2 "${selectedScenario.title}" : chargement des portraits...`);
+            const completeScenario = await fetchScenarioAndSuspectsFromNotion(selectedScenario.id);
+            const gitFiles = await fetchGithubImagesList();
+            loadScenarioData(completeScenario, gitFiles);
+            
+            // On sauvegarde l'ID du scénario en cours
+            appState.pendingScenarioId = selectedScenario.id;
+            savePersistedState();
+            
+            showPortraitsVerificationModal();
+            showToast("Succès", "Portraits chargés avec succès.", "success");
+        } catch (err) {
+            console.error("Error loading scenario step 2:", err);
+            showToast("Erreur", "Impossible de charger les portraits de ce scénario.", "error");
+        } finally {
+            if (submitBtn) {
+                submitBtn.removeAttribute('disabled');
+            }
+            updateSelectScenarioSubmitBtn();
+        }
     } else {
-        // Clic sur Étape 2 et + : Encore à prévoir
-        showToast("Étape " + etape, "La gestion de la reprise à l'étape " + etape + " est encore à prévoir.", "info");
+        // Clic sur Étape 3 et +
+        if (etape === 3) {
+            showToast("Étape 3", "La gestion de la reprise à l'étape 3 est encore à prévoir.", "info");
+        }
         
         // Si c'est l'étape 4 (ou prêt à jouer), on configure l'état pour lancer la session
         if (etape >= 4) {
