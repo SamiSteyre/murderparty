@@ -2237,6 +2237,10 @@ async function handleApprovePortraits() {
     const modal = document.getElementById('modalVerifyPortraits');
     const btnApprove = document.getElementById('btnApprovePortraits');
 
+    // Hide the portraits modal immediately to prevent it showing behind/on top of the loading overlay
+    if (modal) modal.classList.add('hidden');
+    closeVictimModal();
+
     if (btnApprove) {
         btnApprove.setAttribute('disabled', 'true');
         btnApprove.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Récupération des données...`;
@@ -2350,20 +2354,22 @@ async function handleApprovePortraits() {
                 throw new Error(`HTTP error ${response.status}`);
             }
 
+            // Check if the response contains success indicator if JSON is returned
+            const resData = await response.json().catch(() => null);
+            if (resData && (resData.success === false || resData.error || (resData.status && resData.status === "failed"))) {
+                throw new Error(resData.error || resData.message || "L'exécution du workflow n8n a retourné un échec.");
+            }
+
             // Hide loading overlay
             if (genOverlay) {
                 genOverlay.classList.add('hidden');
                 if (loadVideo) loadVideo.pause();
             }
-            if (modal) modal.classList.add('hidden');
-            closeVictimModal();
 
             // Play IAriel2.mp4 reveal video
             playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IAriel2.mp4", async () => {
                 showToast("Étape 3 Lancée", "La génération des indices et de la scène de crime a démarré !", "success");
-                appState.orgaView = 'generated';
-                savePersistedState();
-                renderOrganizerDashboard();
+                showIntrigueModal();
             });
 
         } else {
@@ -2372,13 +2378,9 @@ async function handleApprovePortraits() {
                 genOverlay.classList.add('hidden');
                 if (loadVideo) loadVideo.pause();
             }
-            if (modal) modal.classList.add('hidden');
-            closeVictimModal();
 
             showToast("Portraits Validés", "Simulation terminée.", "success");
-            appState.orgaView = 'generated';
-            savePersistedState();
-            renderOrganizerDashboard();
+            showIntrigueModal();
         }
     } catch (err) {
         console.error("Error triggering step 3 webhook:", err);
@@ -2393,6 +2395,44 @@ async function handleApprovePortraits() {
             btnApprove.removeAttribute('disabled');
             btnApprove.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer`;
         }
+        // Restore the portraits modal so they are back to the portrait viewer
+        if (modal) modal.classList.remove('hidden');
+    }
+}
+
+function showIntrigueModal() {
+    const modal = document.getElementById('modalIntrigue');
+    const imgEl = document.getElementById('intrigueIllustration');
+    const titleEl = document.getElementById('intrigueScenarioTitle');
+    const textEl = document.getElementById('intrigueText');
+
+    if (!modal) return;
+
+    // Load values from appState.scenario
+    let illustration = appState.scenario ? appState.scenario.imageUrl : "";
+    if (!illustration || illustration.includes('unsplash.com')) {
+        illustration = "images/iarena-battle.jpg";
+    }
+
+    if (imgEl) imgEl.src = illustration;
+    if (titleEl) titleEl.textContent = appState.scenario ? (appState.scenario.title || "Intrigue Sans Titre") : "Intrigue Sans Titre";
+    
+    let intrigueContent = appState.scenario ? appState.scenario.intrigue : "";
+    if (!intrigueContent) {
+        intrigueContent = appState.scenario ? (appState.scenario.pitch || "Aucune intrigue disponible.") : "Aucune intrigue disponible.";
+    }
+    if (textEl) textEl.textContent = intrigueContent;
+
+    modal.classList.remove('hidden');
+
+    const btnStart = document.getElementById('btnStartGame');
+    if (btnStart) {
+        btnStart.onclick = () => {
+            modal.classList.add('hidden');
+            appState.orgaView = 'generated';
+            savePersistedState();
+            renderOrganizerDashboard();
+        };
     }
 }
 
