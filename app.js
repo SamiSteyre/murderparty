@@ -2242,6 +2242,27 @@ async function handleApprovePortraits() {
         btnApprove.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Lancement Étape 3...`;
     }
 
+    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+    const titleText = document.getElementById('scenarioGeneratingTitle');
+    const subtitleText = document.getElementById('scenarioGeneratingSubtitle');
+    const loadVideo = document.getElementById('iasminaLoadingVideo');
+
+    // Show the loading screen with IAriel1.mp4 and custom text
+    if (genOverlay) {
+        if (titleText) {
+            titleText.textContent = "L'IA-gens Dramaturge IAriel tisse l'intrigue globale et plante le décor. Elle détermine quel suspect est le coupable.";
+        }
+        if (subtitleText) {
+            subtitleText.textContent = "";
+        }
+        if (loadVideo) {
+            loadVideo.src = "https://github.com/SamiSteyre/murderparty/raw/main/images/IAriel1.mp4";
+            loadVideo.currentTime = 0;
+            loadVideo.play().catch(err => console.warn("Loading video play failed:", err));
+        }
+        genOverlay.classList.remove('hidden');
+    }
+
     try {
         if (appState.n8nBaseUrl && !appState.isSimulationMode) {
             addLiveLog(`[Validation] Lancement de l'étape 3 (mp-generate-scenario-3) avec les détails du scénario et des personnages...`);
@@ -2296,33 +2317,53 @@ async function handleApprovePortraits() {
             });
 
             if (!response.ok) {
-                console.warn(`Erreur lors du lancement de l'étape 3 (${response.status})`);
-                showToast("Attention", "L'étape 3 n'a pas pu être lancée automatiquement.", "warning");
-            } else {
-                showToast("Étape 3 Lancée", "La génération des indices et de la scène de crime a démarré !", "success");
+                throw new Error(`HTTP error ${response.status}`);
             }
+
+            // Hide loading overlay
+            if (genOverlay) {
+                genOverlay.classList.add('hidden');
+                if (loadVideo) loadVideo.pause();
+            }
+            if (modal) modal.classList.add('hidden');
+            closeVictimModal();
+
+            // Play IAriel2.mp4 reveal video
+            playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IAriel2.mp4", async () => {
+                showToast("Étape 3 Lancée", "La génération des indices et de la scène de crime a démarré !", "success");
+                appState.orgaView = 'generated';
+                savePersistedState();
+                renderOrganizerDashboard();
+            });
+
         } else {
+            // Simulation mode fallback
+            if (genOverlay) {
+                genOverlay.classList.add('hidden');
+                if (loadVideo) loadVideo.pause();
+            }
+            if (modal) modal.classList.add('hidden');
+            closeVictimModal();
+
             showToast("Portraits Validés", "Simulation terminée.", "success");
+            appState.orgaView = 'generated';
+            savePersistedState();
+            renderOrganizerDashboard();
         }
     } catch (err) {
         console.error("Error triggering step 3 webhook:", err);
-        showToast("Erreur", "Impossible de contacter le serveur pour lancer l'étape 3.", "error");
-    } finally {
+        showToast("Erreur", "Impossible de lancer l'étape 3. Veuillez réessayer.", "error");
+        
+        // Hide loading overlay on error so the user can retry
+        if (genOverlay) {
+            genOverlay.classList.add('hidden');
+            if (loadVideo) loadVideo.pause();
+        }
         if (btnApprove) {
             btnApprove.removeAttribute('disabled');
             btnApprove.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer`;
         }
     }
-
-    if (modal) modal.classList.add('hidden');
-    
-    closeVictimModal();
-    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
-    if (genOverlay) genOverlay.classList.add('hidden');
-    
-    appState.orgaView = 'generated';
-    savePersistedState();
-    renderOrganizerDashboard();
 }
 
 function startVictimPolling(scenarioId) {
