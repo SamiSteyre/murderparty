@@ -1531,10 +1531,12 @@ function loadScenarioData(data, gitFiles = []) {
         let avatar = "";
         if (suspectGitFiles.length > 0) {
             const cleanSusId = (mapped.id || "").toLowerCase().replace(/-/g, "");
+            const rawSusId = (mapped.id || "").toLowerCase();
             // Find matches for this specific suspect ID (ignore files <= 1000 bytes)
             const matches = suspectGitFiles.filter(f => {
+                const nameLower = f.name.toLowerCase();
                 const size = f.size !== undefined ? f.size : 999999;
-                return f.name.toLowerCase().includes(cleanSusId) && size > 1000;
+                return (nameLower.includes(cleanSusId) || nameLower.includes(rawSusId)) && size > 1000;
             });
             if (matches.length === 1) {
                 avatar = matches[0].download_url;
