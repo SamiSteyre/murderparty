@@ -1113,6 +1113,14 @@ function mapSuspectProperties(s, index) {
     
     const status = getPropValue(targetObj, ["Statut", "status"]) || "Créé";
 
+    let relations = s.relations || s.property_relations || [];
+    if (isRawNotion) {
+        const relText = getPropValue(targetObj, ["Relations", "relations"]);
+        if (relText) {
+            relations = relText;
+        }
+    }
+
     return {
         id: id,
         email: email,
@@ -1126,7 +1134,7 @@ function mapSuspectProperties(s, index) {
         secret: secret || charTemplate.secret || "",
         chronology: chronology || charTemplate.chronology || "",
         outfit: outfit || charTemplate.outfit || "",
-        relations: s.relations || [],
+        relations: relations,
         characterTraits: characterTraits,
         avatarUrl: avatarUrl,
         actionPoints: actionPoints,
@@ -1302,6 +1310,12 @@ function mapScenarioProperties(s) {
     }
 
     const targetObj = isRawNotion ? props : s;
+
+    const medium = getPropValue(targetObj, ["medium", "Medium"]) || s.medium || "";
+    const courantArtistique = getPropValue(targetObj, ["courant artistique", "courant_artistique", "courantArtistique", "Courant Artistique"]) || s.courantArtistique || s.courant_artistique || "";
+    const paletteCouleurs = getPropValue(targetObj, ["palette_couleurs", "palette de couleurs", "palette_de_couleurs", "paletteCouleurs", "Palette Couleurs", "Palette de couleurs"]) || s.paletteCouleurs || s.palette_couleurs || "";
+    const eclairage = getPropValue(targetObj, ["eclairage", "éclairage", "lighting", "Lighting", "Éclairage", "Eclairage"]) || s.eclairage || "";
+
     const victimShortHookVal = getPropValue(targetObj, ["victime_short_hook", "Accroche Victime", "Victime Accroche", "victimShortHook"]) || 
                                (s.victim && typeof s.victim === 'object' ? (s.victim.short_hook || s.victim.victimShortHook || s.victim.victim_short_hook) : "") ||
                                s.victimShortHook || s.property_victime_short_hook || "";
@@ -1309,9 +1323,9 @@ function mapScenarioProperties(s) {
                             (s.victim && typeof s.victim === 'object' ? (s.victim.marker || s.victim.victimMarker || s.victim.victim_marker) : "") ||
                             s.victimMarker || s.property_victime_marker || "";
 
-    const victimObj = s.victimObj || {
+    const victimObj = {
         name: victim,
-        genre: victimGenre,
+        genre: victimGenre || (s.victimObj ? s.victimObj.genre : ""),
         short_hook: victimShortHookVal,
         outfit: victimOutfit,
         marker: victimMarkerVal,
@@ -1335,7 +1349,12 @@ function mapScenarioProperties(s) {
         status: status,
         email: email,
         suspects: suspects,
-        victimObj: victimObj
+        victimObj: victimObj,
+        victimGenre: victimGenre || (s.victimObj ? s.victimObj.genre : ""),
+        medium: medium,
+        courantArtistique: courantArtistique,
+        paletteCouleurs: paletteCouleurs,
+        eclairage: eclairage
     };
 }
 
@@ -1569,6 +1588,12 @@ function loadScenarioData(data, gitFiles = []) {
         }).join('\n');
     }
 
+    const medium = data.medium || "";
+    const courantArtistique = data.courantArtistique || data.courant_artistique || "";
+    const paletteCouleurs = data.paletteCouleurs || data.palette_couleurs || "";
+    const eclairage = data.eclairage || "";
+    const victimGenre = data.victimGenre || (data.victimObj ? data.victimObj.genre : "") || data.victim_genre || "";
+
     appState.scenario = {
         id,
         title,
@@ -1578,6 +1603,11 @@ function loadScenarioData(data, gitFiles = []) {
         victim: victimName,
         victimOutfit,
         victimShortHook,
+        victimGenre,
+        medium,
+        courantArtistique,
+        paletteCouleurs,
+        eclairage,
         cluesCount,
         imageUrl: resolvedImageUrl,
         rawImageUrl: rawIllustration,
@@ -2214,15 +2244,55 @@ async function handleApprovePortraits() {
 
     try {
         if (appState.n8nBaseUrl && !appState.isSimulationMode) {
-            addLiveLog(`[Validation] Lancement de l'étape 3 (mp-generate-scenario-3) en arrière-plan...`);
+            addLiveLog(`[Validation] Lancement de l'étape 3 (mp-generate-scenario-3) avec les détails du scénario et des personnages...`);
             
+            const payload = {
+                scenario_id: appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : ""),
+                organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com',
+                
+                // Nested structures as requested
+                scenario: {
+                    id: appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : ""),
+                    theme: appState.scenario ? (appState.scenario.theme || "") : "",
+                    pitch_global: appState.scenario ? (appState.scenario.pitch || "") : ""
+                },
+                charte_graphique: {
+                    medium: appState.scenario ? (appState.scenario.medium || "") : "",
+                    courant_artistique: appState.scenario ? (appState.scenario.courantArtistique || "") : "",
+                    palette_couleurs: appState.scenario ? (appState.scenario.paletteCouleurs || "") : "",
+                    eclairage: appState.scenario ? (appState.scenario.eclairage || "") : ""
+                },
+                victim: {
+                    nom: appState.scenario ? (appState.scenario.victim || "") : "",
+                    short_hook: appState.scenario ? (appState.scenario.victimShortHook || "") : "",
+                    genre: appState.scenario ? (appState.scenario.victimGenre || "") : "",
+                    outfit: appState.scenario ? (appState.scenario.victimOutfit || "") : ""
+                },
+                suspects: (appState.players || []).map(p => ({
+                    nom: p.roleName || "",
+                    genre: p.genre || "",
+                    role: p.badge || "",
+                    secret: p.secret || "",
+                    relation_avec_la_victime: p.lienVictime || "",
+                    traits_de_caracteres: p.characterTraits || "",
+                    outfit: p.outfit || "",
+                    marker: p.marker || "",
+                    relations: p.relations || []
+                })),
+
+                // Flattened fallback properties at root
+                theme: appState.scenario ? (appState.scenario.theme || "") : "",
+                pitch_global: appState.scenario ? (appState.scenario.pitch || "") : "",
+                medium: appState.scenario ? (appState.scenario.medium || "") : "",
+                courant_artistique: appState.scenario ? (appState.scenario.courantArtistique || "") : "",
+                palette_couleurs: appState.scenario ? (appState.scenario.paletteCouleurs || "") : "",
+                eclairage: appState.scenario ? (appState.scenario.eclairage || "") : ""
+            };
+
             const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario-3`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    scenario_id: appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : ""),
-                    organizer_email: appState.currentUser ? appState.currentUser.email : 'organisateur@email.com'
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
