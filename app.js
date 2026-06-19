@@ -2239,7 +2239,7 @@ async function handleApprovePortraits() {
 
     if (btnApprove) {
         btnApprove.setAttribute('disabled', 'true');
-        btnApprove.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Lancement Étape 3...`;
+        btnApprove.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Récupération des données...`;
     }
 
     const genOverlay = document.getElementById('scenarioGeneratingOverlay');
@@ -2264,6 +2264,36 @@ async function handleApprovePortraits() {
     }
 
     try {
+        const scenarioId = appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : "");
+
+        // Fetch fresh details from mp-get-scenario-details right before launching step 3
+        if (appState.n8nBaseUrl && !appState.isSimulationMode && scenarioId) {
+            addLiveLog(`[Validation] Récupération des dernières données de Notion via mp-get-scenario-details...`);
+            try {
+                const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scenario_id: scenarioId })
+                });
+                if (detailsRes.ok) {
+                    const detailsData = await detailsRes.json();
+                    let rawScenario = extractRawScenario(detailsData);
+                    if (rawScenario) {
+                        const completeScenario = mapScenarioProperties(rawScenario);
+                        const gitFiles = await fetchGithubImagesList();
+                        loadScenarioData(completeScenario, gitFiles);
+                        addLiveLog(`[Validation] Données rafraîchies avec succès depuis Notion.`);
+                    }
+                }
+            } catch (fetchErr) {
+                console.warn("Failed to fetch fresh scenario details before step 3, using local state", fetchErr);
+            }
+        }
+
+        if (btnApprove) {
+            btnApprove.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Lancement Étape 3...`;
+        }
+
         if (appState.n8nBaseUrl && !appState.isSimulationMode) {
             addLiveLog(`[Validation] Lancement de l'étape 3 (mp-generate-scenario-3) avec les détails du scénario et des personnages...`);
             
@@ -2694,7 +2724,10 @@ async function handleApproveVictim() {
             }
         }
 
-        if (rawScenario && (rawScenario.scenario_id || rawScenario.id)) {
+        // Check if rawScenario has full details (at least suspects) to decide if we can finish immediately.
+        // If it only returns the ID, it does NOT have full details, so we let the polling finish the work.
+        const hasFullDetails = rawScenario && (rawScenario.suspects && rawScenario.suspects.length > 0);
+        if (hasFullDetails) {
             addLiveLog(`[Validation] Données complètes du scénario reçues et chargées.`);
             
             if (victimPollInterval) {
@@ -2710,6 +2743,11 @@ async function handleApproveVictim() {
             handleStep2Completion(mappedScenario);
             showToast("Succès", "Scénario généré avec succès !", "success");
             return;
+        } else {
+            addLiveLog(`[Validation] ID de scénario reçu (${appState.pendingScenarioId}). Poursuite du polling des détails via mp-get-scenario-details...`);
+            if (!victimPollInterval && !appState.isSimulationMode && appState.pendingScenarioId) {
+                startVictimPolling(appState.pendingScenarioId);
+            }
         }
 
         addLiveLog(`[Validation] Requête envoyée. Attente de la mise à jour Notion...`);
