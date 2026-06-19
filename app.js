@@ -1025,12 +1025,14 @@ function mapSuspectProperties(s, index) {
         (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "")
     ) : (s.status || s.roleType || s.property_role_type || "");
 
+    const cleanRole = (s.role || "").toLowerCase();
+    const isGenericRole = cleanRole === "suspect" || cleanRole === "coupable" || cleanRole === "le coupable" || cleanRole === "faux-coupable" || cleanRole === "le faux-coupable";
     const badge = isRawNotion ? (
         (props["Badge"] && props["Badge"].select ? props["Badge"].select.name : "") ||
         (props["Badge"] && props["Badge"].rich_text ? getText(props["Badge"]) : "") ||
         (props["badge"] && props["badge"].select ? props["badge"].select.name : "") ||
         (props["badge"] && props["badge"].rich_text ? getText(props["badge"]) : "")
-    ) : (s.role || s.badge || charTemplate.role || "");
+    ) : (s.Badge || s.badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "");
 
     const roleName = isRawNotion ? (getText(props["Nom Fictif"]) || getText(props["Nom"])) : (s.name || s.roleName || s.property_nom || s.role_name || "");
     const history = isRawNotion ? getText(props["Rôle / Histoire"]) : (s.bio || s.history || s.property_r_le_histoire || s.property_role_histoire || "");
@@ -2322,6 +2324,15 @@ function startVictimPolling(scenarioId) {
                 if (titleText) {
                     titleText.textContent = `L'IA-gens Portraitiste IArthur réalise les portraits de la victime et des 16 suspects (${totalImages} / ${targetCount} terminés)`;
                 }
+                
+                const subtitleText = document.getElementById('scenarioGeneratingSubtitle');
+                if (subtitleText) {
+                    if (totalImages === 0) {
+                        subtitleText.textContent = "J'identifie sous quelle forme les gens sont représentés dans le contexte défini. Je prépare le croquis du portrait de la victime en suivant les règles identifiées et je génère son portrait.";
+                    } else {
+                        subtitleText.textContent = "Je prépare les croquis des portraits pour tous les suspects en suivant les règles identifiées (c'est l'étape la plus longue !), puis je génère en une fois leurs portraits.";
+                    }
+                }
             }
 
             const statusLower = (scenarioDetails && scenarioDetails.status) ? scenarioDetails.status.toLowerCase() : "";
@@ -2380,7 +2391,12 @@ async function handleApproveVictim() {
         // Dynamically replace IAsmina video and text with IArthur for step 2
         const titleText = document.getElementById('scenarioGeneratingTitle');
         if (titleText) {
-            titleText.textContent = "L'IA-gens Portraitiste IArthur réalise les portraits de la victime et des 16 suspects";
+            titleText.textContent = "L'IA-gens Portraitiste IArthur réalise les portraits de la victime et des 16 suspects (0 / 17 terminés)";
+        }
+        
+        const subtitleText = document.getElementById('scenarioGeneratingSubtitle');
+        if (subtitleText) {
+            subtitleText.textContent = "J'identifie sous quelle forme les gens sont représentés dans le contexte défini. Je prépare le croquis du portrait de la victime en suivant les règles identifiées et je génère son portrait.";
         }
         
         const loadVideo = document.getElementById('iasminaLoadingVideo');
@@ -2763,26 +2779,7 @@ async function handleSimulateApprove() {
 
         const suspectsData = dataScenario.suspects;
         appState.players = suspectsData.map((s, index) => {
-            const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
-            return {
-                email: "",
-                roleType: s.status || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
-                roleName: s.name,
-                history: s.bio,
-                lienVictime: s.relation,
-                marker: s.marker,
-                genre: s.genre,
-                secret: charTemplate.secret || "",
-                chronology: charTemplate.chronology || "",
-                outfit: s.outfit || "",
-                relations: s.relations || [],
-                characterTraits: "",
-                avatarUrl: "",
-                actionPoints: 1,
-                status: "Créé",
-                knowledge: [],
-                missions: []
-            };
+            return mapSuspectProperties(s, index);
         });
 
         appState.clues = [];
@@ -2853,6 +2850,11 @@ async function handleUnifiedSessionSubmit(e) {
                 const titleText = document.getElementById('scenarioGeneratingTitle');
                 if (titleText) {
                     titleText.textContent = "L'IA-gens Profiler IAsmina identifie la victime et dresse la liste des 16 suspects";
+                }
+                
+                const subtitleText = document.getElementById('scenarioGeneratingSubtitle');
+                if (subtitleText) {
+                    subtitleText.textContent = "";
                 }
                 
                 const loadVideo = document.getElementById('iasminaLoadingVideo');
@@ -2998,10 +3000,13 @@ async function handleUnifiedSessionSubmit(e) {
             const suspectsData = dataScenario.suspects || CHARACTER_TEMPLATES;
             appState.players = suspectsData.map((s, index) => {
                 const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+                const cleanRole = (s.role || "").toLowerCase();
+                const isGenericRole = cleanRole === "suspect" || cleanRole === "coupable" || cleanRole === "le coupable" || cleanRole === "faux-coupable" || cleanRole === "le faux-coupable";
                 return {
                     email: "", // Unassigned initially
                     roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
                     roleName: s.name || s.roleName || charTemplate.name,
+                    badge: s.Badge || s.badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "",
                     history: s.bio || s.history || charTemplate.bio,
                     lienVictime: s.relation || s.lienVictime || charTemplate.relation,
                     marker: s.marker || charTemplate.marker,
@@ -3176,10 +3181,13 @@ async function handleUnifiedSessionSubmit(e) {
                 const suspectsData = selectedScenario.suspects || CHARACTER_TEMPLATES;
                 appState.players = suspectsData.map((s, index) => {
                     const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+                    const cleanRole = (s.role || "").toLowerCase();
+                    const isGenericRole = cleanRole === "suspect" || cleanRole === "coupable" || cleanRole === "le coupable" || cleanRole === "faux-coupable" || cleanRole === "le faux-coupable";
                     return {
                         email: s.email || "",
                         roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
                         roleName: s.name || s.roleName || charTemplate.name,
+                        badge: s.Badge || s.badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "",
                         history: s.bio || s.history || charTemplate.bio,
                         lienVictime: s.relation || s.lienVictime || charTemplate.relation,
                         marker: s.marker || charTemplate.marker,
@@ -3233,25 +3241,7 @@ async function handleUnifiedSessionSubmit(e) {
 
                 // Prepopulate 16 suspects from static template for fallback
                 appState.players = CHARACTER_TEMPLATES.map((char, index) => {
-                    return {
-                        email: "",
-                        roleType: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent"),
-                        roleName: char.name,
-                        history: char.bio,
-                        lienVictime: char.relation,
-                        marker: char.marker,
-                        genre: char.genre || "Non-Binaire",
-                        secret: char.secret || "",
-                        chronology: char.chronology || "",
-                        outfit: char.outfit || "",
-                        relations: char.relations || [],
-                        characterTraits: "",
-                        avatarUrl: "",
-                        actionPoints: 1,
-                        status: "Créé",
-                        knowledge: [],
-                        missions: []
-                    };
+                    return mapSuspectProperties(char, index);
                 });
             }
 
