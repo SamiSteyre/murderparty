@@ -944,8 +944,114 @@ function cleanN8nExpression(value, fallback) {
     return value;
 }
 
+function getPropValue(obj, candidates) {
+    if (!obj) return "";
+    
+    const cleanStr = (str) => {
+        return str.toLowerCase()
+            .replace(/^property[\s_\-]/, "") // remove property_ prefix
+            .replace(/[\s_\-]/g, "") // remove spaces, underscores, dashes
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, ""); // remove accents
+    };
+    
+    const keys = Object.keys(obj);
+    const cleanedKeys = keys.map(cleanStr);
+    
+    // First pass: try exact matches
+    for (const cand of candidates) {
+        const cleanedCand = cleanStr(cand);
+        for (let i = 0; i < keys.length; i++) {
+            if (cleanedKeys[i] === cleanedCand) {
+                const val = obj[keys[i]];
+                if (val !== null && val !== undefined) {
+                    if (typeof val === 'object') {
+                        if (val.select) return val.select.name || "";
+                        if (val.rich_text) return val.rich_text.map(t => t.plain_text).join("");
+                        if (val.title) return val.title.map(t => t.plain_text).join("");
+                        if (val.email) return val.email || "";
+                        if (val.number !== undefined) return String(val.number);
+                    }
+                    return String(val);
+                }
+            }
+        }
+    }
+    
+    // Second pass: try partial matches where the object key contains the candidate (e.g. "Accroche Victime (Court)" contains "Accroche Victime")
+    for (const cand of candidates) {
+        const cleanedCand = cleanStr(cand);
+        for (let i = 0; i < keys.length; i++) {
+            if (cleanedKeys[i].includes(cleanedCand)) {
+                const val = obj[keys[i]];
+                if (val !== null && val !== undefined) {
+                    if (typeof val === 'object') {
+                        if (val.select) return val.select.name || "";
+                        if (val.rich_text) return val.rich_text.map(t => t.plain_text).join("");
+                        if (val.title) return val.title.map(t => t.plain_text).join("");
+                        if (val.email) return val.email || "";
+                        if (val.number !== undefined) return String(val.number);
+                    }
+                    return String(val);
+                }
+            }
+        }
+    }
+    
+    return "";
+}
+
+function extractSuspectBadge(s, charTemplate) {
+    if (!s) return charTemplate ? (charTemplate.role || "") : "";
+    
+    // Check specific columns first
+    let badge = getPropValue(s, ["Badge", "profession", "titre", "badge_fr"]);
+    if (badge) return badge;
+
+    // Check "role" or "Rôle" but ensure it's not generic
+    const rawRole = getPropValue(s, ["role", "Rôle"]);
+    if (rawRole) {
+        const cleanRawRole = rawRole.toLowerCase().trim();
+        const isGeneric = cleanRawRole === "suspect" || 
+                          cleanRawRole === "coupable" || 
+                          cleanRawRole === "le coupable" || 
+                          cleanRawRole === "faux-coupable" || 
+                          cleanRawRole === "le faux-coupable" || 
+                          cleanRawRole === "innocent" || 
+                          cleanRawRole === "l'innocent";
+        if (!isGeneric) {
+            return rawRole;
+        }
+    }
+
+    return charTemplate ? (charTemplate.role || "") : "";
+}
+
 function mapSuspectProperties(s, index) {
     const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
+    if (!s) {
+        return {
+            id: "",
+            email: "",
+            roleType: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent"),
+            roleName: charTemplate.name,
+            history: charTemplate.bio,
+            badge: extractSuspectBadge(null, charTemplate),
+            lienVictime: charTemplate.relation,
+            marker: charTemplate.marker,
+            genre: charTemplate.genre || "Non-Binaire",
+            secret: charTemplate.secret || "",
+            chronology: charTemplate.chronology || "",
+            outfit: charTemplate.outfit || "",
+            relations: [],
+            characterTraits: "",
+            avatarUrl: "",
+            actionPoints: 1,
+            status: "Créé",
+            knowledge: [],
+            missions: []
+        };
+    }
+
     if (typeof s === 'string') {
         return {
             id: s,
@@ -953,6 +1059,7 @@ function mapSuspectProperties(s, index) {
             roleType: index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent"),
             roleName: charTemplate.name,
             history: charTemplate.bio,
+            badge: extractSuspectBadge(null, charTemplate),
             lienVictime: charTemplate.relation,
             marker: charTemplate.marker,
             genre: charTemplate.genre || "Non-Binaire",
@@ -969,7 +1076,6 @@ function mapSuspectProperties(s, index) {
         };
     }
 
-    // Helper to get text/number/file from Notion properties if present
     let isRawNotion = false;
     let props = {};
     if (s && s.properties && typeof s.properties === 'object') {
@@ -977,89 +1083,35 @@ function mapSuspectProperties(s, index) {
         props = s.properties;
     }
 
-    const getText = (prop) => {
-        if (!prop) return "";
-        if (prop.rich_text) return prop.rich_text.map(t => t.plain_text).join("");
-        if (prop.title) return prop.title.map(t => t.plain_text).join("");
-        return "";
-    };
-
-    const getNumber = (prop) => {
-        if (!prop) return 0;
-        return prop.number || 0;
-    };
-
-    const getFileUrl = (prop) => {
-        if (!prop || !prop.files || prop.files.length === 0) return "";
-        const f = prop.files[0];
-        if (f.file) return f.file.url;
-        if (f.external) return f.external.url;
-        return "";
-    };
-
-    const getFile = (val) => {
-        if (!val) return "";
-        if (typeof val === 'string') return val;
-        if (Array.isArray(val) && val.length > 0) {
-            const f = val[0];
-            if (typeof f === 'string') return f;
-            if (f.file && f.file.url) return f.file.url;
-            if (f.external && f.external.url) return f.external.url;
-            if (f.url) return f.url;
-        }
-        if (typeof val === 'object') {
-            if (val.url) return val.url;
-            if (val.files && Array.isArray(val.files) && val.files.length > 0) {
-                const f = val.files[0];
-                if (f.file && f.file.url) return f.file.url;
-                if (f.external && f.external.url) return f.external.url;
-                if (f.url) return f.url;
-            }
-        }
-        return "";
-    };
+    const targetObj = isRawNotion ? props : s;
 
     const id = (typeof s === 'string') ? s : (s.id || s.scenario_id || s.character_id || "");
-    const email = isRawNotion ? (props["Email"] ? props["Email"].email : "") : (s.email || s.property_email || "");
-    const roleType = isRawNotion ? (
-        (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "")
-    ) : (s.status || s.roleType || s.property_role_type || "");
+    const email = getPropValue(targetObj, ["Email", "email"]);
+    const roleType = getPropValue(targetObj, ["Statut", "status", "roleType"]);
 
-    const cleanRole = (s.role || "").toLowerCase();
-    const isGenericRole = cleanRole === "suspect" || cleanRole === "coupable" || cleanRole === "le coupable" || cleanRole === "faux-coupable" || cleanRole === "le faux-coupable";
-    const badge = isRawNotion ? (
-        (props["Badge"] && props["Badge"].select ? props["Badge"].select.name : "") ||
-        (props["Badge"] && props["Badge"].rich_text ? getText(props["Badge"]) : "") ||
-        (props["badge"] && props["badge"].select ? props["badge"].select.name : "") ||
-        (props["badge"] && props["badge"].rich_text ? getText(props["badge"]) : "")
-    ) : (s.Badge || s.badge || s.property_badge || s.property_Badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "");
+    const badge = extractSuspectBadge(targetObj, charTemplate);
 
-    const roleName = isRawNotion ? (getText(props["Nom Fictif"]) || getText(props["Nom"])) : (s.name || s.roleName || s.property_nom || s.role_name || "");
-    const history = isRawNotion ? getText(props["Rôle / Histoire"]) : (s.bio || s.history || s.property_r_le_histoire || s.property_role_histoire || "");
-    const lienVictime = isRawNotion ? getText(props["Lien avec la Victime"]) : (s.relation || s.lienVictime || s.property_lien_avec_la_victime || "");
-    const marker = isRawNotion ? getText(props["Marqueur Visuel"]) : (s.marker || s.property_marqueur_visuel || "");
+    const roleName = getPropValue(targetObj, ["Nom Fictif", "Nom", "name", "roleName"]);
+    const history = getPropValue(targetObj, ["Rôle / Histoire", "bio", "history"]);
+    const lienVictime = getPropValue(targetObj, ["Lien avec la Victime", "relation", "lienVictime"]);
+    const marker = getPropValue(targetObj, ["Marqueur Visuel", "marker", "marqueur"]);
     
-    let genre = "";
-    if (isRawNotion) {
-        const g = props["Genre"] || props["genre"];
-        if (g) {
-            if (g.select) genre = g.select.name;
-            else if (g.rich_text) genre = g.rich_text.map(t => t.plain_text).join("");
-            else if (g.title) genre = g.title.map(t => t.plain_text).join("");
-        }
-        if (!genre) genre = "Non-Binaire";
-    } else {
-        genre = s.genre || s.roleGenre || s.property_genre || "";
+    const genre = getPropValue(targetObj, ["Genre", "genre"]) || "Non-Binaire";
+    const secret = getPropValue(targetObj, ["Secret", "secret"]);
+    const chronology = getPropValue(targetObj, ["Timeline", "chronology"]);
+    const outfit = getPropValue(targetObj, ["Tenue", "outfit"]);
+    const characterTraits = getPropValue(targetObj, ["Traits de Caractère", "characterTraits"]);
+    
+    const avatarUrl = getPropValue(targetObj, ["photo_suspect", "Avatar / Photo", "Photo Suspect", "photo", "avatarUrl", "avatar"]);
+    
+    let actionPointsVal = getPropValue(targetObj, ["Solde Points d'Action", "actionPoints"]);
+    let actionPoints = 1;
+    if (actionPointsVal) {
+        let parsed = parseInt(actionPointsVal);
+        if (!isNaN(parsed)) actionPoints = parsed;
     }
-
-    const secret = isRawNotion ? getText(props["Secret"]) : (s.secret || s.property_secret || "");
-    const chronology = isRawNotion ? getText(props["Timeline"]) : (s.chronology || s.property_timeline || "");
-    const outfit = isRawNotion ? getText(props["Tenue"]) : (s.outfit || s.property_tenue || "");
-    const characterTraits = isRawNotion ? getText(props["Traits de Caractère"]) : (s.characterTraits || s.property_traits_de_caractere || "");
     
-    const avatarUrl = isRawNotion ? (getText(props["photo_suspect"]) || getFileUrl(props["photo_suspect"]) || getFileUrl(props["Avatar / Photo"]) || getFileUrl(props["Photo Suspect"]) || getFileUrl(props["photo"])) : getFile(s.avatarUrl || s.avatar_url || s.avatar || s.illustration || s.property_avatar___photo || s.property_avatar__photo || s.property_avatar_photo || s.avatar___photo || s.avatar__photo || s.avatar_photo || s["Avatar / Photo"] || s.property_photo_suspect || s.photo_suspect || s.property_photo || s.photo || "");
-    const actionPoints = isRawNotion ? getNumber(props["Solde Points d'Action"]) : (s.actionPoints !== undefined ? s.actionPoints : (s.property_solde_points_d_action !== undefined ? s.property_solde_points_d_action : 1));
-    const status = isRawNotion ? (props["Statut"] && props["Statut"].select ? props["Statut"].select.name : "Créé") : (s.status || "Créé");
+    const status = getPropValue(targetObj, ["Statut", "status"]) || "Créé";
 
     return {
         id: id,
@@ -1249,12 +1301,16 @@ function mapScenarioProperties(s) {
         }
     }
 
+    const targetObj = isRawNotion ? props : s;
+    const victimShortHookVal = getPropValue(targetObj, ["victime_short_hook", "Accroche Victime", "Victime Accroche", "victimShortHook"]) || s.victimShortHook || s.property_victime_short_hook || "";
+    const victimMarkerVal = getPropValue(targetObj, ["Marqueur Victime", "Victime Marqueur", "Marqueur Visuel Victime", "victimMarker"]) || s.victimMarker || s.property_victime_marker || "";
+
     const victimObj = s.victimObj || {
         name: victim,
         genre: victimGenre,
-        short_hook: isRawNotion ? getText(props["victime_short_hook"]) || getText(props["Accroche Victime"]) || getText(props["Victime Accroche"]) : (s.victimShortHook || s.property_victime_short_hook || ""),
+        short_hook: victimShortHookVal,
         outfit: victimOutfit,
-        marker: isRawNotion ? getText(props["Marqueur Victime"]) || getText(props["Victime Marqueur"]) || getText(props["Marqueur Visuel Victime"]) : (s.victimMarker || s.property_victime_marker || ""),
+        marker: victimMarkerVal,
         avatarUrl: victimPhotoUrl
     };
 
@@ -1268,6 +1324,7 @@ function mapScenarioProperties(s) {
         crimeRoom: crimeRoom,
         victim: victim,
         victimOutfit: victimOutfit,
+        victimShortHook: victimShortHookVal,
         chronology: chronology,
         cluesCount: cluesCount,
         illustration: illustration,
@@ -1418,6 +1475,7 @@ function extractRawScenario(data) {
 }
 
 function loadScenarioData(data, gitFiles = []) {
+    if (!data) return;
     const id = data.scenario_id || data.id;
     const title = data.title;
     const theme = data.theme || appState.scenario?.theme || "Généré";
@@ -1550,7 +1608,7 @@ function loadScenarioData(data, gitFiles = []) {
             const rawSusId = (mapped.id || "").toLowerCase();
             // Find matches for this specific suspect ID (ignore files <= 1000 bytes)
             const matches = suspectGitFiles.filter(f => {
-                const nameLower = f.name.toLowerCase();
+                const nameLower = (f.name || "").toLowerCase();
                 const size = f.size !== undefined ? f.size : 999999;
                 return (nameLower.includes(cleanSusId) || nameLower.includes(rawSusId)) && size > 1000;
             });
@@ -1603,7 +1661,7 @@ function loadScenarioData(data, gitFiles = []) {
     if (data.clues && Array.isArray(data.clues)) {
         data.clues.forEach((c, idx) => {
             appState.clues.push({
-                id: c.id || `clue_${c.location.replace(/\s+/g, '_')}_${idx}`,
+                id: c.id || `clue_${(c.location || '').replace(/\s+/g, '_')}_${idx}`,
                 name: c.name,
                 description: c.description,
                 type: c.type || "Fouille de Pièce",
@@ -1933,6 +1991,11 @@ async function handleStep2Completion(scenarioDetails) {
     if (titleText) {
         titleText.textContent = "Récupération des portraits en cours...";
     }
+
+    const subtitleText = document.getElementById('scenarioGeneratingSubtitle');
+    if (subtitleText) {
+        subtitleText.textContent = "";
+    }
     
     closeVictimModal();
 
@@ -1990,10 +2053,10 @@ function showPortraitsVerificationModal() {
             }
             list.push({
                 name: p.roleName,
-                role: p.roleType || "Suspect",
+                role: p.badge || "Suspect",
                 imageUrl: avatar,
                 fallbackUrl: p.rawAvatarUrl || "",
-                bio: p.badge || p.history || ""
+                bio: p.history || ""
             });
         });
     }
@@ -2045,10 +2108,6 @@ function renderActivePortrait() {
         roleEl.textContent = portrait.role;
         if (portrait.role === "La Victime") {
             roleEl.className = "px-2.5 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-red-950/20 border border-red-500/20 text-red-500 inline-block";
-        } else if (portrait.role === "Le Coupable" || portrait.role === "Coupable") {
-            roleEl.className = "px-2.5 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-blood/20 border border-blood/30 text-blood inline-block";
-        } else if (portrait.role === "Faux-Coupable") {
-            roleEl.className = "px-2.5 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-amber-500/10 border border-amber-500/20 text-amber-500 inline-block";
         } else {
             roleEl.className = "px-2.5 py-0.5 text-[9px] uppercase tracking-wider rounded font-extrabold bg-gold/10 border border-gold/20 text-gold inline-block";
         }
@@ -2188,6 +2247,7 @@ function startVictimPolling(scenarioId) {
     const maxPolls = 160; // 8 minutes timeout (160 * 3s = 480s)
 
     victimPollInterval = setInterval(async () => {
+        if (step2CompletionTriggered || !victimPollInterval) return;
         pollCount++;
         if (pollCount >= maxPolls) {
             clearInterval(victimPollInterval);
@@ -2204,6 +2264,7 @@ function startVictimPolling(scenarioId) {
         }
 
         try {
+            if (step2CompletionTriggered || !victimPollInterval) return;
             let scenarioDetails = null;
 
             if (appState.n8nBaseUrl) {
@@ -2213,6 +2274,7 @@ function startVictimPolling(scenarioId) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ scenario_id: scenarioId })
                     });
+                    if (step2CompletionTriggered || !victimPollInterval) return;
                     if (res.ok) {
                         const data = await res.json();
                         let rawScenario = extractRawScenario(data);
@@ -2249,6 +2311,7 @@ function startVictimPolling(scenarioId) {
 
             if (!scenarioDetails) {
                 const config = await getNotionConfig();
+                if (step2CompletionTriggered || !victimPollInterval) return;
                 if (config && config.NOTION_TOKEN) {
                     try {
                         const res = await fetch(`https://api.notion.com/v1/pages/${scenarioId}`, {
@@ -2258,6 +2321,7 @@ function startVictimPolling(scenarioId) {
                                 'Notion-Version': '2022-06-28'
                             }
                         });
+                        if (step2CompletionTriggered || !victimPollInterval) return;
                         if (res.ok) {
                             const page = await res.json();
                             console.log("[Polling] Page Notion récupérée directement :", page);
@@ -2278,6 +2342,7 @@ function startVictimPolling(scenarioId) {
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({ scenario_id: scenarioId })
                                         });
+                                        if (step2CompletionTriggered || !victimPollInterval) return;
                                         if (detailsRes.ok) {
                                             const detailsData = await detailsRes.json();
                                             let rawScenario = extractRawScenario(detailsData);
@@ -2800,7 +2865,7 @@ async function handleSimulateApprove() {
         appState.clues = [];
         dataScenario.clues.forEach((c, idx) => {
             appState.clues.push({
-                id: c.id || `clue_${c.location.replace(/\s+/g, '_')}_${idx}`,
+                id: c.id || `clue_${(c.location || '').replace(/\s+/g, '_')}_${idx}`,
                 name: c.name,
                 description: c.description,
                 type: c.type || "Fouille de Pièce",
@@ -3016,13 +3081,11 @@ async function handleUnifiedSessionSubmit(e) {
             const suspectsData = dataScenario.suspects || CHARACTER_TEMPLATES;
             appState.players = suspectsData.map((s, index) => {
                 const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
-                const cleanRole = (s.role || "").toLowerCase();
-                const isGenericRole = cleanRole === "suspect" || cleanRole === "coupable" || cleanRole === "le coupable" || cleanRole === "faux-coupable" || cleanRole === "le faux-coupable";
                 return {
                     email: "", // Unassigned initially
                     roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
                     roleName: s.name || s.roleName || charTemplate.name,
-                    badge: s.Badge || s.badge || s.property_badge || s.property_Badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "",
+                    badge: extractSuspectBadge(s, charTemplate),
                     history: s.bio || s.history || charTemplate.bio,
                     lienVictime: s.relation || s.lienVictime || charTemplate.relation,
                     marker: s.marker || charTemplate.marker,
@@ -3065,6 +3128,67 @@ async function handleUnifiedSessionSubmit(e) {
 
                 // Handle resuming a draft scenario (status "En cours de génération")
                 if (selectedScenario.status === "En cours de génération" || selectedScenario.status === "En cours de generation") {
+                    const etape = selectedScenario.etapeGeneration || 1;
+                    if (etape === 2) {
+                        addLiveLog(`[Reprise] Récupération des portraits pour "${selectedScenario.title}"...`);
+                        try {
+                            let completeScenario = null;
+                            if (appState.n8nBaseUrl) {
+                                try {
+                                    const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ scenario_id: selectedScenario.id })
+                                    });
+                                    if (detailsRes.ok) {
+                                        const detailsData = await detailsRes.json();
+                                        let rawScenario = extractRawScenario(detailsData);
+                                        if (rawScenario) {
+                                            completeScenario = mapScenarioProperties(rawScenario);
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn("Failed to fetch scenario details via webhook:", e);
+                                }
+                            }
+                            if (!completeScenario) {
+                                try {
+                                    completeScenario = await fetchScenarioAndSuspectsFromNotion(selectedScenario.id);
+                                } catch (err) {
+                                    console.warn("Failed direct Notion fetch (expected due to CORS in browser):", err);
+                                }
+                            }
+                            if (!completeScenario) {
+                                completeScenario = selectedScenario;
+                            }
+
+                            const gitFiles = await fetchGithubImagesList();
+                            loadScenarioData(completeScenario, gitFiles);
+                            
+                            appState.pendingScenarioId = selectedScenario.id;
+                            appState.pendingScenarioData = {
+                                scenario_id: selectedScenario.id,
+                                title: completeScenario.title || selectedScenario.title,
+                                theme: completeScenario.theme || selectedScenario.theme || "",
+                                pitch: completeScenario.pitch || selectedScenario.pitch || "",
+                                epoch: completeScenario.epoch || selectedScenario.epoch || "passé",
+                                victim: completeScenario.victimObj || completeScenario.victim,
+                                suspects: completeScenario.suspects || []
+                            };
+                            savePersistedState();
+                            
+                            showPortraitsVerificationModal();
+                            showToast("Succès", "Portraits chargés avec succès.", "success");
+                        } catch (err) {
+                            console.error("Error loading scenario step 2 in submit button click:", err);
+                            showToast("Erreur", "Impossible de charger les portraits.", "error");
+                        } finally {
+                            submitBtn.removeAttribute('disabled');
+                            updateSelectScenarioSubmitBtn();
+                        }
+                        return;
+                    }
+
                     addLiveLog(`[Reprise] Récupération de la victime et des suspects pour "${selectedScenario.title}"...`);
                     
                     try {
@@ -3198,13 +3322,11 @@ async function handleUnifiedSessionSubmit(e) {
                 const suspectsData = selectedScenario.suspects || CHARACTER_TEMPLATES;
                 appState.players = suspectsData.map((s, index) => {
                     const charTemplate = CHARACTER_TEMPLATES[index % CHARACTER_TEMPLATES.length];
-                    const cleanRole = (s.role || "").toLowerCase();
-                    const isGenericRole = cleanRole === "suspect" || cleanRole === "coupable" || cleanRole === "le coupable" || cleanRole === "faux-coupable" || cleanRole === "le faux-coupable";
                     return {
                         email: s.email || "",
                         roleType: s.status || s.roleType || (index === 0 ? "Coupable" : (index === 1 || index === 2 ? "Faux-Coupable" : "Innocent")),
                         roleName: s.name || s.roleName || charTemplate.name,
-                        badge: s.Badge || s.badge || s.property_badge || s.property_Badge || (s.role && !isGenericRole ? s.role : "") || charTemplate.role || "",
+                        badge: extractSuspectBadge(s, charTemplate),
                         history: s.bio || s.history || charTemplate.bio,
                         lienVictime: s.relation || s.lienVictime || charTemplate.relation,
                         marker: s.marker || charTemplate.marker,
@@ -3272,7 +3394,7 @@ async function handleUnifiedSessionSubmit(e) {
         if (dataScenario && dataScenario.clues && Array.isArray(dataScenario.clues)) {
             dataScenario.clues.forEach((c, idx) => {
                 appState.clues.push({
-                    id: c.id || `clue_${c.location.replace(/\s+/g, '_')}_${idx}`,
+                    id: c.id || `clue_${(c.location || '').replace(/\s+/g, '_')}_${idx}`,
                     name: c.name,
                     description: c.description,
                     type: c.type || "Fouille de Pièce",
@@ -3287,7 +3409,7 @@ async function handleUnifiedSessionSubmit(e) {
                 if (room.clues && Array.isArray(room.clues)) {
                     room.clues.forEach((c, idx) => {
                         appState.clues.push({
-                            id: `clue_${roomName.replace(/\s+/g, '_')}_${idx}`,
+                            id: `clue_${(roomName || '').replace(/\s+/g, '_')}_${idx}`,
                             name: c.name,
                             description: c.description,
                             type: "Fouille de Pièce",
@@ -4471,12 +4593,59 @@ async function handleScenarioCardClick(scenarioId) {
         
         try {
             addLiveLog(`[Reprise] Clic sur scénario Étape 2 "${selectedScenario.title}" : chargement des portraits...`);
-            const completeScenario = await fetchScenarioAndSuspectsFromNotion(selectedScenario.id);
+            
+            let completeScenario = null;
+            // 1. Try fetching via webhook first (CORS-safe)
+            if (appState.n8nBaseUrl) {
+                try {
+                    const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scenario_id: selectedScenario.id })
+                    });
+                    if (detailsRes.ok) {
+                        const detailsData = await detailsRes.json();
+                        let rawScenario = extractRawScenario(detailsData);
+                        if (rawScenario) {
+                            completeScenario = mapScenarioProperties(rawScenario);
+                            addLiveLog(`[Reprise] Détails récupérés depuis n8n.`);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch scenario details via webhook:", e);
+                }
+            }
+            
+            // 2. Try direct Notion API as fallback
+            if (!completeScenario) {
+                try {
+                    completeScenario = await fetchScenarioAndSuspectsFromNotion(selectedScenario.id);
+                    addLiveLog(`[Reprise] Détails récupérés en direct de Notion.`);
+                } catch (err) {
+                    console.warn("Failed direct Notion fetch (expected due to CORS in browser):", err);
+                }
+            }
+
+            // 3. Fallback to local data
+            if (!completeScenario) {
+                addLiveLog(`[Reprise] Webhook et Notion indisponibles. Utilisation des données locales.`);
+                completeScenario = selectedScenario;
+            }
+
             const gitFiles = await fetchGithubImagesList();
             loadScenarioData(completeScenario, gitFiles);
             
             // On sauvegarde l'ID du scénario en cours
             appState.pendingScenarioId = selectedScenario.id;
+            appState.pendingScenarioData = {
+                scenario_id: selectedScenario.id,
+                title: completeScenario.title || selectedScenario.title,
+                theme: completeScenario.theme || selectedScenario.theme || "",
+                pitch: completeScenario.pitch || selectedScenario.pitch || "",
+                epoch: completeScenario.epoch || selectedScenario.epoch || "passé",
+                victim: completeScenario.victimObj || completeScenario.victim,
+                suspects: completeScenario.suspects || []
+            };
             savePersistedState();
             
             showPortraitsVerificationModal();
