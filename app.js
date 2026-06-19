@@ -4854,6 +4854,15 @@ function init() {
 
     const btnApprovePortraits = document.getElementById('btnApprovePortraits');
     if (btnApprovePortraits) btnApprovePortraits.addEventListener('click', handleApprovePortraits);
+
+    const btnBackVerifyPortraits = document.getElementById('btnBackVerifyPortraits');
+    if (btnBackVerifyPortraits) {
+        btnBackVerifyPortraits.addEventListener('click', () => {
+            const modal = document.getElementById('modalVerifyPortraits');
+            if (modal) modal.classList.add('hidden');
+            renderOrganizerDashboard();
+        });
+    }
 }
 
 window.addEventListener('DOMContentLoaded', init);
