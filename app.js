@@ -2376,9 +2376,11 @@ async function handleApprovePortraits() {
             const targetData = Array.isArray(resData) ? resData[0] : resData;
             if (targetData) {
                 const hasError = targetData.success === false ||
+                                 targetData.success === "false" ||
                                  targetData.error ||
                                  targetData.code === 500 ||
-                                 (targetData.status && (targetData.status === "failed" || targetData.status === "error")) ||
+                                 targetData.code === "500" ||
+                                 (targetData.status && (targetData.status === "failed" || targetData.status === "error" || targetData.status === "fail")) ||
                                  (targetData.message && (targetData.message.toLowerCase().includes("fail") || targetData.message.toLowerCase().includes("error")));
                 if (hasError) {
                     throw new Error(targetData.error || targetData.message || "L'exécution du workflow n8n a retourné un échec.");
