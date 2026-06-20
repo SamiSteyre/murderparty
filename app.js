@@ -2547,10 +2547,10 @@ async function handleApproveIntrigue() {
     // Show the loading screen with IAnis1.mp4 and custom text
     if (genOverlay) {
         if (titleText) {
-            titleText.textContent = "L'IA-gens Biographe IAnis rédige la biographie détaillée des 16 suspects en une seule fois pour plus de cohérence";
+            titleText.textContent = "L'IA-gens Biographe IAnis rédige la biographie détaillée des 16 suspects";
         }
         if (subtitleText) {
-            subtitleText.textContent = "";
+            subtitleText.textContent = "Biographies rédigées : 0/16...";
         }
         if (loadVideo) {
             loadVideo.src = "https://github.com/SamiSteyre/murderparty/raw/main/images/IAnis1.mp4";
@@ -2562,6 +2562,8 @@ async function handleApproveIntrigue() {
 
     // Hide the intrigue modal immediately
     if (modal) modal.classList.add('hidden');
+
+    let pollInterval = null;
 
     try {
         const scenarioId = appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : "");
@@ -2598,6 +2600,42 @@ async function handleApproveIntrigue() {
                 payload.scenario_id = scenarioId;
             }
 
+            // Start polling progress in Notion via mp-get-scenario-details every 4 seconds
+            pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scenario_id: scenarioId })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        let suspects = [];
+                        
+                        // Extract suspects list from payload body/scenario
+                        const rootData = data.scenario || (Array.isArray(data) ? (data[0].scenario || data[0]) : data);
+                        if (rootData && Array.isArray(rootData.suspects)) {
+                            suspects = rootData.suspects;
+                        } else if (Array.isArray(data.suspects)) {
+                            suspects = data.suspects;
+                        }
+
+                        // Count how many characters have the "Histoire" column populated
+                        // "Histoire" maps to the "bio" property in webhook response
+                        const count = suspects.filter(s => {
+                            const bio = s.bio || s.history || "";
+                            return bio.trim().length > 10;
+                        }).length;
+
+                        if (subtitleText) {
+                            subtitleText.textContent = `Biographies rédigées : ${count}/16`;
+                        }
+                    }
+                } catch (pollErr) {
+                    console.warn("Failed to poll biography progress:", pollErr);
+                }
+            }, 4000);
+
             const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario-4`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2627,7 +2665,25 @@ async function handleApproveIntrigue() {
         } else {
             // Simulation mode fallback
             addLiveLog(`[Validation] Mode simulation ou n8n non configuré. Simulation de l'étape 4...`);
+            
+            let count = 0;
+            pollInterval = setInterval(() => {
+                count++;
+                if (subtitleText) {
+                    subtitleText.textContent = `Biographies rédigées : ${count}/16`;
+                }
+                if (count >= 16) {
+                    clearInterval(pollInterval);
+                }
+            }, 120);
+
             await sleep(2000);
+        }
+
+        // Clean up polling interval
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
         }
 
         // Success! Hide loading overlay
@@ -2676,6 +2732,12 @@ async function handleApproveIntrigue() {
     } catch (err) {
         console.error("Error triggering step 4 webhook:", err);
         showToast("Erreur", "Impossible de lancer l'étape 4. Veuillez réessayer.", "error");
+
+        // Clean up polling interval
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
 
         // Hide loading overlay on error
         if (genOverlay) {
