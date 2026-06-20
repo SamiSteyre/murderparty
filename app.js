@@ -5300,6 +5300,15 @@ function init() {
             renderOrganizerDashboard();
         });
     }
+
+    const btnBackIntrigue = document.getElementById('btnBackIntrigue');
+    if (btnBackIntrigue) {
+        btnBackIntrigue.addEventListener('click', () => {
+            const modal = document.getElementById('modalIntrigue');
+            if (modal) modal.classList.add('hidden');
+            renderOrganizerDashboard();
+        });
+    }
 }
 
 window.addEventListener('DOMContentLoaded', init);
