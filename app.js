@@ -495,7 +495,7 @@ function renderOrganizerDashboard() {
         // Render Generated Scenario details
         if (appState.scenario) {
             const coverImg = document.getElementById('genScenarioImage');
-            if (coverImg) coverImg.src = appState.scenario.imageUrl || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
+            if (coverImg) coverImg.src = appState.scenario.illustrationUrl || appState.scenario.imageUrl || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
             document.getElementById('genScenarioTitle').textContent = appState.scenario.title;
             document.getElementById('genScenarioPitch').textContent = appState.scenario.pitch;
             const victimEl = document.getElementById('genScenarioVictim');
@@ -1546,6 +1546,27 @@ function loadScenarioData(data, gitFiles = []) {
             .replace('github.com/SamiSteyre/murderparty/raw/', 'raw.githubusercontent.com/SamiSteyre/murderparty/');
     }
 
+    // Resolve scenario illustration URL separately
+    let resolvedIllustrationUrl = "";
+    let rawIllustrationField = data.illustration || data.Illustration || "";
+    if (rawIllustrationField) {
+        if (rawIllustrationField.startsWith('http://') || rawIllustrationField.startsWith('https://')) {
+            resolvedIllustrationUrl = rawIllustrationField;
+        } else {
+            resolvedIllustrationUrl = "https://raw.githubusercontent.com/SamiSteyre/murderparty/main/" + rawIllustrationField.replace(/^\/+/, '');
+        }
+        
+        // Convert any branch / commit ref raw/blob URLs to raw.githubusercontent.com format
+        if (resolvedIllustrationUrl.includes('github.com/SamiSteyre/murderparty')) {
+            resolvedIllustrationUrl = resolvedIllustrationUrl
+                .replace('github.com/SamiSteyre/murderparty/blob/', 'raw.githubusercontent.com/SamiSteyre/murderparty/')
+                .replace('github.com/SamiSteyre/murderparty/raw/', 'raw.githubusercontent.com/SamiSteyre/murderparty/');
+        }
+    } else {
+        // Fallback to resolvedImageUrl (victim's photo) if no illustration is specified
+        resolvedIllustrationUrl = resolvedImageUrl;
+    }
+
     let victimName = "Non définie";
     if (data.victim_name) {
         victimName = data.victim_name;
@@ -1612,7 +1633,8 @@ function loadScenarioData(data, gitFiles = []) {
         eclairage,
         cluesCount,
         imageUrl: resolvedImageUrl,
-        rawImageUrl: rawIllustration,
+        illustrationUrl: resolvedIllustrationUrl,
+        rawImageUrl: rawIllustrationField || rawIllustration,
         chronology,
         intrigue: data.intrigue || ""
     };
@@ -2472,7 +2494,7 @@ function showIntrigueModal() {
     if (!modal) return;
 
     // Load values from appState.scenario
-    let illustration = appState.scenario ? appState.scenario.imageUrl : "";
+    let illustration = appState.scenario ? (appState.scenario.illustrationUrl || appState.scenario.imageUrl) : "";
     if (!illustration || illustration.includes('unsplash.com')) {
         illustration = "images/iarena-battle.jpg";
     }
