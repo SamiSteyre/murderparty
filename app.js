@@ -1101,6 +1101,7 @@ function mapSuspectProperties(s, index) {
     const chronology = getPropValue(targetObj, ["Timeline", "chronology"]);
     const outfit = getPropValue(targetObj, ["Tenue", "outfit"]);
     const characterTraits = getPropValue(targetObj, ["Traits de Caractère", "characterTraits"]);
+    const intrigue = getPropValue(targetObj, ["Intrigue", "intrigue"]);
     
     const avatarUrl = getPropValue(targetObj, ["photo_suspect", "Avatar / Photo", "Photo Suspect", "photo", "avatarUrl", "avatar"]);
     
@@ -1139,6 +1140,7 @@ function mapSuspectProperties(s, index) {
         avatarUrl: avatarUrl,
         actionPoints: actionPoints,
         status: status,
+        intrigue: intrigue || "",
         knowledge: s.knowledge || s.property_connaissances || [],
         missions: s.missions || s.property_missions || []
     };
@@ -3659,6 +3661,7 @@ async function handleUnifiedSessionSubmit(e) {
                     avatarUrl: "",
                     actionPoints: 1,
                     status: "Créé",
+                    intrigue: s.intrigue || "",
                     knowledge: [],
                     missions: []
                 };
@@ -3960,6 +3963,7 @@ async function handleUnifiedSessionSubmit(e) {
                         avatarUrl: "",
                         actionPoints: 1,
                         status: "Créé",
+                        intrigue: s.intrigue || "",
                         knowledge: [],
                         missions: []
                     };
