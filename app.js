@@ -3487,6 +3487,66 @@ async function handleUnifiedSessionSubmit(e) {
                         }
                         return;
                     }
+                    
+                    if (etape === 3) {
+                        addLiveLog(`[Reprise] Récupération de l'intrigue pour "${selectedScenario.title}"...`);
+                        try {
+                            let completeScenario = null;
+                            if (appState.n8nBaseUrl) {
+                                try {
+                                    const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ scenario_id: selectedScenario.id })
+                                    });
+                                    if (detailsRes.ok) {
+                                        const detailsData = await detailsRes.json();
+                                        let rawScenario = extractRawScenario(detailsData);
+                                        if (rawScenario) {
+                                            completeScenario = mapScenarioProperties(rawScenario);
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn("Failed to fetch scenario details via webhook:", e);
+                                }
+                            }
+                            if (!completeScenario) {
+                                try {
+                                    completeScenario = await fetchScenarioAndSuspectsFromNotion(selectedScenario.id);
+                                } catch (err) {
+                                    console.warn("Failed direct Notion fetch:", err);
+                                }
+                            }
+                            if (!completeScenario) {
+                                completeScenario = selectedScenario;
+                            }
+
+                            const gitFiles = await fetchGithubImagesList();
+                            loadScenarioData(completeScenario, gitFiles);
+                            
+                            appState.pendingScenarioId = selectedScenario.id;
+                            appState.pendingScenarioData = {
+                                scenario_id: selectedScenario.id,
+                                title: completeScenario.title || selectedScenario.title,
+                                theme: completeScenario.theme || selectedScenario.theme || "",
+                                pitch: completeScenario.pitch || selectedScenario.pitch || "",
+                                epoch: completeScenario.epoch || selectedScenario.epoch || "passé",
+                                victim: completeScenario.victimObj || completeScenario.victim,
+                                suspects: completeScenario.suspects || []
+                            };
+                            savePersistedState();
+                            
+                            showIntrigueModal();
+                            showToast("Succès", "Intrigue chargée avec succès.", "success");
+                        } catch (err) {
+                            console.error("Error loading scenario step 3 in submit button click:", err);
+                            showToast("Erreur", "Impossible de charger l'intrigue.", "error");
+                        } finally {
+                            submitBtn.removeAttribute('disabled');
+                            updateSelectScenarioSubmitBtn();
+                        }
+                        return;
+                    }
 
                     addLiveLog(`[Reprise] Récupération de la victime et des suspects pour "${selectedScenario.title}"...`);
                     
@@ -4958,8 +5018,79 @@ async function handleScenarioCardClick(scenarioId) {
             }
             updateSelectScenarioSubmitBtn();
         }
+    } else if (etape === 3) {
+        // Clic sur Étape 3 : Chargement immédiat du visualisateur d'intrigue
+        const submitBtn = document.getElementById('unifiedSubmitBtn');
+        if (submitBtn) {
+            submitBtn.setAttribute('disabled', 'true');
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-sm mr-2"></i> Récupération Étape 3...`;
+        }
+        
+        try {
+            addLiveLog(`[Reprise] Clic sur scénario Étape 3 "${selectedScenario.title}" : chargement de l'intrigue...`);
+            
+            let completeScenario = null;
+            if (appState.n8nBaseUrl) {
+                try {
+                    const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scenario_id: selectedScenario.id })
+                    });
+                    if (detailsRes.ok) {
+                        const detailsData = await detailsRes.json();
+                        let rawScenario = extractRawScenario(detailsData);
+                        if (rawScenario) {
+                            completeScenario = mapScenarioProperties(rawScenario);
+                            addLiveLog(`[Reprise] Détails récupérés depuis n8n.`);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch scenario details via webhook:", e);
+                }
+            }
+            
+            if (!completeScenario) {
+                try {
+                    completeScenario = await fetchScenarioAndSuspectsFromNotion(selectedScenario.id);
+                    addLiveLog(`[Reprise] Détails récupérés en direct de Notion.`);
+                } catch (err) {
+                    console.warn("Failed direct Notion fetch:", err);
+                }
+            }
+            
+            if (!completeScenario) {
+                completeScenario = selectedScenario;
+            }
+
+            const gitFiles = await fetchGithubImagesList();
+            loadScenarioData(completeScenario, gitFiles);
+            
+            appState.pendingScenarioId = selectedScenario.id;
+            appState.pendingScenarioData = {
+                scenario_id: selectedScenario.id,
+                title: completeScenario.title || selectedScenario.title,
+                theme: completeScenario.theme || selectedScenario.theme || "",
+                pitch: completeScenario.pitch || selectedScenario.pitch || "",
+                epoch: completeScenario.epoch || selectedScenario.epoch || "passé",
+                victim: completeScenario.victimObj || completeScenario.victim,
+                suspects: completeScenario.suspects || []
+            };
+            savePersistedState();
+            
+            showIntrigueModal();
+            showToast("Succès", "Intrigue chargée avec succès.", "success");
+        } catch (err) {
+            console.error("Error loading scenario step 3:", err);
+            showToast("Erreur", "Impossible de charger l'intrigue de ce scénario.", "error");
+        } finally {
+            if (submitBtn) {
+                submitBtn.removeAttribute('disabled');
+            }
+            updateSelectScenarioSubmitBtn();
+        }
     } else {
-        // Clic sur Étape 3 et + (quand non prêt à jouer)
+        // Clic sur Étape 4 et + (quand non prêt à jouer)
         showToast("Étape " + etape, "La gestion de la reprise à l'étape " + etape + " est encore à prévoir.", "info");
         updateSelectScenarioSubmitBtn();
     }
@@ -4982,6 +5113,10 @@ function updateSelectScenarioSubmitBtn() {
             submitBtn.innerHTML = `<i class="fa-solid fa-gears"></i> Lancer la session`;
         } else if (etape === 1) {
             submitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Vérifier le scénario`;
+        } else if (etape === 2) {
+            submitBtn.innerHTML = `<i class="fa-solid fa-image"></i> Visualiser les portraits`;
+        } else if (etape === 3) {
+            submitBtn.innerHTML = `<i class="fa-solid fa-scroll"></i> Visualiser l'intrigue`;
         } else {
             submitBtn.innerHTML = `<i class="fa-solid fa-circle-question"></i> Étape ${etape} sélectionnée`;
         }
