@@ -1116,7 +1116,7 @@ function mapSuspectProperties(s, index) {
 
     let relations = s.relations || s.property_relations || [];
     if (isRawNotion) {
-        const relText = getPropValue(targetObj, ["Relations", "relations"]);
+        const relText = getPropValue(targetObj, ["Relations", "relations", "Connaissances", "connaissances"]);
         if (relText) {
             relations = relText;
         }
