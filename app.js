@@ -4771,7 +4771,10 @@ async function loadExistingScenarios() {
                 const statusLower = (s.status || "").toLowerCase();
                 let isReady = statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify";
                 
-                if (isReady && s.illustration) {
+                const isStatusEnCours = statusLower === "en cours de génération" || statusLower === "en cours de generation";
+                const showIllustration = s.illustration && (!isStatusEnCours || (isStatusEnCours && etape >= 3));
+                
+                if (showIllustration) {
                     let rawIllustration = s.illustration;
                     let resolvedImageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop";
                     if (rawIllustration.startsWith('http://') || rawIllustration.startsWith('https://')) {
@@ -4787,7 +4790,7 @@ async function loadExistingScenarios() {
                 card.className = "scenario-card border border-white/5 hover:border-blood/50 p-4 rounded-xl relative overflow-hidden h-36 flex flex-col justify-between transition-all cursor-pointer group hover:shadow-[0_4px_12px_rgba(245,158,11,0.08)] select-none text-left";
                 
                 // Large step number on background
-                const bigNumColor = isReady ? "text-white/5 group-hover:text-blood/10" : "text-zinc-900 group-hover:text-zinc-850";
+                const bigNumColor = showIllustration ? "text-white/5 group-hover:text-blood/10" : "text-zinc-900 group-hover:text-zinc-850";
                 const badgeHtml = isReady 
                     ? `<span class="px-2 py-0.5 text-[8px] bg-green-950/40 border border-green-800/40 text-green-400 rounded-md uppercase font-bold tracking-widest z-10 w-fit">Prêt à jouer</span>`
                     : `<span class="px-2 py-0.5 text-[8px] bg-blood/10 border border-blood/20 text-blood-light rounded-md uppercase font-bold tracking-widest z-10 w-fit font-semibold">Étape ${etape} en cours</span>`;
