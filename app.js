@@ -2394,7 +2394,6 @@ async function handleApprovePortraits() {
                 throw new Error(`HTTP error ${response.status}`);
             }
 
-            // Check if the response contains success indicator if JSON is returned
             const resData = await response.json().catch(() => null);
             console.log("[Validation] Réponse de mp-generate-scenario-3 :", resData);
             
@@ -2409,6 +2408,15 @@ async function handleApprovePortraits() {
                                  (targetData.message && (targetData.message.toLowerCase().includes("fail") || targetData.message.toLowerCase().includes("error")));
                 if (hasError) {
                     throw new Error(targetData.error || targetData.message || "L'exécution du workflow n8n a retourné un échec.");
+                }
+
+                // Storing the ID returned by mp-generate-scenario-3
+                const returnedId = targetData.scenario_id || targetData.id;
+                if (returnedId) {
+                    appState.pendingScenarioId = returnedId;
+                    if (appState.scenario) {
+                        appState.scenario.id = returnedId;
+                    }
                 }
             }
 
@@ -2513,11 +2521,259 @@ function showIntrigueModal() {
     const btnStart = document.getElementById('btnStartGame');
     if (btnStart) {
         btnStart.onclick = () => {
-            modal.classList.add('hidden');
-            appState.orgaView = 'generated';
-            savePersistedState();
-            renderOrganizerDashboard();
+            handleApproveIntrigue();
         };
+    }
+}
+
+let activeBiographyIndex = 0;
+
+async function handleApproveIntrigue() {
+    const modal = document.getElementById('modalIntrigue');
+    const btnStart = document.getElementById('btnStartGame');
+
+    if (btnStart) {
+        btnStart.setAttribute('disabled', 'true');
+        btnStart.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i> Lancement Étape 4...`;
+    }
+
+    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+    const titleText = document.getElementById('scenarioGeneratingTitle');
+    const subtitleText = document.getElementById('scenarioGeneratingSubtitle');
+    const loadVideo = document.getElementById('iasminaLoadingVideo');
+
+    // Show the loading screen with IAnis1.mp4 and custom text
+    if (genOverlay) {
+        if (titleText) {
+            titleText.textContent = "L'IA-gens Biographe IAnis rédige la biographie détaillée des 16 suspects en une seule fois pour plus de cohérence";
+        }
+        if (subtitleText) {
+            subtitleText.textContent = "";
+        }
+        if (loadVideo) {
+            loadVideo.src = "https://github.com/SamiSteyre/murderparty/raw/main/images/IAnis1.mp4";
+            loadVideo.currentTime = 0;
+            loadVideo.play().catch(err => console.warn("Loading video play failed:", err));
+        }
+        genOverlay.classList.remove('hidden');
+    }
+
+    // Hide the intrigue modal immediately
+    if (modal) modal.classList.add('hidden');
+
+    try {
+        const scenarioId = appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : "");
+        let detailsData = null;
+
+        if (appState.n8nBaseUrl && !appState.isSimulationMode && scenarioId) {
+            addLiveLog(`[Validation] Récupération des données du scénario via mp-get-scenario-details pour l'étape 4...`);
+            
+            const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scenario_id: scenarioId })
+            });
+
+            if (!detailsRes.ok) {
+                throw new Error(`Erreur lors de l'appel à mp-get-scenario-details (${detailsRes.status})`);
+            }
+
+            detailsData = await detailsRes.json();
+            console.log("[Validation] Données récupérées de mp-get-scenario-details :", detailsData);
+
+            addLiveLog(`[Validation] Lancement de l'étape 4 (mp-generate-scenario-4)...`);
+            
+            // Format payload to send all retrieved details
+            let payload = {};
+            if (Array.isArray(detailsData)) {
+                payload = { ...detailsData[0] };
+            } else if (detailsData) {
+                payload = { ...detailsData };
+            }
+
+            // Ensure scenario_id is present
+            if (!payload.scenario_id && !payload.id) {
+                payload.scenario_id = scenarioId;
+            }
+
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario-4`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status} de mp-generate-scenario-4`);
+            }
+
+            const resData = await response.json().catch(() => null);
+            console.log("[Validation] Réponse de mp-generate-scenario-4 :", resData);
+
+            const targetData = Array.isArray(resData) ? resData[0] : resData;
+            if (targetData) {
+                const hasError = targetData.success === false ||
+                                 targetData.success === "false" ||
+                                 targetData.error ||
+                                 targetData.code === 500 ||
+                                 targetData.code === "500" ||
+                                 (targetData.status && (targetData.status === "failed" || targetData.status === "error" || targetData.status === "fail")) ||
+                                 (targetData.message && (targetData.message.toLowerCase().includes("fail") || targetData.message.toLowerCase().includes("error")));
+                if (hasError) {
+                    throw new Error(targetData.error || targetData.message || "L'exécution de l'étape 4 a retourné un échec.");
+                }
+            }
+        } else {
+            // Simulation mode fallback
+            addLiveLog(`[Validation] Mode simulation ou n8n non configuré. Simulation de l'étape 4...`);
+            await sleep(2000);
+        }
+
+        // Success! Hide loading overlay
+        if (genOverlay) {
+            genOverlay.classList.add('hidden');
+            if (loadVideo) loadVideo.pause();
+        }
+
+        // Restore button state for future uses
+        if (btnStart) {
+            btnStart.removeAttribute('disabled');
+            btnStart.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer`;
+        }
+
+        // Play IAnis2.mp4 reveal video
+        playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IAnis2.mp4", async () => {
+            // Fetch fresh details from Notion to get final biographies
+            if (appState.n8nBaseUrl && !appState.isSimulationMode && scenarioId) {
+                try {
+                    addLiveLog(`[Validation] Récupération finale des données Notion (Biographies) via mp-get-scenario-details...`);
+                    const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scenario_id: scenarioId })
+                    });
+                    if (detailsRes.ok) {
+                        const data = await detailsRes.json();
+                        let rawScenario = extractRawScenario(data);
+                        if (rawScenario) {
+                            const completeScenario = mapScenarioProperties(rawScenario);
+                            const gitFiles = await fetchGithubImagesList();
+                            loadScenarioData(completeScenario, gitFiles);
+                            addLiveLog(`[Validation] Biographies chargées avec succès depuis Notion.`);
+                        }
+                    }
+                } catch (fetchErr) {
+                    console.warn("Failed to fetch fresh scenario details after step 4 success", fetchErr);
+                    addLiveLog(`[Validation] Échec de la récupération finale des biographies.`);
+                }
+            }
+
+            showToast("Étape 4 Terminée", "Les biographies détaillées des suspects sont prêtes !", "success");
+            showBiographyModal();
+        });
+
+    } catch (err) {
+        console.error("Error triggering step 4 webhook:", err);
+        showToast("Erreur", "Impossible de lancer l'étape 4. Veuillez réessayer.", "error");
+
+        // Hide loading overlay on error
+        if (genOverlay) {
+            genOverlay.classList.add('hidden');
+            if (loadVideo) loadVideo.pause();
+        }
+        
+        // Restore button state
+        if (btnStart) {
+            btnStart.removeAttribute('disabled');
+            btnStart.innerHTML = `<i class="fa-solid fa-circle-check"></i> Valider et continuer`;
+        }
+
+        // Restore the intrigue modal so the user is back to the visualizer
+        if (modal) modal.classList.remove('hidden');
+    }
+}
+
+function showBiographyModal() {
+    activeBiographyIndex = 0;
+    const modal = document.getElementById('modalVerifyBiographies');
+    if (modal) {
+        modal.classList.remove('hidden');
+        renderActiveBiography();
+    }
+}
+
+function renderActiveBiography() {
+    const list = appState.players || [];
+    const idx = activeBiographyIndex;
+    if (list.length === 0 || idx < 0 || idx >= list.length) return;
+
+    const suspect = list[idx];
+
+    const counter = document.getElementById('biographyVerifyCounter');
+    if (counter) counter.textContent = `Suspect ${idx + 1}/${list.length}`;
+
+    const imgEl = document.getElementById('biographyVerifyImage');
+    if (imgEl) {
+        let photo = suspect.avatarUrl;
+        if (!photo) {
+            photo = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=300";
+        } else if (photo && !photo.startsWith('http://') && !photo.startsWith('https://')) {
+            photo = "https://raw.githubusercontent.com/SamiSteyre/murderparty/main/" + photo.replace(/^\/+/, '');
+        }
+        imgEl.src = photo;
+        imgEl.onerror = () => {
+            imgEl.src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=300";
+        };
+    }
+
+    const nameEl = document.getElementById('biographyVerifyName');
+    if (nameEl) nameEl.textContent = suspect.roleName || suspect.name || "--";
+
+    const roleEl = document.getElementById('biographyVerifyRole');
+    if (roleEl) roleEl.textContent = suspect.badge || suspect.role || "Suspect";
+
+    const genreEl = document.getElementById('biographyVerifyGenre');
+    if (genreEl) genreEl.textContent = suspect.genre || "Non-Binaire";
+
+    const textEl = document.getElementById('biographyVerifyText');
+    if (textEl) {
+        textEl.textContent = suspect.history || suspect.bio || "Aucune biographie disponible.";
+    }
+
+    const btnPrev = document.getElementById('btnPrevBiography');
+    const btnNext = document.getElementById('btnNextBiography');
+
+    if (btnPrev) {
+        if (idx === 0) {
+            btnPrev.setAttribute('disabled', 'true');
+            btnPrev.style.opacity = "0.3";
+        } else {
+            btnPrev.removeAttribute('disabled');
+            btnPrev.style.opacity = "1";
+        }
+    }
+    if (btnNext) {
+        if (idx === list.length - 1) {
+            btnNext.setAttribute('disabled', 'true');
+            btnNext.style.opacity = "0.3";
+        } else {
+            btnNext.removeAttribute('disabled');
+            btnNext.style.opacity = "1";
+        }
+    }
+}
+
+function handlePrevBiography() {
+    if (activeBiographyIndex > 0) {
+        activeBiographyIndex--;
+        renderActiveBiography();
+    }
+}
+
+function handleNextBiography() {
+    const list = appState.players || [];
+    if (activeBiographyIndex < list.length - 1) {
+        activeBiographyIndex++;
+        renderActiveBiography();
     }
 }
 
@@ -5297,6 +5553,24 @@ function init() {
         btnBackVerifyPortraits.addEventListener('click', () => {
             const modal = document.getElementById('modalVerifyPortraits');
             if (modal) modal.classList.add('hidden');
+            renderOrganizerDashboard();
+        });
+    }
+
+    // Biography Visualizer Modal Event Listeners
+    const btnPrevBiography = document.getElementById('btnPrevBiography');
+    if (btnPrevBiography) btnPrevBiography.addEventListener('click', handlePrevBiography);
+
+    const btnNextBiography = document.getElementById('btnNextBiography');
+    if (btnNextBiography) btnNextBiography.addEventListener('click', handleNextBiography);
+
+    const btnFinishBiographies = document.getElementById('btnFinishBiographies');
+    if (btnFinishBiographies) {
+        btnFinishBiographies.addEventListener('click', () => {
+            const modal = document.getElementById('modalVerifyBiographies');
+            if (modal) modal.classList.add('hidden');
+            appState.orgaView = 'generated';
+            savePersistedState();
             renderOrganizerDashboard();
         });
     }
