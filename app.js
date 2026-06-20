@@ -1102,6 +1102,19 @@ function mapSuspectProperties(s, index) {
     const outfit = getPropValue(targetObj, ["Tenue", "outfit"]);
     const characterTraits = getPropValue(targetObj, ["Traits de Caractère", "characterTraits"]);
     const intrigue = getPropValue(targetObj, ["Intrigue", "intrigue"]);
+    const powersNamedRaw = getPropValue(targetObj, ["powers_named", "Powers Named", "powersNamed"]);
+    let powers_named = [];
+    if (powersNamedRaw) {
+        if (typeof powersNamedRaw === 'string') {
+            try {
+                powers_named = JSON.parse(powersNamedRaw);
+            } catch (e) {
+                powers_named = powersNamedRaw;
+            }
+        } else if (Array.isArray(powersNamedRaw)) {
+            powers_named = powersNamedRaw;
+        }
+    }
     
     const avatarUrl = getPropValue(targetObj, ["photo_suspect", "Avatar / Photo", "Photo Suspect", "photo", "avatarUrl", "avatar"]);
     
@@ -1141,6 +1154,7 @@ function mapSuspectProperties(s, index) {
         actionPoints: actionPoints,
         status: status,
         intrigue: intrigue || "",
+        powers_named: powers_named,
         knowledge: s.knowledge || s.property_connaissances || [],
         missions: s.missions || s.property_missions || []
     };
@@ -2803,6 +2817,50 @@ function renderActiveBiography() {
         textEl.textContent = suspect.history || suspect.bio || "Aucune biographie disponible.";
     }
 
+    // Render powers list
+    const powersContainer = document.getElementById('biographyVerifyPowersContainer');
+    const powersList = document.getElementById('biographyVerifyPowersList');
+    if (powersContainer && powersList) {
+        let powers = suspect.powers_named || [];
+        if (typeof powers === 'string' && powers) {
+            try {
+                powers = JSON.parse(powers);
+            } catch(e) {
+                powers = powers.split(',').map(p => p.trim());
+            }
+        }
+
+        if (Array.isArray(powers) && powers.length > 0) {
+            powersList.innerHTML = '';
+            powers.forEach(p => {
+                let badgeHtml = '';
+                if (p && typeof p === 'object') {
+                    const type = p.type || p.type_pouvoir || "Pouvoir";
+                    const name = p.name || p.nom_pouvoir || p.nom || "";
+                    badgeHtml = `
+                        <div class="px-2.5 py-1 rounded bg-zinc-900 border border-gold/25 flex flex-col items-start min-w-[100px]">
+                            <span class="text-[7px] uppercase tracking-widest text-gold font-mono font-bold">${type}</span>
+                            <span class="text-slate-200 text-3xs font-medium mt-0.5 leading-tight">${name}</span>
+                        </div>
+                    `;
+                } else if (p) {
+                    badgeHtml = `
+                        <div class="px-2.5 py-1 rounded bg-zinc-900 border border-gold/25 flex items-center">
+                            <span class="text-slate-200 text-3xs font-medium">${p}</span>
+                        </div>
+                    `;
+                }
+                if (badgeHtml) {
+                    powersList.insertAdjacentHTML('beforeend', badgeHtml);
+                }
+            });
+            powersContainer.classList.remove('hidden');
+        } else {
+            powersContainer.classList.add('hidden');
+            powersList.innerHTML = '';
+        }
+    }
+
     const btnPrev = document.getElementById('btnPrevBiography');
     const btnNext = document.getElementById('btnNextBiography');
 
@@ -3724,6 +3782,22 @@ async function handleUnifiedSessionSubmit(e) {
                     actionPoints: 1,
                     status: "Créé",
                     intrigue: s.intrigue || "",
+                    powers_named: (() => {
+                        const powersNamedRaw = s.powers_named || s.powersNamed || [];
+                        let powers_named = [];
+                        if (powersNamedRaw) {
+                            if (typeof powersNamedRaw === 'string') {
+                                try {
+                                    powers_named = JSON.parse(powersNamedRaw);
+                                } catch (e) {
+                                    powers_named = powersNamedRaw;
+                                }
+                            } else if (Array.isArray(powersNamedRaw)) {
+                                powers_named = powersNamedRaw;
+                            }
+                        }
+                        return powers_named;
+                    })(),
                     knowledge: [],
                     missions: []
                 };
@@ -4026,6 +4100,22 @@ async function handleUnifiedSessionSubmit(e) {
                         actionPoints: 1,
                         status: "Créé",
                         intrigue: s.intrigue || "",
+                        powers_named: (() => {
+                            const powersNamedRaw = s.powers_named || s.powersNamed || [];
+                            let powers_named = [];
+                            if (powersNamedRaw) {
+                                if (typeof powersNamedRaw === 'string') {
+                                    try {
+                                        powers_named = JSON.parse(powersNamedRaw);
+                                    } catch (e) {
+                                        powers_named = powersNamedRaw;
+                                    }
+                                } else if (Array.isArray(powersNamedRaw)) {
+                                    powers_named = powersNamedRaw;
+                                }
+                            }
+                            return powers_named;
+                        })(),
                         knowledge: [],
                         missions: []
                     };
