@@ -1258,6 +1258,7 @@ function mapScenarioProperties(s) {
     const chronology = isRawNotion ? getText(props["Chronologie"]) : (s.chronology || s.property_chronologie || "");
     const cluesCount = isRawNotion ? (getNumber(props["Nombre Total d'Indices"]) || 24) : (s.cluesCount || s.property_nombre_total_d_indices || 24);
     const illustration = isRawNotion ? getText(props["Illustration"]) : (s.illustration || s.property_illustration || "");
+    const intrigue = isRawNotion ? getText(props["Intrigue"]) : (s.intrigue || s.property_intrigue || s.property_intrigue_globale || "");
 
     let status = "En cours de génération";
     if (isRawNotion) {
@@ -1346,6 +1347,7 @@ function mapScenarioProperties(s) {
         chronology: chronology,
         cluesCount: cluesCount,
         illustration: illustration,
+        intrigue: intrigue,
         status: status,
         email: email,
         suspects: suspects,
@@ -1611,7 +1613,8 @@ function loadScenarioData(data, gitFiles = []) {
         cluesCount,
         imageUrl: resolvedImageUrl,
         rawImageUrl: rawIllustration,
-        chronology
+        chronology,
+        intrigue: data.intrigue || ""
     };
 
     // Filter suspect files from gitFiles
@@ -2387,6 +2390,16 @@ async function handleApprovePortraits() {
                 }
             }
 
+            // Period of image/scenario recovery: wait 25 seconds before playing IAriel2.mp4
+            if (titleText) {
+                titleText.textContent = "Récupération de l'illustration en cours...";
+            }
+            if (subtitleText) {
+                subtitleText.textContent = "";
+            }
+            addLiveLog(`[Validation] Attente de 25 secondes pour la propagation de l'illustration...`);
+            await sleep(25000);
+
             // Hide loading overlay
             if (genOverlay) {
                 genOverlay.classList.add('hidden');
@@ -2395,6 +2408,29 @@ async function handleApprovePortraits() {
 
             // Play IAriel2.mp4 reveal video
             playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IAriel2.mp4", async () => {
+                // Fetch fresh details from mp-get-scenario-details to get updated Illustration and Intrigue
+                try {
+                    addLiveLog(`[Validation] Récupération des dernières données Notion (Illustration & Intrigue) via mp-get-scenario-details...`);
+                    const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scenario_id: scenarioId })
+                    });
+                    if (detailsRes.ok) {
+                        const detailsData = await detailsRes.json();
+                        let rawScenario = extractRawScenario(detailsData);
+                        if (rawScenario) {
+                            const completeScenario = mapScenarioProperties(rawScenario);
+                            const gitFiles = await fetchGithubImagesList();
+                            loadScenarioData(completeScenario, gitFiles);
+                            addLiveLog(`[Validation] Illustration et Intrigue chargées avec succès depuis Notion.`);
+                        }
+                    }
+                } catch (fetchErr) {
+                    console.warn("Failed to fetch fresh scenario details after step 3", fetchErr);
+                    addLiveLog(`[Validation] Échec de la récupération des détails rafraîchis.`);
+                }
+
                 showToast("Étape 3 Lancée", "La génération des indices et de la scène de crime a démarré !", "success");
                 showIntrigueModal();
             });
