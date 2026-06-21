@@ -1109,10 +1109,24 @@ function mapSuspectProperties(s, index) {
             try {
                 powers_named = JSON.parse(powersNamedRaw);
             } catch (e) {
-                powers_named = powersNamedRaw;
+                powers_named = powersNamedRaw.split(',').map(p => p.trim());
             }
         } else if (Array.isArray(powersNamedRaw)) {
             powers_named = powersNamedRaw;
+        }
+    }
+
+    const powersRaw = getPropValue(targetObj, ["powers", "Powers", "pouvoirs"]);
+    let powers = [];
+    if (powersRaw) {
+        if (typeof powersRaw === 'string') {
+            try {
+                powers = JSON.parse(powersRaw);
+            } catch (e) {
+                powers = powersRaw.split(',').map(p => p.trim());
+            }
+        } else if (Array.isArray(powersRaw)) {
+            powers = powersRaw;
         }
     }
     
@@ -1155,6 +1169,7 @@ function mapSuspectProperties(s, index) {
         status: status,
         intrigue: intrigue || "",
         powers_named: powers_named,
+        powers: powers,
         knowledge: s.knowledge || s.property_connaissances || [],
         missions: s.missions || s.property_missions || []
     };
@@ -2832,7 +2847,7 @@ function renderActiveBiography() {
 
         if (Array.isArray(powers) && powers.length > 0) {
             powersList.innerHTML = '';
-            powers.forEach(p => {
+            powers.forEach((p, pIdx) => {
                 let badgeHtml = '';
                 if (p && typeof p === 'object') {
                     const type = p.type || p.type_pouvoir || "Pouvoir";
@@ -2844,9 +2859,14 @@ function renderActiveBiography() {
                         </div>
                     `;
                 } else if (p) {
+                    let type = "Pouvoir";
+                    if (suspect.powers && Array.isArray(suspect.powers) && suspect.powers[pIdx]) {
+                        type = suspect.powers[pIdx];
+                    }
                     badgeHtml = `
-                        <div class="px-2.5 py-1 rounded bg-zinc-900 border border-gold/25 flex items-center">
-                            <span class="text-slate-200 text-3xs font-medium">${p}</span>
+                        <div class="px-2.5 py-1 rounded bg-zinc-900 border border-gold/25 flex flex-col items-start min-w-[100px]">
+                            <span class="text-[7px] uppercase tracking-widest text-gold font-mono font-bold">${type}</span>
+                            <span class="text-slate-200 text-3xs font-medium mt-0.5 leading-tight">${p}</span>
                         </div>
                     `;
                 }
