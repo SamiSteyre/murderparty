@@ -3220,7 +3220,17 @@ async function handleApproveVictim() {
                 throw new Error(`Erreur lors de la génération finale (${response.status})`);
             }
 
-            dataScenario = await response.json();
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                try {
+                    dataScenario = await response.json();
+                } catch (e) {
+                    console.warn("Failed to parse response as JSON", e);
+                }
+            } else {
+                const text = await response.text();
+                console.log("[Validation] Réponse texte de n8n :", text);
+            }
         }
 
         let rawScenario = extractRawScenario(dataScenario);
@@ -3267,7 +3277,7 @@ async function handleApproveVictim() {
             showToast("Succès", "Scénario généré avec succès !", "success");
             return;
         } else {
-            addLiveLog(`[Validation] ID de scénario reçu (${appState.pendingScenarioId}). Poursuite du polling des détails via mp-get-scenario-details...`);
+            addLiveLog(`[Validation] ID de scénario reçu ou génération en cours. Poursuite du polling des détails via mp-get-scenario-details...`);
             if (!victimPollInterval && !appState.isSimulationMode && appState.pendingScenarioId) {
                 startVictimPolling(appState.pendingScenarioId);
             }
@@ -3278,13 +3288,18 @@ async function handleApproveVictim() {
     } catch (err) {
         console.error("Error approving victim:", err);
         
-        // If it's a network/CORS/Mixed-Content error, the request might have actually reached n8n successfully.
-        // We let the polling finish the job instead of blocking the user.
-        if (err.message === "Failed to fetch" || err.name === "TypeError") {
-            addLiveLog(`[Validation] CORS/Erreur Réseau détectée. Tentative de poursuite via le polling Notion...`);
+        // If it's a network/CORS/Mixed-Content error, or a timeout (like 504 / 502 / aborted request)
+        // We let the polling finish the job instead of blocking the user and going backward!
+        const errMsg = err.message || "";
+        const errName = err.name || "";
+        if (errMsg === "Failed to fetch" || errName === "TypeError" || errMsg.includes("504") || errMsg.includes("502") || errMsg.includes("timeout")) {
+            addLiveLog(`[Validation] Erreur réseau ou timeout détecté (${errMsg}). Poursuite transparente via le polling Notion...`);
             
             if (statusText) {
                 statusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blood"></i> Requête envoyée. Génération finale en cours...`;
+            }
+            if (!victimPollInterval && !appState.isSimulationMode && appState.pendingScenarioId) {
+                startVictimPolling(appState.pendingScenarioId);
             }
             return;
         }
