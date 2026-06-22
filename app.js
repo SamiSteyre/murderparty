@@ -3094,6 +3094,24 @@ function startVictimPolling(scenarioId) {
             }
 
             const statusLower = (scenarioDetails && scenarioDetails.status) ? scenarioDetails.status.toLowerCase() : "";
+            
+            // Check for error statuses to stop polling and alert the user
+            const isFailed = statusLower === "erreur" || statusLower === "echec" || statusLower === "failed" || statusLower === "error";
+            if (scenarioDetails && isFailed) {
+                clearInterval(victimPollInterval);
+                victimPollInterval = null;
+                
+                const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+                if (genOverlay) {
+                    genOverlay.classList.add('hidden');
+                    const loadVideo = document.getElementById('iasminaLoadingVideo');
+                    if (loadVideo) loadVideo.pause();
+                }
+                
+                showToast("Échec de la génération", "Le workflow n8n a échoué ou a rencontré une erreur. Veuillez vérifier vos logs n8n.", "error");
+                return;
+            }
+
             const isFinished = statusLower === "vérifié" || statusLower === "vérifie" || statusLower === "verifie" || statusLower === "verify" || (scenarioDetails && totalImages >= targetCount);
             if (scenarioDetails && isFinished) {
                 clearInterval(victimPollInterval);
