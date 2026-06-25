@@ -346,6 +346,34 @@ function savePersistedState() {
     localStorage.setItem('mp_engine_state', JSON.stringify(appState));
 }
 
+// Global fetch interceptor for n8n requests to handle Mixed Content and ngrok warnings
+const originalFetch = window.fetch;
+window.fetch = async function (resource, options = {}) {
+    if (typeof resource === 'string' && appState.n8nBaseUrl && resource.startsWith(appState.n8nBaseUrl)) {
+        // 1. Detect and prevent Mixed Content blocks (HTTPS trying to request HTTP)
+        if (window.location.protocol === 'https:' && resource.startsWith('http://')) {
+            const errorMsg = `Requête bloquée (Mixed Content) : Impossible de contacter un endpoint HTTP (${resource}) depuis un site HTTPS. Veuillez configurer une URL n8n sécurisée en HTTPS (via ngrok ou autre tunnel) en ajoutant le paramètre ?n8n=https://... à l'URL.`;
+            showToast("Sécurité Navigateur", errorMsg, "error");
+            throw new Error(errorMsg);
+        }
+
+        // 2. Add headers for ngrok browser warning bypass and JSON content type compatibility
+        options.headers = options.headers || {};
+        if (options.headers instanceof Headers) {
+            options.headers.set('ngrok-skip-browser-warning', 'true');
+            if (!options.headers.has('Accept')) {
+                options.headers.set('Accept', 'application/json');
+            }
+        } else {
+            options.headers['ngrok-skip-browser-warning'] = 'true';
+            if (!options.headers['Accept']) {
+                options.headers['Accept'] = 'application/json';
+            }
+        }
+    }
+    return originalFetch(resource, options);
+};
+
 /* ==========================================================================
    NAVIGATION & VIEW ROUTING
    ========================================================================== */
