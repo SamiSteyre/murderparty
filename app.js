@@ -328,8 +328,18 @@ function loadPersistedState() {
             console.error("Failed to load local state", e);
         }
     }
-    appState.n8nBaseUrl = 'http://localhost:5678'; // Hardcoded to run "for real" on localhost:5678
+    
+    // Check for n8n URL in query parameters (useful for HTTPS hosting like GitHub Pages)
+    const urlParams = new URLSearchParams(window.location.search);
+    const n8nParam = urlParams.get('n8n');
+    if (n8nParam) {
+        appState.n8nBaseUrl = n8nParam.replace(/\/$/, '');
+        savePersistedState();
+    } else if (!appState.n8nBaseUrl) {
+        appState.n8nBaseUrl = 'http://localhost:5678';
+    }
 }
+
 
 // Save State to LocalStorage
 function savePersistedState() {
