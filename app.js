@@ -6237,7 +6237,13 @@ function init() {
     }
 
     // Event Listeners
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+        if (appState.loginStep === 'email') {
+            handleRequestOtp(e);
+        } else {
+            handleLogin(e);
+        }
+    });
     document.getElementById('requestOtpBtn').addEventListener('click', handleRequestOtp);
     document.getElementById('backToEmailBtn').addEventListener('click', handleBackToEmail);
     document.getElementById('logoutBtn').addEventListener('click', logout);
