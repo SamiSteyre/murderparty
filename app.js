@@ -3314,6 +3314,30 @@ function parseChronology(chronologyText) {
     return events;
 }
 
+async function handleRegeneratePortraits() {
+    const modal = document.getElementById('modalVerifyPortraits');
+    if (modal) modal.classList.add('hidden');
+    await handleApproveVictim();
+}
+
+async function handleRegenerateIntrigue() {
+    const modal = document.getElementById('modalIntrigue');
+    if (modal) modal.classList.add('hidden');
+    await handleApprovePortraits();
+}
+
+async function handleRegenerateBiographies() {
+    const modal = document.getElementById('modalVerifyBiographies');
+    if (modal) modal.classList.add('hidden');
+    await handleApproveIntrigue();
+}
+
+async function handleRegenerateMapTimeline() {
+    const modal = document.getElementById('modalVerifyMapTimeline');
+    if (modal) modal.classList.add('hidden');
+    await handleApproveBiographies();
+}
+
 function showBiographyModal() {
     activeBiographyIndex = 0;
     const modal = document.getElementById('modalVerifyBiographies');
@@ -6360,6 +6384,9 @@ function init() {
     const btnApprovePortraits = document.getElementById('btnApprovePortraits');
     if (btnApprovePortraits) btnApprovePortraits.addEventListener('click', handleApprovePortraits);
 
+    const btnRegeneratePortraits = document.getElementById('btnRegeneratePortraits');
+    if (btnRegeneratePortraits) btnRegeneratePortraits.addEventListener('click', handleRegeneratePortraits);
+
     const btnBackVerifyPortraits = document.getElementById('btnBackVerifyPortraits');
     if (btnBackVerifyPortraits) {
         btnBackVerifyPortraits.addEventListener('click', () => {
@@ -6381,6 +6408,9 @@ function init() {
         btnFinishBiographies.addEventListener('click', handleApproveBiographies);
     }
 
+    const btnRegenerateBiographies = document.getElementById('btnRegenerateBiographies');
+    if (btnRegenerateBiographies) btnRegenerateBiographies.addEventListener('click', handleRegenerateBiographies);
+
     const btnApproveMapTimeline = document.getElementById('btnApproveMapTimeline');
     if (btnApproveMapTimeline) {
         btnApproveMapTimeline.addEventListener('click', () => {
@@ -6394,6 +6424,9 @@ function init() {
             renderOrganizerDashboard();
         });
     }
+
+    const btnRegenerateMapTimeline = document.getElementById('btnRegenerateMapTimeline');
+    if (btnRegenerateMapTimeline) btnRegenerateMapTimeline.addEventListener('click', handleRegenerateMapTimeline);
 
     const btnBackVerifyMapTimeline = document.getElementById('btnBackVerifyMapTimeline');
     if (btnBackVerifyMapTimeline) {
@@ -6412,6 +6445,9 @@ function init() {
             renderOrganizerDashboard();
         });
     }
+
+    const btnRegenerateIntrigue = document.getElementById('btnRegenerateIntrigue');
+    if (btnRegenerateIntrigue) btnRegenerateIntrigue.addEventListener('click', handleRegenerateIntrigue);
 }
 
 window.addEventListener('DOMContentLoaded', init);
