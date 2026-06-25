@@ -1084,10 +1084,103 @@
                     <i class="fa-solid fa-arrow-left"></i> Précédent
                 </button>
                 <button id="btnFinishBiographies" class="px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-gold hover:bg-gold-hover text-black font-black transition-all shadow-[0_2px_10px_rgba(245,158,11,0.2)] flex items-center gap-1.5">
-                    <i class="fa-solid fa-circle-check"></i> Commencer la partie
+                    <i class="fa-solid fa-circle-check"></i> Valider et continuer
                 </button>
                 <button id="btnNextBiography" class="px-4 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-zinc-900 border border-white/5 text-slate-400 hover:text-white transition-colors flex items-center gap-1.5">
                     Suivant <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4.8. Modal Cartographie & Timeline (par IAgo & IAël) -->
+    <div id="modalVerifyMapTimeline" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="glass-panel border-gold/30 w-full max-w-4xl rounded-2xl p-6 space-y-6 shadow-[0_0_50px_rgba(245,158,11,0.25)] my-auto relative">
+            <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                <h3 class="font-cinzel text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-map-location-dot text-gold animate-pulse"></i> Cartographie & Chronologie
+                </h3>
+                <span class="text-3xs uppercase tracking-widest text-slate-550 font-bold bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">Étape 5/6</span>
+            </div>
+
+            <!-- Tab Selector -->
+            <div class="flex gap-2 border-b border-white/5 pb-2">
+                <button id="tabMapBtn" class="px-4 py-2 text-3xs font-bold uppercase tracking-wider border-b-2 border-gold text-white hover:text-white transition-all">
+                    <i class="fa-solid fa-map mr-1"></i> Plan des Lieux
+                </button>
+                <button id="tabTimelineBtn" class="px-4 py-2 text-3xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Chronologie
+                </button>
+                <button id="tabRawJsonBtn" class="px-4 py-2 text-3xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-code mr-1"></i> JSON Brut
+                </button>
+            </div>
+
+            <!-- Content Screens -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[350px] max-h-[500px] overflow-y-auto pr-2">
+                <!-- Map Tab Screen -->
+                <div id="mapTabScreen" class="lg:col-span-12 space-y-4">
+                    <div class="flex justify-between items-center bg-zinc-900/50 p-3 rounded-xl border border-white/5">
+                        <div>
+                            <h4 id="mapLocationTitle" class="text-xs font-bold text-white uppercase tracking-wider">--</h4>
+                            <p id="mapLocationSubtitle" class="text-3xs text-slate-400 font-light mt-0.5">Plan d'implantation sur grille 12x12</p>
+                        </div>
+                        <!-- Floor Selection Buttons -->
+                        <div id="mapFloorContainer" class="flex gap-1">
+                            <!-- Dynamic Floor Buttons -->
+                        </div>
+                    </div>
+
+                    <!-- CSS Grid Visual Map Representation -->
+                    <div class="flex flex-col md:flex-row gap-6 items-center justify-center">
+                        <div class="relative w-full max-w-[340px] aspect-square bg-zinc-950 p-2 rounded-xl border border-white/10 shadow-[0_4px_25px_rgba(0,0,0,0.6)]">
+                            <!-- Dynamic rooms container -->
+                            <div id="mapGridContainer" class="relative w-full h-full grid grid-cols-12 grid-rows-12 gap-1">
+                                <!-- Dynamic Room Divs positioned using grid-column and grid-row -->
+                            </div>
+                        </div>
+                        <!-- Room details panel on the right -->
+                        <div class="flex-1 w-full space-y-3 bg-zinc-900/30 p-4 rounded-xl border border-white/5 max-h-[340px] overflow-y-auto">
+                            <span class="text-[9px] uppercase tracking-widest text-gold font-mono font-bold flex items-center gap-1.5">
+                                <i class="fa-solid fa-circle-info text-gold"></i> Détails de la Pièce
+                            </span>
+                            <div id="selectedRoomDetails" class="text-slate-400 text-3xs space-y-2">
+                                <p class="italic text-slate-500">Sélectionnez une pièce sur le plan pour afficher ses détails (dimensions, capacité, connexions...).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Tab Screen (Hidden by default) -->
+                <div id="timelineTabScreen" class="hidden lg:col-span-12 space-y-4">
+                    <div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5">
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider">Déroulement Chronologique</h4>
+                        <p class="text-3xs text-slate-400 font-light mt-0.5">Enchaînement temporel des événements de l'intrigue</p>
+                    </div>
+
+                    <!-- Vertical Timeline list container -->
+                    <div class="relative border-l border-gold/20 ml-3 pl-6 space-y-6 py-2 max-h-[380px] overflow-y-auto" id="timelineListContainer">
+                        <!-- Dynamic Timeline Items -->
+                    </div>
+                </div>
+
+                <!-- Raw JSON Tab Screen (Hidden by default) -->
+                <div id="rawJsonTabScreen" class="hidden lg:col-span-12 space-y-3">
+                    <div class="bg-zinc-900/50 p-3 rounded-xl border border-white/5">
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider">Données Structurales (Plan JSON)</h4>
+                        <p class="text-3xs text-slate-400 font-light mt-0.5">Format brut enregistré en base de données</p>
+                    </div>
+                    <pre class="bg-zinc-950 p-4 rounded-xl border border-white/10 text-3xs text-slate-350 font-mono overflow-auto max-h-[350px] leading-relaxed select-all" id="rawJsonCodeBlock">--</pre>
+                </div>
+            </div>
+
+            <!-- Footer Controls -->
+            <div class="flex justify-end gap-2 border-t border-white/5 pt-4 w-full">
+                <button id="btnBackVerifyMapTimeline" class="px-4 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-zinc-900 border border-white/5 text-slate-400 hover:text-white transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-house"></i> Retour
+                </button>
+                <button id="btnApproveMapTimeline" class="px-5 py-2.5 rounded-xl text-3xs font-bold uppercase tracking-wider bg-gold hover:bg-gold-hover text-black font-black transition-all shadow-[0_2px_10px_rgba(245,158,11,0.2)] flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-check"></i> Valider et continuer
                 </button>
             </div>
         </div>

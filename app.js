@@ -1287,6 +1287,16 @@ function mapScenarioProperties(s) {
     const victim = isRawNotion ? getText(props["Victime"]) : (s.victim && typeof s.victim === 'object' ? (s.victim.name || "") : (s.victim || s.property_victime || ""));
     const victimOutfit = isRawNotion ? getText(props["Tenue Victime"]) : (s.victimOutfit || (s.victim && typeof s.victim === 'object' ? s.victim.outfit : "") || s.property_tenue_victime || "");
     const chronology = isRawNotion ? getText(props["Chronologie"]) : (s.chronology || s.property_chronologie || "");
+    let planJson = null;
+    const planJsonStr = isRawNotion ? getText(props["Plan JSON"]) : (s.planJson || s.property_plan_json || s.plan_json || "");
+    if (planJsonStr) {
+        try {
+            planJson = typeof planJsonStr === 'string' ? JSON.parse(planJsonStr) : planJsonStr;
+        } catch (e) {
+            console.warn("Failed to parse Plan JSON", e);
+            planJson = planJsonStr;
+        }
+    }
     const cluesCount = isRawNotion ? (getNumber(props["Nombre Total d'Indices"]) || 24) : (s.cluesCount || s.property_nombre_total_d_indices || 24);
     const illustration = isRawNotion ? getText(props["Illustration"]) : (s.illustration || s.property_illustration || "");
     const intrigue = isRawNotion ? getText(props["Intrigue"]) : (s.intrigue || s.property_intrigue || s.property_intrigue_globale || "");
@@ -1376,6 +1386,7 @@ function mapScenarioProperties(s) {
         victimOutfit: victimOutfit,
         victimShortHook: victimShortHookVal,
         chronology: chronology,
+        planJson: planJson,
         cluesCount: cluesCount,
         illustration: illustration,
         intrigue: intrigue,
@@ -2785,6 +2796,524 @@ async function handleApproveIntrigue() {
     }
 }
 
+async function loadScenarioDetailsAndData(selectedScenario) {
+    let completeScenario = null;
+    if (appState.n8nBaseUrl) {
+        try {
+            const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scenario_id: selectedScenario.id })
+            });
+            if (detailsRes.ok) {
+                const detailsData = await detailsRes.json();
+                let rawScenario = extractRawScenario(detailsData);
+                if (rawScenario) {
+                    completeScenario = mapScenarioProperties(rawScenario);
+                    addLiveLog(`[Reprise] Détails récupérés depuis n8n.`);
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to fetch scenario details via webhook:", e);
+        }
+    }
+    
+    if (!completeScenario) {
+        try {
+            completeScenario = await fetchScenarioAndSuspectsFromNotion(selectedScenario.id);
+            addLiveLog(`[Reprise] Détails récupérés en direct de Notion.`);
+        } catch (err) {
+            console.warn("Failed direct Notion fetch:", err);
+        }
+    }
+    
+    if (!completeScenario) {
+        completeScenario = selectedScenario;
+    }
+
+    const gitFiles = await fetchGithubImagesList();
+    loadScenarioData(completeScenario, gitFiles);
+    
+    appState.pendingScenarioId = selectedScenario.id;
+    appState.pendingScenarioData = {
+        scenario_id: selectedScenario.id,
+        title: completeScenario.title || selectedScenario.title,
+        theme: completeScenario.theme || selectedScenario.theme || "",
+        pitch: completeScenario.pitch || selectedScenario.pitch || "",
+        epoch: completeScenario.epoch || selectedScenario.epoch || "passé",
+        victim: completeScenario.victimObj || completeScenario.victim,
+        suspects: completeScenario.suspects || []
+    };
+    if (completeScenario.planJson) appState.planJson = completeScenario.planJson;
+    if (completeScenario.chronology) appState.chronology = completeScenario.chronology;
+    
+    savePersistedState();
+    return completeScenario;
+}
+
+async function handleApproveBiographies() {
+    const modal = document.getElementById('modalVerifyBiographies');
+    if (modal) modal.classList.add('hidden');
+
+    const genOverlay = document.getElementById('scenarioGeneratingOverlay');
+    const titleText = document.getElementById('scenarioGeneratingTitle');
+    const subtitleText = document.getElementById('scenarioGeneratingSubtitle');
+    const loadVideo = document.getElementById('iasminaLoadingVideo');
+
+    if (genOverlay) {
+        if (titleText) {
+            titleText.textContent = "Les IAgens Cartographe & Chronologue IAgo et IAël dressent la cartographie des lieux et l'enchainement chronologique des événements";
+        }
+        if (subtitleText) {
+            subtitleText.textContent = "Génération de la topographie et de la chronologie...";
+        }
+        if (loadVideo) {
+            loadVideo.src = "https://github.com/SamiSteyre/murderparty/raw/main/images/IAgoIAel1.mp4";
+            loadVideo.currentTime = 0;
+            loadVideo.play().catch(err => console.warn("Loading video play failed:", err));
+        }
+        genOverlay.classList.remove('hidden');
+    }
+
+    let pollInterval = null;
+
+    try {
+        const scenarioId = appState.pendingScenarioId || (appState.scenario ? appState.scenario.id : "");
+        let detailsData = null;
+
+        if (appState.n8nBaseUrl && !appState.isSimulationMode && scenarioId) {
+            addLiveLog(`[Validation] Récupération des données du scénario via mp-get-scenario-details pour l'étape 5...`);
+            
+            const detailsRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scenario_id: scenarioId })
+            });
+
+            if (!detailsRes.ok) {
+                throw new Error(`Erreur lors de l'appel à mp-get-scenario-details (${detailsRes.status})`);
+            }
+
+            detailsData = await detailsRes.json();
+            console.log("[Validation] Données récupérées de mp-get-scenario-details :", detailsData);
+
+            addLiveLog(`[Validation] Lancement de l'étape 5 (mp-generate-scenario-5)...`);
+            
+            let payload = {};
+            if (Array.isArray(detailsData)) {
+                payload = { ...detailsData[0] };
+            } else if (detailsData) {
+                payload = { ...detailsData };
+            }
+
+            if (!payload.scenario_id && !payload.id) {
+                payload.scenario_id = scenarioId;
+            }
+
+            pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scenario_id: scenarioId })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const rawScenario = extractRawScenario(data);
+                        if (rawScenario) {
+                            const tempScenario = mapScenarioProperties(rawScenario);
+                            const hasPlan = tempScenario.planJson && (typeof tempScenario.planJson === 'object' || tempScenario.planJson.trim().length > 10);
+                            const hasChrono = tempScenario.chronology && tempScenario.chronology.trim().length > 10;
+                            
+                            if (hasPlan && hasChrono) {
+                                clearInterval(pollInterval);
+                                pollInterval = null;
+                                appState.scenario = tempScenario;
+                                appState.chronology = tempScenario.chronology;
+                                appState.planJson = tempScenario.planJson;
+                                
+                                if (genOverlay) {
+                                    genOverlay.classList.add('hidden');
+                                    if (loadVideo) loadVideo.pause();
+                                }
+                                
+                                playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IAgoIAel2.mp4", async () => {
+                                    try {
+                                        const finalRes = await fetch(`${appState.n8nBaseUrl}/webhook/mp-get-scenario-details`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ scenario_id: scenarioId })
+                                        });
+                                        if (finalRes.ok) {
+                                            const finalData = await finalRes.json();
+                                            const finalRaw = extractRawScenario(finalData);
+                                            if (finalRaw) {
+                                                const completeScenario = mapScenarioProperties(finalRaw);
+                                                const gitFiles = await fetchGithubImagesList();
+                                                loadScenarioData(completeScenario, gitFiles);
+                                            }
+                                        }
+                                    } catch (err) {
+                                        console.warn("Failed final fetch for step 5 details", err);
+                                    }
+                                    showToast("Étape 5 Terminée", "La cartographie et la chronologie sont prêtes !", "success");
+                                    showMapTimelineModal(appState.scenario);
+                                });
+                            }
+                        }
+                    }
+                } catch (pollErr) {
+                    console.warn("Failed to poll topography/chronology progress:", pollErr);
+                }
+            }, 4000);
+
+            const response = await fetch(`${appState.n8nBaseUrl}/webhook/mp-generate-scenario-5`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status} de mp-generate-scenario-5`);
+            }
+
+            const resData = await response.json().catch(() => null);
+            console.log("[Validation] Réponse de mp-generate-scenario-5 :", resData);
+        } else {
+            addLiveLog(`[Validation] Mode simulation ou n8n non configuré. Simulation de l'étape 5...`);
+            await sleep(5000);
+            
+            const dummyPlan = {
+                grid: { c: 12, r: 12 },
+                floors: [
+                    { id: 0, n: "RDC" },
+                    { id: 1, n: "1er Étage" }
+                ],
+                rooms: [
+                    { id: "r1", n: "Grand Salon", f: 0, x: 0, y: 0, w: 6, h: 6, c: ["r2", "r3"], t: 36, nb: 8, lt: "int" },
+                    { id: "r2", n: "Cuisine", f: 0, x: 6, y: 0, w: 6, h: 4, c: ["r1"], t: 24, nb: 4, lt: "int" },
+                    { id: "r3", n: "Bibliothèque", f: 0, x: 0, y: 6, w: 6, h: 6, c: ["r1", "r4"], t: 36, nb: 6, lt: "int" },
+                    { id: "r4", n: "Jardin d'Hiver", f: 0, x: 6, y: 4, w: 6, h: 8, c: ["r2", "r3"], t: 48, nb: 10, lt: "ext" },
+                    { id: "r5", n: "Chambre Bleue", f: 1, x: 1, y: 1, w: 5, h: 5, c: ["r6"], t: 25, nb: 2, lt: "int" },
+                    { id: "r6", n: "Couloir Étage", f: 1, x: 6, y: 1, w: 5, h: 10, c: ["r5", "r7"], t: 50, nb: 4, lt: "int" },
+                    { id: "r7", n: "Chambre Rouge", f: 1, x: 1, y: 6, w: 5, h: 5, c: ["r6"], t: 25, nb: 2, lt: "int" }
+                ]
+            };
+            const dummyTimeline = `⏱️ Jour J - 20:00 | 📍 Grand Salon\n👥 Suspects impliqués : Arthur Pendelton, Ariel Vance\n📝 Les invités arrivent au Grand Salon et trinquent à la santé de la victime.\n\n⏱️ Jour J - 20:30 | 📍 Bibliothèque\n👥 Suspects impliqués : Charles Mercier\n📝 Charles Mercier s'isole dans la bibliothèque pour consulter des documents secrets.\n\n⏱️ Jour J - 21:00 | 📍 Jardin d'Hiver\n👥 Suspects impliqués : La Victime, Asmina Al-Fayed\n📝 Une discussion animée éclate dans le jardin d'hiver entre la victime et Asmina.`;
+
+            if (appState.scenario) {
+                appState.scenario.planJson = dummyPlan;
+                appState.scenario.chronology = dummyTimeline;
+                appState.scenario.etapeGeneration = 5;
+            }
+            appState.planJson = dummyPlan;
+            appState.chronology = dummyTimeline;
+
+            if (genOverlay) {
+                genOverlay.classList.add('hidden');
+                if (loadVideo) loadVideo.pause();
+            }
+
+            playRevealVideo("https://github.com/SamiSteyre/murderparty/raw/main/images/IAgoIAel2.mp4", () => {
+                showToast("Étape 5 Terminée", "La cartographie et la chronologie sont prêtes (Mode Simulation) !", "success");
+                showMapTimelineModal(appState.scenario);
+            });
+        }
+    } catch (err) {
+        console.error("Error triggering step 5 webhook:", err);
+        showToast("Erreur", "Impossible de lancer l'étape 5. Veuillez réessayer.", "error");
+
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+
+        if (genOverlay) {
+            genOverlay.classList.add('hidden');
+            if (loadVideo) loadVideo.pause();
+        }
+
+        if (modal) modal.classList.remove('hidden');
+    }
+}
+
+let currentFloorId = null;
+
+function showMapTimelineModal(scenario) {
+    const modal = document.getElementById('modalVerifyMapTimeline');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+
+    switchMapTimelineTab('Map');
+
+    const tabMapBtn = document.getElementById('tabMapBtn');
+    if (tabMapBtn) tabMapBtn.onclick = () => switchMapTimelineTab('Map');
+
+    const tabTimelineBtn = document.getElementById('tabTimelineBtn');
+    if (tabTimelineBtn) tabTimelineBtn.onclick = () => switchMapTimelineTab('Timeline');
+
+    const tabRawJsonBtn = document.getElementById('tabRawJsonBtn');
+    if (tabRawJsonBtn) tabRawJsonBtn.onclick = () => switchMapTimelineTab('RawJson');
+
+    const mapLocationTitle = document.getElementById('mapLocationTitle');
+    if (mapLocationTitle) mapLocationTitle.textContent = scenario.title || "Plan du Scénario";
+
+    const planJson = scenario.planJson;
+    if (planJson) {
+        const rooms = planJson.rooms || [];
+        const floors = planJson.floors || [];
+        
+        let floorsList = floors;
+        if (floorsList.length === 0 && rooms.length > 0) {
+            const uniqueFloors = [...new Set(rooms.map(r => r.f))].sort((a, b) => a - b);
+            floorsList = uniqueFloors.map(fId => {
+                const isRdc = fId === 0 || fId === '0';
+                return { id: fId, n: isRdc ? "RDC" : `${fId}e Étage` };
+            });
+        }
+
+        const floorContainer = document.getElementById('mapFloorContainer');
+        if (floorContainer) {
+            floorContainer.innerHTML = '';
+            floorsList.forEach((floor, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1.5 rounded-lg text-3xs font-bold uppercase tracking-wider transition-colors \${idx === 0 ? 'bg-gold text-black' : 'bg-zinc-800 text-slate-400 hover:text-white border border-white/5'}`;
+                btn.textContent = floor.n;
+                btn.onclick = () => {
+                    Array.from(floorContainer.children).forEach(child => {
+                        child.className = 'px-3 py-1.5 rounded-lg text-3xs font-bold uppercase tracking-wider transition-colors bg-zinc-800 text-slate-400 hover:text-white border border-white/5';
+                    });
+                    btn.className = 'px-3 py-1.5 rounded-lg text-3xs font-bold uppercase tracking-wider transition-colors bg-gold text-black';
+                    currentFloorId = floor.id;
+                    renderFloorMap(floor.id, rooms);
+                };
+                floorContainer.appendChild(btn);
+            });
+        }
+
+        if (floorsList.length > 0) {
+            currentFloorId = floorsList[0].id;
+            renderFloorMap(floorsList[0].id, rooms);
+        } else {
+            const gridContainer = document.getElementById('mapGridContainer');
+            if (gridContainer) gridContainer.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500 text-3xs">Aucune pièce disponible.</div>';
+        }
+
+        const detailPanel = document.getElementById('selectedRoomDetails');
+        if (detailPanel) {
+            detailPanel.innerHTML = '<p class="italic text-slate-550">Sélectionnez une pièce sur le plan pour afficher ses détails (dimensions, capacité, connexions...).</p>';
+        }
+
+        const rawJsonBlock = document.getElementById('rawJsonCodeBlock');
+        if (rawJsonBlock) {
+            rawJsonBlock.textContent = JSON.stringify(planJson, null, 2);
+        }
+    } else {
+        const gridContainer = document.getElementById('mapGridContainer');
+        if (gridContainer) gridContainer.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500 text-3xs">Plan indisponible.</div>';
+        
+        const rawJsonBlock = document.getElementById('rawJsonCodeBlock');
+        if (rawJsonBlock) rawJsonBlock.textContent = 'Aucune donnée topographique disponible.';
+    }
+
+    const timelineContainer = document.getElementById('timelineListContainer');
+    if (timelineContainer) {
+        timelineContainer.innerHTML = '';
+        const parsedTimeline = parseChronology(scenario.chronology);
+        if (parsedTimeline.length > 0) {
+            parsedTimeline.forEach((event) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "relative pl-2 group transition-all duration-300";
+                itemDiv.innerHTML = `
+                    <div class="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-zinc-950 border-2 border-gold flex items-center justify-center group-hover:scale-110 transition-transform shadow-[0_0_8px_rgba(245,158,11,0.4)]">
+                        <div class="w-1.5 h-1.5 rounded-full bg-gold"></div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-3xs font-mono font-bold text-gold bg-gold/10 px-2 py-0.5 rounded border border-gold/20 flex items-center gap-1">
+                                <i class="fa-solid fa-clock text-[9px]"></i> \${event.time}
+                            </span>
+                            <span class="text-3xs font-bold text-white uppercase tracking-wider bg-zinc-800 border border-white/5 px-2 py-0.5 rounded flex items-center gap-1">
+                                <i class="fa-solid fa-location-dot text-[9px] text-slate-400"></i> \${event.room}
+                            </span>
+                        </div>
+                        \${event.suspects ? `
+                            <div class="text-[9px] font-bold text-slate-300 flex items-center gap-1">
+                                <span class="text-slate-500 uppercase tracking-widest font-mono text-[8px]">Présents :</span>
+                                <span>\${event.suspects}</span>
+                            </div>
+                        ` : ''}
+                        <p class="text-slate-400 text-3xs font-light leading-relaxed">\${event.description}</p>
+                    </div>
+                `;
+                timelineContainer.appendChild(itemDiv);
+            });
+        } else {
+            timelineContainer.innerHTML = `<p class="text-slate-555 italic text-center text-3xs py-8">Aucune chronologie disponible.</p>`;
+        }
+    }
+}
+
+function switchMapTimelineTab(activeTab) {
+    const tabs = ['Map', 'Timeline', 'RawJson'];
+    tabs.forEach(tab => {
+        const btn = document.getElementById(`tab\${tab}Btn`);
+        const screen = document.getElementById(`\${tab.charAt(0).toLowerCase() + tab.slice(1)}TabScreen`);
+        if (tab === activeTab) {
+            if (btn) {
+                btn.className = "px-4 py-2 text-3xs font-bold uppercase tracking-wider border-b-2 border-gold text-white transition-all";
+            }
+            if (screen) screen.classList.remove('hidden');
+        } else {
+            if (btn) {
+                btn.className = "px-4 py-2 text-3xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white transition-all";
+            }
+            if (screen) screen.classList.add('hidden');
+        }
+    });
+}
+
+function renderFloorMap(floorId, rooms) {
+    const gridContainer = document.getElementById('mapGridContainer');
+    if (!gridContainer) return;
+    gridContainer.innerHTML = '';
+    
+    const floorRooms = rooms.filter(r => r.f == floorId);
+    floorRooms.forEach(room => {
+        const roomDiv = document.createElement('div');
+        const isCrimeScene = (appState.scenario && appState.scenario.crimeRoom && 
+                              appState.scenario.crimeRoom.toLowerCase().trim() === room.n.toLowerCase().trim());
+        
+        roomDiv.style.gridColumn = `\${room.x + 1} / span \${room.w}`;
+        roomDiv.style.gridRow = `\${room.y + 1} / span \${room.h}`;
+        
+        let baseClass = "flex flex-col items-center justify-center p-2 rounded-lg border text-center cursor-pointer transition-all duration-300 select-none overflow-hidden ";
+        if (isCrimeScene) {
+            baseClass += "bg-red-950/40 border-red-500/60 hover:bg-red-900/50 hover:border-red-400 text-red-100 shadow-[0_0_15px_rgba(239,68,68,0.2)]";
+        } else {
+            baseClass += "bg-zinc-900/40 border-gold/20 hover:bg-zinc-800/60 hover:border-gold/50 text-slate-200 hover:text-white";
+        }
+        roomDiv.className = baseClass;
+        
+        roomDiv.innerHTML = `
+            <span class="font-cinzel text-[9px] font-bold leading-tight line-clamp-2">\${room.n}</span>
+            \${isCrimeScene ? '<span class="text-[7px] text-red-400 uppercase tracking-widest font-bold mt-1"><i class="fa-solid fa-skull-crossbones animate-pulse"></i> Crime</span>' : ''}
+        `;
+        
+        roomDiv.onclick = () => {
+            Array.from(gridContainer.children).forEach(child => {
+                if (child.classList.contains('border-red-500/60')) {
+                    // Keep crime scene border
+                } else if (child.classList.contains('border-red-400')) {
+                    child.className = child.className.replace('bg-red-900/50 border-red-400', 'bg-red-950/40 border-red-500/60');
+                } else {
+                    child.className = child.className.replace(/border-gold\\/\\d+|border-gold/g, 'border-gold/20');
+                }
+            });
+            if (isCrimeScene) {
+                roomDiv.className = roomDiv.className.replace('bg-red-950/40 border-red-500/60', 'bg-red-900/50 border-red-400');
+            } else {
+                roomDiv.className = roomDiv.className.replace('border-gold/20', 'border-gold');
+            }
+            
+            showRoomDetails(room, rooms);
+        };
+        
+        gridContainer.appendChild(roomDiv);
+    });
+}
+
+function showRoomDetails(room, allRooms) {
+    const panel = document.getElementById('selectedRoomDetails');
+    if (!panel) return;
+    
+    const isCrimeScene = (appState.scenario && appState.scenario.crimeRoom && 
+                          appState.scenario.crimeRoom.toLowerCase().trim() === room.n.toLowerCase().trim());
+    
+    let connectionNames = [];
+    if (Array.isArray(room.c)) {
+        connectionNames = room.c.map(connId => {
+            const connRoom = allRooms.find(r => r.id === connId || r.n === connId);
+            return connRoom ? connRoom.n : connId;
+        });
+    }
+    
+    panel.innerHTML = `
+        <div class="space-y-3">
+            <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                <h5 class="text-xs font-bold text-white uppercase font-cinzel">\${room.n}</h5>
+                \${isCrimeScene ? '<span class="px-2 py-0.5 rounded text-[8px] bg-red-950 border border-red-500 text-red-400 font-bold uppercase tracking-wider">Scène du Crime</span>' : ''}
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-3xs">
+                <div class="bg-zinc-950/50 p-2 rounded border border-white/5">
+                    <span class="text-slate-500 block">Dimensions</span>
+                    <strong class="text-slate-200">\${room.w} x \${room.h} (\${room.w * room.h} m²)</strong>
+                </div>
+                <div class="bg-zinc-950/50 p-2 rounded border border-white/5">
+                    <span class="text-slate-500 block">Capacité</span>
+                    <strong class="text-slate-200">\${room.nb || 3} suspects max</strong>
+                </div>
+                <div class="bg-zinc-950/50 p-2 rounded border border-white/5">
+                    <span class="text-slate-500 block">Type de Lieu</span>
+                    <strong class="text-slate-200 uppercase">\${room.lt === 'ext' ? 'Extérieur' : 'Intérieur'}</strong>
+                </div>
+                <div class="bg-zinc-950/50 p-2 rounded border border-white/5">
+                    <span class="text-slate-500 block">Étage</span>
+                    <strong class="text-slate-200">\${room.f == 0 ? 'RDC' : `\${room.f}e Étage`}</strong>
+                </div>
+            </div>
+            <div>
+                <span class="text-slate-500 text-[9px] uppercase tracking-wider block mb-1">Passages & Connexions</span>
+                <div class="flex flex-wrap gap-1">
+                    \${connectionNames.length > 0 ? 
+                        connectionNames.map(name => `<span class="bg-zinc-800 text-slate-300 border border-white/5 px-2 py-0.5 rounded text-[9px]">\${name}</span>`).join('') :
+                        '<span class="text-slate-550 italic">Aucune connexion directe</span>'
+                    }
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function parseChronology(chronologyText) {
+    if (!chronologyText) return [];
+    const blocks = chronologyText.split(/------------------------------------+/);
+    const events = [];
+    for (let block of blocks) {
+        block = block.trim();
+        if (!block) continue;
+        if (block.includes("CHRONOLOGIE GLOBALE")) continue;
+        
+        const lines = block.split('\\n').map(l => l.trim()).filter(Boolean);
+        let time = "";
+        let room = "";
+        let suspects = "";
+        let description = "";
+        
+        for (let line of lines) {
+            if (line.startsWith("⏱️") || line.includes("⏱️")) {
+                const parts = line.replace("⏱️", "").split(" | ");
+                time = parts[0] ? parts[0].trim() : "";
+                if (parts[1]) {
+                    room = parts[1].replace("📍", "").trim();
+                }
+            } else if (line.startsWith("👥") || line.includes("👥")) {
+                suspects = line.replace("👥", "").replace("Suspects impliqués :", "").replace("Suspects impliqués:", "").trim();
+            } else if (line.startsWith("📝") || line.includes("📝")) {
+                description = line.replace("📝", "").trim();
+            } else if (!time && !room && !suspects) {
+                if (description) description += " " + line;
+                else description = line;
+            }
+        }
+        if (time || room || description) {
+            events.push({ time, room, suspects, description });
+        }
+    }
+    return events;
+}
+
 function showBiographyModal() {
     activeBiographyIndex = 0;
     const modal = document.getElementById('modalVerifyBiographies');
@@ -3989,6 +4518,38 @@ async function handleUnifiedSessionSubmit(e) {
                         } catch (err) {
                             console.error("Error loading scenario step 3 in submit button click:", err);
                             showToast("Erreur", "Impossible de charger l'intrigue.", "error");
+                        } finally {
+                            submitBtn.removeAttribute('disabled');
+                            updateSelectScenarioSubmitBtn();
+                        }
+                        return;
+                    }
+
+                    if (etape === 4) {
+                        addLiveLog(`[Reprise] Récupération des biographies pour "${selectedScenario.title}"...`);
+                        try {
+                            await loadScenarioDetailsAndData(selectedScenario);
+                            showBiographyModal();
+                            showToast("Succès", "Biographies chargées avec succès.", "success");
+                        } catch (err) {
+                            console.error("Error loading scenario step 4 in submit button click:", err);
+                            showToast("Erreur", "Impossible de charger les biographies.", "error");
+                        } finally {
+                            submitBtn.removeAttribute('disabled');
+                            updateSelectScenarioSubmitBtn();
+                        }
+                        return;
+                    }
+
+                    if (etape === 5) {
+                        addLiveLog(`[Reprise] Récupération de la cartographie pour "${selectedScenario.title}"...`);
+                        try {
+                            const completeScenario = await loadScenarioDetailsAndData(selectedScenario);
+                            showMapTimelineModal(completeScenario);
+                            showToast("Succès", "Cartographie & chronologie chargées avec succès.", "success");
+                        } catch (err) {
+                            console.error("Error loading scenario step 5 in submit button click:", err);
+                            showToast("Erreur", "Impossible de charger la cartographie.", "error");
                         } finally {
                             submitBtn.removeAttribute('disabled');
                             updateSelectScenarioSubmitBtn();
@@ -5557,8 +6118,46 @@ async function handleScenarioCardClick(scenarioId) {
             }
             updateSelectScenarioSubmitBtn();
         }
+    } else if (etape === 4) {
+        // Clic sur Étape 4 : Chargement immédiat du visualisateur de biographies
+        const submitBtn = document.getElementById('unifiedSubmitBtn');
+        if (submitBtn) {
+            submitBtn.setAttribute('disabled', 'true');
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-sm mr-2"></i> Récupération Étape 4...`;
+        }
+        try {
+            addLiveLog(`[Reprise] Clic sur scénario Étape 4 "${selectedScenario.title}" : chargement des biographies...`);
+            await loadScenarioDetailsAndData(selectedScenario);
+            showBiographyModal();
+            showToast("Succès", "Biographies chargées avec succès.", "success");
+        } catch (err) {
+            console.error("Error loading scenario step 4:", err);
+            showToast("Erreur", "Impossible de charger les biographies de ce scénario.", "error");
+        } finally {
+            if (submitBtn) submitBtn.removeAttribute('disabled');
+            updateSelectScenarioSubmitBtn();
+        }
+    } else if (etape === 5) {
+        // Clic sur Étape 5 : Chargement immédiat du visualisateur de cartographie & chronologie
+        const submitBtn = document.getElementById('unifiedSubmitBtn');
+        if (submitBtn) {
+            submitBtn.setAttribute('disabled', 'true');
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-sm mr-2"></i> Récupération Étape 5...`;
+        }
+        try {
+            addLiveLog(`[Reprise] Clic sur scénario Étape 5 "${selectedScenario.title}" : chargement de la cartographie & chronologie...`);
+            const completeScenario = await loadScenarioDetailsAndData(selectedScenario);
+            showMapTimelineModal(completeScenario);
+            showToast("Succès", "Cartographie & chronologie chargées avec succès.", "success");
+        } catch (err) {
+            console.error("Error loading scenario step 5:", err);
+            showToast("Erreur", "Impossible de charger la cartographie de ce scénario.", "error");
+        } finally {
+            if (submitBtn) submitBtn.removeAttribute('disabled');
+            updateSelectScenarioSubmitBtn();
+        }
     } else {
-        // Clic sur Étape 4 et + (quand non prêt à jouer)
+        // Clic sur Étape 6 et + (quand non prêt à jouer)
         showToast("Étape " + etape, "La gestion de la reprise à l'étape " + etape + " est encore à prévoir.", "info");
         updateSelectScenarioSubmitBtn();
     }
@@ -5585,6 +6184,10 @@ function updateSelectScenarioSubmitBtn() {
             submitBtn.innerHTML = `<i class="fa-solid fa-image"></i> Visualiser les portraits`;
         } else if (etape === 3) {
             submitBtn.innerHTML = `<i class="fa-solid fa-scroll"></i> Visualiser l'intrigue`;
+        } else if (etape === 4) {
+            submitBtn.innerHTML = `<i class="fa-solid fa-address-book"></i> Visualiser les biographies`;
+        } else if (etape === 5) {
+            submitBtn.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> Visualiser la cartographie`;
         } else {
             submitBtn.innerHTML = `<i class="fa-solid fa-circle-question"></i> Étape ${etape} sélectionnée`;
         }
@@ -5775,11 +6378,28 @@ function init() {
 
     const btnFinishBiographies = document.getElementById('btnFinishBiographies');
     if (btnFinishBiographies) {
-        btnFinishBiographies.addEventListener('click', () => {
-            const modal = document.getElementById('modalVerifyBiographies');
+        btnFinishBiographies.addEventListener('click', handleApproveBiographies);
+    }
+
+    const btnApproveMapTimeline = document.getElementById('btnApproveMapTimeline');
+    if (btnApproveMapTimeline) {
+        btnApproveMapTimeline.addEventListener('click', () => {
+            const modal = document.getElementById('modalVerifyMapTimeline');
             if (modal) modal.classList.add('hidden');
+            if (appState.scenario) {
+                appState.scenario.etapeGeneration = 5;
+            }
             appState.orgaView = 'generated';
             savePersistedState();
+            renderOrganizerDashboard();
+        });
+    }
+
+    const btnBackVerifyMapTimeline = document.getElementById('btnBackVerifyMapTimeline');
+    if (btnBackVerifyMapTimeline) {
+        btnBackVerifyMapTimeline.addEventListener('click', () => {
+            const modal = document.getElementById('modalVerifyMapTimeline');
+            if (modal) modal.classList.add('hidden');
             renderOrganizerDashboard();
         });
     }
