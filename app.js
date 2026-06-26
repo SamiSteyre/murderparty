@@ -3116,7 +3116,7 @@ function showMapTimelineModal(scenario) {
             floorContainer.innerHTML = '';
             floorsList.forEach((floor, idx) => {
                 const btn = document.createElement('button');
-                btn.className = `px-3 py-1.5 rounded-lg text-3xs font-bold uppercase tracking-wider transition-colors \${idx === 0 ? 'bg-gold text-black' : 'bg-zinc-800 text-slate-400 hover:text-white border border-white/5'}`;
+                btn.className = `px-3 py-1.5 rounded-lg text-3xs font-bold uppercase tracking-wider transition-colors ${idx === 0 ? 'bg-gold text-black' : 'bg-zinc-800 text-slate-400 hover:text-white border border-white/5'}`;
                 btn.textContent = floor.n;
                 btn.onclick = () => {
                     Array.from(floorContainer.children).forEach(child => {
@@ -3170,19 +3170,19 @@ function showMapTimelineModal(scenario) {
                     <div class="space-y-1">
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="text-3xs font-mono font-bold text-gold bg-gold/10 px-2 py-0.5 rounded border border-gold/20 flex items-center gap-1">
-                                <i class="fa-solid fa-clock text-[9px]"></i> \${event.time}
+                                <i class="fa-solid fa-clock text-[9px]"></i> ${event.time}
                             </span>
                             <span class="text-3xs font-bold text-white uppercase tracking-wider bg-zinc-800 border border-white/5 px-2 py-0.5 rounded flex items-center gap-1">
-                                <i class="fa-solid fa-location-dot text-[9px] text-slate-400"></i> \${event.room}
+                                <i class="fa-solid fa-location-dot text-[9px] text-slate-400"></i> ${event.room}
                             </span>
                         </div>
-                        \${event.suspects ? `
+                        ${event.suspects ? `
                             <div class="text-[9px] font-bold text-slate-300 flex items-center gap-1">
                                 <span class="text-slate-500 uppercase tracking-widest font-mono text-[8px]">Présents :</span>
-                                <span>\${event.suspects}</span>
+                                <span>${event.suspects}</span>
                             </div>
                         ` : ''}
-                        <p class="text-slate-400 text-3xs font-light leading-relaxed">\${event.description}</p>
+                        <p class="text-slate-400 text-3xs font-light leading-relaxed">${event.description}</p>
                     </div>
                 `;
                 timelineContainer.appendChild(itemDiv);
@@ -3196,8 +3196,8 @@ function showMapTimelineModal(scenario) {
 function switchMapTimelineTab(activeTab) {
     const tabs = ['Map', 'Timeline', 'RawJson'];
     tabs.forEach(tab => {
-        const btn = document.getElementById(`tab\${tab}Btn`);
-        const screen = document.getElementById(`\${tab.charAt(0).toLowerCase() + tab.slice(1)}TabScreen`);
+        const btn = document.getElementById(`tab${tab}Btn`);
+        const screen = document.getElementById(`${tab.charAt(0).toLowerCase() + tab.slice(1)}TabScreen`);
         if (tab === activeTab) {
             if (btn) {
                 btn.className = "px-4 py-2 text-3xs font-bold uppercase tracking-wider border-b-2 border-gold text-white transition-all";
@@ -3223,8 +3223,8 @@ function renderFloorMap(floorId, rooms) {
         const isCrimeScene = (appState.scenario && appState.scenario.crimeRoom && 
                               appState.scenario.crimeRoom.toLowerCase().trim() === room.n.toLowerCase().trim());
         
-        roomDiv.style.gridColumn = `\${room.x + 1} / span \${room.w}`;
-        roomDiv.style.gridRow = `\${room.y + 1} / span \${room.h}`;
+        roomDiv.style.gridColumn = `${room.x + 1} / span ${room.w}`;
+        roomDiv.style.gridRow = `${room.y + 1} / span ${room.h}`;
         
         let baseClass = "flex flex-col items-center justify-center p-2 rounded-lg border text-center cursor-pointer transition-all duration-300 select-none overflow-hidden ";
         if (isCrimeScene) {
@@ -3235,8 +3235,8 @@ function renderFloorMap(floorId, rooms) {
         roomDiv.className = baseClass;
         
         roomDiv.innerHTML = `
-            <span class="font-cinzel text-[9px] font-bold leading-tight line-clamp-2">\${room.n}</span>
-            \${isCrimeScene ? '<span class="text-[7px] text-red-400 uppercase tracking-widest font-bold mt-1"><i class="fa-solid fa-skull-crossbones animate-pulse"></i> Crime</span>' : ''}
+            <span class="font-cinzel text-[9px] font-bold leading-tight line-clamp-2">${room.n}</span>
+            ${isCrimeScene ? '<span class="text-[7px] text-red-400 uppercase tracking-widest font-bold mt-1"><i class="fa-solid fa-skull-crossbones animate-pulse"></i> Crime</span>' : ''}
         `;
         
         roomDiv.onclick = () => {
@@ -3280,32 +3280,32 @@ function showRoomDetails(room, allRooms) {
     panel.innerHTML = `
         <div class="space-y-3">
             <div class="flex items-center justify-between border-b border-white/5 pb-2">
-                <h5 class="text-xs font-bold text-white uppercase font-cinzel">\${room.n}</h5>
-                \${isCrimeScene ? '<span class="px-2 py-0.5 rounded text-[8px] bg-red-950 border border-red-500 text-red-400 font-bold uppercase tracking-wider">Scène du Crime</span>' : ''}
+                <h5 class="text-xs font-bold text-white uppercase font-cinzel">${room.n}</h5>
+                ${isCrimeScene ? '<span class="px-2 py-0.5 rounded text-[8px] bg-red-950 border border-red-500 text-red-400 font-bold uppercase tracking-wider">Scène du Crime</span>' : ''}
             </div>
             <div class="grid grid-cols-2 gap-2 text-3xs">
                 <div class="bg-zinc-950/50 p-2 rounded border border-white/5">
                     <span class="text-slate-500 block">Dimensions</span>
-                    <strong class="text-slate-200">\${room.w} x \${room.h} (\${room.w * room.h} m²)</strong>
+                    <strong class="text-slate-200">${room.w} x ${room.h} (${room.w * room.h} m²)</strong>
                 </div>
                 <div class="bg-zinc-950/50 p-2 rounded border border-white/5">
                     <span class="text-slate-500 block">Capacité</span>
-                    <strong class="text-slate-200">\${room.nb || 3} suspects max</strong>
+                    <strong class="text-slate-200">${room.nb || 3} suspects max</strong>
                 </div>
                 <div class="bg-zinc-950/50 p-2 rounded border border-white/5">
                     <span class="text-slate-500 block">Type de Lieu</span>
-                    <strong class="text-slate-200 uppercase">\${room.lt === 'ext' ? 'Extérieur' : 'Intérieur'}</strong>
+                    <strong class="text-slate-200 uppercase">${room.lt === 'ext' ? 'Extérieur' : 'Intérieur'}</strong>
                 </div>
                 <div class="bg-zinc-950/50 p-2 rounded border border-white/5">
                     <span class="text-slate-500 block">Étage</span>
-                    <strong class="text-slate-200">\${room.f == 0 ? 'RDC' : `\${room.f}e Étage`}</strong>
+                    <strong class="text-slate-200">${room.f == 0 ? 'RDC' : `${room.f}e Étage`}</strong>
                 </div>
             </div>
             <div>
                 <span class="text-slate-500 text-[9px] uppercase tracking-wider block mb-1">Passages & Connexions</span>
                 <div class="flex flex-wrap gap-1">
-                    \${connectionNames.length > 0 ? 
-                        connectionNames.map(name => `<span class="bg-zinc-800 text-slate-300 border border-white/5 px-2 py-0.5 rounded text-[9px]">\${name}</span>`).join('') :
+                    ${connectionNames.length > 0 ? 
+                        connectionNames.map(name => `<span class="bg-zinc-800 text-slate-300 border border-white/5 px-2 py-0.5 rounded text-[9px]">${name}</span>`).join('') :
                         '<span class="text-slate-550 italic">Aucune connexion directe</span>'
                     }
                 </div>
