@@ -3246,7 +3246,7 @@ function renderFloorMap(floorId, rooms) {
                 } else if (child.classList.contains('border-red-400')) {
                     child.className = child.className.replace('bg-red-900/50 border-red-400', 'bg-red-950/40 border-red-500/60');
                 } else {
-                    child.className = child.className.replace(/border-gold\\/\\d+|border-gold/g, 'border-gold/20');
+                    child.className = child.className.replace(/border-gold\/\d+|border-gold/g, 'border-gold/20');
                 }
             });
             if (isCrimeScene) {
