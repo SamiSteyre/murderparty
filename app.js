@@ -357,18 +357,14 @@ window.fetch = async function (resource, options = {}) {
             throw new Error(errorMsg);
         }
 
-        // 2. Add headers for ngrok browser warning bypass and JSON content type compatibility
-        options.headers = options.headers || {};
-        if (options.headers instanceof Headers) {
-            options.headers.set('ngrok-skip-browser-warning', 'true');
-            if (!options.headers.has('Accept')) {
-                options.headers.set('Accept', 'application/json');
-            }
-        } else {
-            options.headers['ngrok-skip-browser-warning'] = 'true';
-            if (!options.headers['Accept']) {
-                options.headers['Accept'] = 'application/json';
-            }
+        // 2. Add query parameter for ngrok browser warning bypass to avoid CORS preflight header blocks
+        try {
+            const urlObj = new URL(resource);
+            urlObj.searchParams.set('ngrok-skip-browser-warning', 'true');
+            resource = urlObj.toString();
+        } catch (e) {
+            const separator = resource.includes('?') ? '&' : '?';
+            resource = resource + separator + 'ngrok-skip-browser-warning=true';
         }
     }
     return originalFetch(resource, options);
